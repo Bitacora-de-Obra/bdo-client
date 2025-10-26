@@ -30,10 +30,17 @@ const MainApp = () => {
 
   const { user } = useAuth();
   const { data: projectDetails, isLoading: isProjectLoading } = useApi.projectDetails();
-  const { data: contractModifications, isLoading: isModificationsLoading } = useApi.contractModifications();
+  const {
+    data: contractModifications,
+    isLoading: isModificationsLoading,
+    retry: refetchContractModifications,
+  } = useApi.contractModifications();
   const { data: actas, isLoading: isActasLoading } = useApi.actas();
 
-  const isLoading = isProjectLoading || isModificationsLoading || isActasLoading;
+  const isLoading =
+    isProjectLoading ||
+    isActasLoading ||
+    (isModificationsLoading && !contractModifications);
 
   useEffect(() => {
     if (!actas || !user) return;
@@ -112,7 +119,7 @@ const MainApp = () => {
       return (
         <ProjectSummaryDashboard
           project={projectDetails}
-          contractModifications={contractModifications}
+          contractModifications={contractModifications || []}
         />
       );
     }
@@ -122,7 +129,7 @@ const MainApp = () => {
         return (
           <ProjectSummaryDashboard
             project={projectDetails}
-            contractModifications={contractModifications}
+            contractModifications={contractModifications || []}
           />
         );
       case "pending_tasks":
@@ -137,7 +144,14 @@ const MainApp = () => {
       case "drawings":
         return <DrawingsDashboard project={projectDetails} />;
       case "work_progress":
-        return <WorkProgressDashboard project={projectDetails} />;
+        return (
+          <WorkProgressDashboard
+            project={projectDetails}
+            contractModifications={contractModifications || []}
+            onContractModificationsRefresh={refetchContractModifications}
+            contractModificationsLoading={isModificationsLoading}
+          />
+        );
       case "photographic_progress":
         return <PhotographicProgressDashboard project={projectDetails} />;
       case "planning":

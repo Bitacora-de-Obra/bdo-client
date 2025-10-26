@@ -3,12 +3,14 @@ import Button from './ui/Button';
 import { XMarkIcon } from './icons/Icon';
 
 interface FileUploadProps {
-  onFileUpload: (file: File) => void;
+  onFileUpload: (file: File) => Promise<void>;
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload }) => {
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -43,9 +45,18 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload }) => {
   }, []);
 
 
-  const handleSubmit = () => {
-    if (file) {
-      onFileUpload(file);
+  const handleSubmit = async () => {
+    if (!file || isProcessing) return;
+
+    try {
+      setIsProcessing(true);
+      setErrorMessage(null);
+      await onFileUpload(file);
+      setFile(null);
+    } catch (error: any) {
+      setErrorMessage(error?.message || "No se pudo procesar el archivo.");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -80,9 +91,12 @@ const FileUpload: React.FC<FileUploadProps> = ({ onFileUpload }) => {
               <XMarkIcon className="h-5 w-5" />
             </button>
           </div>
-          <Button onClick={handleSubmit} className="w-full mt-2">
-            Procesar Cronograma
+          <Button onClick={handleSubmit} className="w-full mt-2" disabled={isProcessing}>
+            {isProcessing ? "Procesando..." : "Procesar Cronograma"}
           </Button>
+          {errorMessage && (
+            <p className="mt-2 text-sm text-red-600">{errorMessage}</p>
+          )}
         </div>
       )}
     </div>

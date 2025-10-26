@@ -9,11 +9,14 @@ interface ReportFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (
-    reportData: Omit<Report, "id" | "author" | "status" | "attachments">,
-    files: File[]
-  ) => void;
+    reportData: Omit<Report, "id" | "author" | "status" | "attachments" | "version" | "previousReportId" | "versions">,
+    files: File[],
+    options?: { previousReportId?: string }
+  ) => Promise<void>;
   reportType: "Weekly" | "Monthly";
   reportScope: ReportScope;
+  baseReport?: Report | null;
+  mode?: "create" | "newVersion";
 }
 
 const ReportFormModal: React.FC<ReportFormModalProps> = ({
@@ -22,6 +25,8 @@ const ReportFormModal: React.FC<ReportFormModalProps> = ({
   onSave,
   reportType,
   reportScope,
+  baseReport,
+  mode = "create",
 }) => {
   const [number, setNumber] = useState("");
   const [period, setPeriod] = useState("");
@@ -29,6 +34,7 @@ const ReportFormModal: React.FC<ReportFormModalProps> = ({
   const [summary, setSummary] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const reportTypeName = reportType === "Weekly" ? "Semanal" : "Mensual";
 
@@ -39,7 +45,28 @@ const ReportFormModal: React.FC<ReportFormModalProps> = ({
     setSummary("");
     setFiles([]);
     setValidationError(null);
+    setIsSubmitting(false);
   };
+
+  React.useEffect(() => {
+    if (isOpen) {
+      if (baseReport) {
+        setNumber(baseReport.number);
+        setPeriod(baseReport.period);
+        setSubmissionDate(
+          baseReport.submissionDate
+            ? new Date(baseReport.submissionDate).toISOString().split("T")[0]
+            : ""
+        );
+        setSummary(baseReport.summary || "");
+      } else {
+        resetForm();
+      }
+    } else {
+      resetForm();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, baseReport?.id]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -51,7 +78,7 @@ const ReportFormModal: React.FC<ReportFormModalProps> = ({
     setFiles((prev) => prev.filter((file) => file !== fileToRemove));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setValidationError(null);
 
@@ -68,32 +95,59 @@ const ReportFormModal: React.FC<ReportFormModalProps> = ({
       return;
     }
 
-    onSave(
-      {
-        number,
-        period,
-        submissionDate: new Date(submissionDate).toISOString(),
-        summary,
-        type: reportType,
-        reportScope,
-        // Fix: Add missing properties to satisfy the Report type
-        requiredSignatories: [],
-        signatures: [],
-      },
-      files
-    );
+    try {
+      setIsSubmitting(true);
+      await onSave(
+        {
+          number,
+          period,
+          submissionDate: new Date(submissionDate).toISOString(),
+          summary,
+          type: reportType,
+          reportScope,
+          requiredSignatories: [],
+          signatures: [],
+        },
+        files,
+        { previousReportId: baseReport?.id }
+      );
 
-    resetForm();
+      resetForm();
+      onClose();
+    } catch (saveError: any) {
+      setValidationError(
+        saveError?.message || "No se pudo guardar el informe. Intenta nuevamente."
+      );
+      setIsSubmitting(false);
+    }
   };
+
+  const titlePrefix =
+    mode === "newVersion" && baseReport
+      ? `Registrar Nueva Versión (v${baseReport.version + 1}) de ${baseReport.number}`
+      : `Registrar Nuevo Informe ${reportTypeName} de ${reportScope}`;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Registrar Nuevo Informe ${reportTypeName} de ${reportScope}`}
+      title={titlePrefix}
       size="xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
+        {mode === "newVersion" && baseReport && (
+          <div className="p-3 border border-brand-primary/30 bg-brand-primary/5 rounded text-sm text-brand-primary">
+            <p>
+              Estás registrando la versión <strong>v{baseReport.version + 1}</strong> del
+              informe <strong>{baseReport.number}</strong>.
+            </p>
+            <p className="mt-1 text-brand-primary/80">
+              El número y el tipo de informe se mantienen; ajusta el periodo, el
+              resumen y adjunta la documentación que respalda esta nueva versión.
+            </p>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label={`Número de Informe ${reportTypeName}`}
@@ -102,6 +156,7 @@ const ReportFormModal: React.FC<ReportFormModalProps> = ({
             onChange={(e) => setNumber(e.target.value)}
             required
             placeholder={`Ej: Informe ${reportTypeName} No. 15`}
+            disabled={mode === "newVersion"}
           />
           <Input
             label="Fecha de Presentación"
@@ -215,7 +270,9 @@ const ReportFormModal: React.FC<ReportFormModalProps> = ({
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancelar
           </Button>
-          <Button type="submit">Guardar Informe</Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Guardando..." : "Guardar Informe"}
+          </Button>
         </div>
       </form>
     </Modal>

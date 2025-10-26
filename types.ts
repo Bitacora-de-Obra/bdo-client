@@ -422,11 +422,21 @@ export enum ReportScope {
   INTERVENTORIA = 'Interventoría',
 }
 
+export interface ReportVersionInfo {
+  id: string;
+  version: number;
+  status: ReportStatus;
+  submissionDate: string;
+  createdAt?: string;
+}
+
 export interface Report {
   id: string;
   type: 'Weekly' | 'Monthly';
   reportScope: ReportScope;
   number: string;
+  version: number;
+  previousReportId?: string | null;
   period: string; // "Semana del X al Y" or "Mes de Z"
   submissionDate: string; // ISO date string
   status: ReportStatus;
@@ -435,6 +445,9 @@ export interface Report {
   author: User;
   requiredSignatories: User[];
   signatures: Signature[];
+  versions?: ReportVersionInfo[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // NOTIFICATIONS

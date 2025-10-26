@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"; // Importa useEffect
+import React, { useState, useEffect, useCallback } from "react"; // Importa useEffect
 import {
   ProjectDetails,
   Report,
@@ -6,7 +6,7 @@ import {
   ReportStatus,
   User,
 } from "../types"; // Importa tipos necesarios
-import apiFetch from "../src/services/api"; // <-- Importa apiFetch
+import api from "../src/services/api"; // Cliente API centralizado
 import Button from "./ui/Button";
 import { PlusIcon, DocumentChartBarIcon, CalendarIcon } from "./icons/Icon"; // Importa CalendarIcon
 import EmptyState from "./ui/EmptyState";
@@ -34,38 +34,38 @@ const WeeklyReportsDashboard: React.FC<WeeklyReportsDashboardProps> = ({
   const [error, setError] = useState<string | null>(null);
   // ------------------------------------
 
-  const [isFormModalOpen, setIsFormModalOpen] = useState(false); // Usamos el modal genérico
-  const [selectedReport, setSelectedReport] = useState<Report | null>(null); // Para el detalle
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false); // Para el detalle
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [formMode, setFormMode] = useState<"create" | "newVersion">("create");
+  const [baseReportForForm, setBaseReportForForm] = useState<Report | null>(null);
 
   // --- useEffect para cargar datos ---
-  useEffect(() => {
-    const fetchWeeklyReports = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        // Llamamos al endpoint GET /api/reports filtrando por tipo y scope
-        const data = await apiFetch(
-          `/reports?type=Weekly&scope=${reportScope}`
-        );
-        setWeeklyReports(data);
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Error al cargar los informes semanales."
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    // Solo carga si hay un usuario logueado
-    if (user) {
-      fetchWeeklyReports();
-    } else {
-      setIsLoading(false); // No hay usuario, no cargamos nada
+  const loadReports = useCallback(async () => {
+    if (!user) return;
+    try {
+      setIsLoading(true);
+      setError(null);
+      const data = await api(`/reports?type=Weekly&scope=${reportScope}`);
+      setWeeklyReports(data);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Error al cargar los informes semanales."
+      );
+    } finally {
+      setIsLoading(false);
     }
-  }, [reportScope, user]); // Se ejecuta al montar y si cambia el scope o el usuario
+  }, [reportScope, user]);
+
+  useEffect(() => {
+    if (user) {
+      loadReports();
+    } else {
+      setIsLoading(false);
+    }
+  }, [user, loadReports]);
   // ---------------------------------
 
   const handleOpenDetail = (report: Report) => {
@@ -79,51 +79,41 @@ const WeeklyReportsDashboard: React.FC<WeeklyReportsDashboardProps> = ({
   };
 
   const handleOpenForm = () => {
+    setFormMode("create");
+    setBaseReportForForm(null);
     setIsFormModalOpen(true);
   };
 
   const handleCloseForm = () => {
     setIsFormModalOpen(false);
+    setBaseReportForForm(null);
+    setFormMode("create");
+  };
+
+  const handleCreateVersion = (report: Report) => {
+    setBaseReportForForm(report);
+    setFormMode("newVersion");
+    setIsFormModalOpen(true);
   };
 
   // --- Implementación de handleSaveReport con subida de archivos ---
   const handleSaveReport = async (
     reportData: Omit<
       Report,
-      "id" | "author" | "status" | "attachments" | "signatures"
-    >, // Quitamos signatures también
-    files: File[]
+      "id" | "author" | "status" | "attachments" | "signatures" | "version" | "previousReportId" | "versions"
+    >,
+    files: File[],
+    options: { previousReportId?: string } = {}
   ) => {
     if (!user) return;
-    // setIsLoading(true); // Puedes añadir feedback visual
     setError(null);
 
     try {
       // 1. Subir archivos adjuntos
       // **IMPORTANTE**: Asegúrate que el backend /api/upload devuelva el ID del Attachment creado.
-      const uploadPromises = files.map((file) => {
-        const formData = new FormData();
-        formData.append("file", file);
-        return fetch("http://localhost:4000/api/upload", {
-          // Ajusta la URL si es necesario
-          method: "POST",
-          body: formData,
-          // No añadir 'Authorization' header aquí si /upload no lo requiere
-        }).then(async (res) => {
-          const result = await res.json();
-          // Verifica que la respuesta sea OK y que contenga un ID
-          if (!res.ok || !result.id) {
-            console.error("Error en respuesta de /api/upload:", result); // Log para depurar
-            throw new Error(
-              result.error ||
-                `Error subiendo ${file.name} o falta ID en la respuesta.`
-            );
-          }
-          return { id: result.id }; // Solo necesitamos el ID para conectar
-        });
-      });
-
-      const uploadResults = await Promise.all(uploadPromises);
+      const uploadResults = await Promise.all(
+        files.map((file) => api.upload.uploadFile(file, "document"))
+      );
 
       // 2. Preparar payload con IDs de adjuntos
       const attachmentDataForPayload = uploadResults.map((result) => ({
@@ -138,6 +128,7 @@ const WeeklyReportsDashboard: React.FC<WeeklyReportsDashboardProps> = ({
         authorId: user.id,
         attachments: attachmentDataForPayload, // Enviamos IDs de adjuntos
         requiredSignatories: reportData.requiredSignatories || [], // Asegura que sea un array
+        previousReportId: options.previousReportId,
       };
 
       console.log(
@@ -145,19 +136,18 @@ const WeeklyReportsDashboard: React.FC<WeeklyReportsDashboardProps> = ({
         JSON.stringify(reportPayload, null, 2)
       ); // Log para depurar payload
 
-      const createdReport = await apiFetch("/reports", {
+      const createdReport = await api("/reports", {
         method: "POST",
         body: JSON.stringify(reportPayload),
       });
 
-      // 4. Actualizar estado local y cerrar modal
-      setWeeklyReports((prev) =>
-        [createdReport, ...prev].sort(
-          (a, b) =>
-            new Date(b.submissionDate).getTime() -
-            new Date(a.submissionDate).getTime()
-        )
-      );
+      await loadReports();
+
+      if (options.previousReportId) {
+        setSelectedReport(createdReport);
+        setIsDetailModalOpen(true);
+      }
+
       handleCloseForm();
     } catch (err) {
       console.error("Error detallado al guardar:", err); // Log más detallado
@@ -176,7 +166,7 @@ const WeeklyReportsDashboard: React.FC<WeeklyReportsDashboardProps> = ({
   const handleUpdateReport = async (updatedReport: Report) => {
     try {
       // Llamamos al endpoint PUT con los datos a actualizar
-      const updatedReportFromServer = await apiFetch(
+      const updatedReportFromServer = await api(
         `/reports/${updatedReport.id}`,
         {
           method: "PUT",
@@ -188,17 +178,12 @@ const WeeklyReportsDashboard: React.FC<WeeklyReportsDashboardProps> = ({
         }
       );
 
-      setWeeklyReports((prev) =>
-        prev.map((r) =>
-          r.id === updatedReportFromServer.id ? updatedReportFromServer : r
-        )
-      );
+      await loadReports();
 
-      // Actualizamos el modal si está abierto
-      if (selectedReport && selectedReport.id === updatedReportFromServer.id) {
+      if (isDetailModalOpen) {
         setSelectedReport(updatedReportFromServer);
       }
-      handleCloseDetail(); // Cierra el modal después de guardar
+      handleCloseDetail();
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Error al actualizar el informe."
@@ -216,7 +201,7 @@ const addSignature = async (
       return { success: false, error: "Se requiere contraseña para firmar." };
     }
     try {
-      const updatedReportFromServer = await apiFetch(
+      const updatedReportFromServer = await api(
         `/reports/${documentId}/signatures`,
         {
           method: "POST",
@@ -227,13 +212,9 @@ const addSignature = async (
         }
       );
 
-      setWeeklyReports((prev) =>
-        prev.map((r) =>
-          r.id === updatedReportFromServer.id ? updatedReportFromServer : r
-        )
-      );
+      await loadReports();
 
-      if (selectedReport && selectedReport.id === updatedReportFromServer.id) {
+      if (isDetailModalOpen) {
         setSelectedReport(updatedReportFromServer);
       }
       return { success: true, updated: updatedReportFromServer };
@@ -246,6 +227,20 @@ const addSignature = async (
     }
   };
   // -------------------------------------------------------------
+
+  const handleSelectVersion = async (reportId: string) => {
+    try {
+      const data = await api(`/reports/${reportId}`);
+      setSelectedReport(data);
+      setIsDetailModalOpen(true);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo cargar la versión seleccionada."
+      );
+    }
+  };
 
   if (!user) return null; // Necesario por si el usuario se desloguea
 
@@ -303,6 +298,8 @@ const addSignature = async (
           onUpdate={handleUpdateReport} // Conectado (simulado por ahora)
           onSign={addSignature} // Conectado (simulado por ahora)
           currentUser={user}
+          onSelectVersion={handleSelectVersion}
+          onCreateVersion={handleCreateVersion}
         />
       )}
 
@@ -313,6 +310,8 @@ const addSignature = async (
         onSave={handleSaveReport} // Conectado al backend con subida
         reportType="Weekly"
         reportScope={reportScope} // Pasamos el scope
+        baseReport={baseReportForForm}
+        mode={formMode}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Report, ReportStatus, User } from "../types";
+import { Report, ReportStatus, ReportVersionInfo, User } from "../types";
 import Modal from "./ui/Modal";
 import Button from "./ui/Button";
 import Select from "./ui/Select";
@@ -12,7 +12,7 @@ interface ReportDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   report: Report;
-  onUpdate: (updatedReport: Report) => void;
+  onUpdate: (updatedReport: Report) => void | Promise<void>;
   onSign: (
     documentId: string,
     documentType: "report",
@@ -20,6 +20,8 @@ interface ReportDetailModalProps {
     password: string
   ) => Promise<{ success: boolean; error?: string; updated?: Report }>;
   currentUser: User;
+  onSelectVersion?: (reportId: string) => void | Promise<void>;
+  onCreateVersion?: (report: Report) => void;
 }
 
 const DetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({
@@ -39,12 +41,25 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
   onUpdate,
   onSign,
   currentUser,
+  onSelectVersion,
+  onCreateVersion,
 }) => {
   const [editedReport, setEditedReport] = useState<Report>(report);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const previousVersionInfo = React.useMemo(() => {
+    if (!report.previousReportId || !report.versions) {
+      return null;
+    }
+    return report.versions.find(
+      (version) => version.id === report.previousReportId
+    );
+  }, [report.previousReportId, report.versions]);
 
   useEffect(() => {
     setEditedReport(report);
+    setIsSaving(false);
   }, [report, isOpen]);
 
   const handleStatusChange = (newStatus: ReportStatus) => {
@@ -72,9 +87,15 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
     return { success: true };
   };
 
-  const handleSaveChanges = () => {
-    onUpdate(editedReport);
-    onClose();
+  const handleSaveChanges = async () => {
+    if (isSaving) return;
+    try {
+      setIsSaving(true);
+      await Promise.resolve(onUpdate(editedReport));
+      onClose();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -82,20 +103,70 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title={`Detalle de Informe - ${report.number}`}
+        title={`Detalle de Informe - ${report.number} · v${report.version}`}
         size="2xl"
       >
         <div className="space-y-6">
-          <div className="pb-4 border-b">
-            <div className="flex justify-between items-start">
-              <h3 className="text-xl font-bold text-gray-900">
-                {report.number}
-              </h3>
-              <ReportStatusBadge status={editedReport.status} />
+          <div className="pb-4 border-b space-y-3">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">
+                  {report.number}
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Periodo: {report.period}
+                </p>
+                <span className="inline-flex items-center gap-2 text-xs font-semibold text-brand-primary mt-2 bg-brand-primary/10 px-2 py-0.5 rounded-full">
+                  Versión {report.version}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ReportStatusBadge status={editedReport.status} />
+                {onCreateVersion && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => onCreateVersion(report)}
+                    size="sm"
+                  >
+                    Nueva Versión
+                  </Button>
+                )}
+              </div>
             </div>
-            <p className="text-sm text-gray-500 mt-1">
-              Periodo: {report.period}
-            </p>
+
+            {report.versions && report.versions.length > 0 && (
+              <div className="pt-2 border-t border-gray-200">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Historial de versiones
+                </p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {report.versions.map((versionInfo: ReportVersionInfo) => {
+                    const isCurrent = versionInfo.id === report.id;
+                    return (
+                      <button
+                        key={versionInfo.id}
+                        onClick={() =>
+                          !isCurrent &&
+                          onSelectVersion &&
+                          onSelectVersion(versionInfo.id)
+                        }
+                        className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+                          isCurrent
+                            ? "bg-brand-primary text-white border-brand-primary cursor-default"
+                            : "bg-white text-gray-700 border-gray-300 hover:border-brand-primary hover:text-brand-primary"
+                        }`}
+                        title={`Estado: ${versionInfo.status}\nPresentado: ${new Date(
+                          versionInfo.submissionDate
+                        ).toLocaleDateString("es-CO")}`}
+                        disabled={isCurrent}
+                      >
+                        v{versionInfo.version}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6">
@@ -111,6 +182,27 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
               label="Autor del Informe"
               value={report.author.fullName}
             />
+            <DetailRow label="Versión" value={`v${report.version}`} />
+            {previousVersionInfo && (
+              <DetailRow
+                label="Deriva de"
+                value={`v${previousVersionInfo.version} · ${new Date(
+                  previousVersionInfo.submissionDate
+                ).toLocaleDateString("es-CO")}`}
+              />
+            )}
+            {report.createdAt && (
+              <DetailRow
+                label="Fecha de Registro"
+                value={new Date(report.createdAt).toLocaleString("es-CO")}
+              />
+            )}
+            {report.updatedAt && (
+              <DetailRow
+                label="Última Actualización"
+                value={new Date(report.updatedAt).toLocaleString("es-CO")}
+              />
+            )}
           </dl>
 
           <div>
@@ -163,11 +255,11 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
           />
         </div>
         <div className="mt-6 flex flex-col sm:flex-row sm:justify-end gap-2">
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose} disabled={isSaving}>
             Cancelar
           </Button>
-          <Button variant="primary" onClick={handleSaveChanges}>
-            Guardar Cambios
+          <Button variant="primary" onClick={handleSaveChanges} disabled={isSaving}>
+            {isSaving ? "Guardando..." : "Guardar Cambios"}
           </Button>
         </div>
       </Modal>

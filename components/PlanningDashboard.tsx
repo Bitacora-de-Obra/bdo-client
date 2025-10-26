@@ -4,10 +4,137 @@ import FileUpload from './FileUpload';
 import GanttChart, { ProcessedProjectTask } from './GanttChart';
 import Card from './ui/Card';
 import Button from './ui/Button';
-import { DocumentArrowDownIcon } from './icons/Icon';
+import { DocumentArrowDownIcon, CalendarIcon, ListBulletIcon } from './icons/Icon';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useApi } from '../src/hooks/useApi';
+import api from '../src/services/api';
+
+type ProjectTaskImportPayload = {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  progress: number;
+  duration: number;
+  isSummary: boolean;
+  outlineLevel: number;
+  dependencies: string[];
+};
+
+const formatFullDate = (date: Date | null) =>
+  date
+    ? date.toLocaleDateString('es-CO', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+      })
+    : '—';
+
+const getTextContent = (element: Element, tagName: string): string => {
+  const child = element.getElementsByTagName(tagName)[0];
+  return child?.textContent?.trim() ?? "";
+};
+
+const createIsoDate = (value: string): string => {
+  if (!value) {
+    return new Date().toISOString();
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return new Date().toISOString();
+  }
+  return parsed.toISOString();
+};
+
+const computeDurationInDays = (durationText: string, startIso: string, endIso: string): number => {
+  let totalDays = 0;
+  if (durationText) {
+    const regex = /P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?/i;
+    const match = durationText.match(regex);
+    if (match) {
+      const days = Number(match[1] || 0);
+      const hours = Number(match[2] || 0);
+      const minutes = Number(match[3] || 0);
+      const seconds = Number(match[4] || 0);
+      const additionalDays = (hours + minutes / 60 + seconds / 3600) / 8; // Suponiendo jornadas de 8h
+      totalDays = days + additionalDays;
+    }
+  }
+
+  if (!totalDays || !Number.isFinite(totalDays) || totalDays <= 0) {
+    const start = new Date(startIso);
+    const end = new Date(endIso);
+    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && end >= start) {
+      const diff = end.getTime() - start.getTime();
+      totalDays = diff / (1000 * 60 * 60 * 24);
+    }
+  }
+
+  if (!totalDays || !Number.isFinite(totalDays) || totalDays <= 0) {
+    return 1;
+  }
+
+  return Math.max(1, Math.round(totalDays));
+};
+
+const parseMsProjectXml = async (file: File): Promise<ProjectTaskImportPayload[]> => {
+  const xmlText = await file.text();
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlText, "text/xml");
+
+  if (doc.getElementsByTagName("parsererror").length > 0) {
+    throw new Error("El archivo XML no es válido. Asegúrate de exportarlo desde MS Project.");
+  }
+
+  const taskNodes = Array.from(doc.getElementsByTagName("Task"));
+  const tasks: ProjectTaskImportPayload[] = [];
+  const seenIds = new Set<string>();
+
+  for (const taskNode of taskNodes) {
+    const uid = getTextContent(taskNode, "UID");
+    if (!uid || uid === "0" || seenIds.has(uid)) {
+      continue;
+    }
+
+    const name = getTextContent(taskNode, "Name") || `Tarea ${uid}`;
+    const startIso = createIsoDate(getTextContent(taskNode, "Start"));
+    const endIsoFromXml = getTextContent(taskNode, "Finish");
+    const endIso = createIsoDate(endIsoFromXml || startIso);
+    const outlineLevelValue = parseInt(getTextContent(taskNode, "OutlineLevel"), 10);
+    const outlineLevel = Number.isFinite(outlineLevelValue) && outlineLevelValue > 0 ? outlineLevelValue : 1;
+    const summaryFlag = getTextContent(taskNode, "Summary");
+    const isSummary = summaryFlag === "1" || summaryFlag.toLowerCase() === "true";
+    const percentComplete = parseInt(getTextContent(taskNode, "PercentComplete"), 10);
+    const progress = Math.max(0, Math.min(100, Number.isFinite(percentComplete) ? percentComplete : 0));
+    const durationText = getTextContent(taskNode, "Duration");
+    const duration = computeDurationInDays(durationText, startIso, endIso);
+
+    const dependencies = Array.from(taskNode.getElementsByTagName("PredecessorLink"))
+      .map((link) => getTextContent(link, "PredecessorUID"))
+      .filter((value) => value && value !== uid);
+
+    tasks.push({
+      id: uid,
+      name,
+      startDate: startIso,
+      endDate: endIso,
+      progress,
+      duration,
+      isSummary,
+      outlineLevel,
+      dependencies,
+    });
+
+    seenIds.add(uid);
+  }
+
+  if (!tasks.length) {
+    throw new Error("No se encontraron tareas válidas dentro del archivo XML proporcionado.");
+  }
+
+  return tasks;
+};
 
 // Helper function to build the task tree from a flat list with outline levels
 const buildTaskTree = (tasks: Omit<ProjectTask, 'children'>[]): ProjectTask[] => {
@@ -85,7 +212,9 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
   const { data: flatTasks, isLoading, error, retry: refetchTasks } = useApi.projectTasks();
   const [hierarchicalTasks, setHierarchicalTasks] = useState<ProjectTask[]>([]);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const ganttChartRef = useRef<HTMLDivElement>(null);
+  const ganttGridRef = useRef<HTMLDivElement>(null);
+  const ganttExportRef = useRef<HTMLDivElement>(null);
+  const [uploadStatus, setUploadStatus] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
 
 
   // Este useEffect reconstruye el árbol cuando flatTasks cambia
@@ -208,13 +337,90 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
         };
   }, [processedHierarchicalTasks]);
 
+  const flattenedTasks = useMemo(() => {
+    const tasks: ProjectTask[] = [];
+    const traverse = (items: ProjectTask[]) => {
+      items.forEach((task) => {
+        tasks.push(task);
+        if (Array.isArray(task.children) && task.children.length > 0) {
+          traverse(task.children);
+        }
+      });
+    };
+    traverse(processedHierarchicalTasks);
+    return tasks;
+  }, [processedHierarchicalTasks]);
+
+  const scheduleRange = useMemo(() => {
+    if (!flattenedTasks.length) {
+      return { start: null as Date | null, end: null as Date | null, days: 0 };
+    }
+    const start = new Date(
+      Math.min(...flattenedTasks.map((task) => new Date(task.startDate).getTime()))
+    );
+    const end = new Date(
+      Math.max(...flattenedTasks.map((task) => new Date(task.endDate).getTime()))
+    );
+    const msPerDay = 1000 * 60 * 60 * 24;
+    const days = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / msPerDay));
+    return { start, end, days };
+  }, [flattenedTasks]);
+
 
   const handleFileUpload = async (file: File) => {
-    console.warn("Importación de cronograma no implementada aún.", file.name);
+    try {
+      setUploadStatus({ type: 'info', message: `Procesando cronograma "${file.name}"...` });
+      const tasksToImport = await parseMsProjectXml(file);
+      await api.projectTasks.import(tasksToImport);
+      await refetchTasks();
+      setUploadStatus({
+        type: 'success',
+        message: `Cronograma actualizado con ${tasksToImport.length} tareas.`,
+      });
+    } catch (err: any) {
+      const message = err?.message || 'No se pudo procesar el cronograma.';
+      setUploadStatus({ type: 'error', message });
+      throw err instanceof Error ? err : new Error(message);
+    }
   };
 
-  // handleDownloadPdf se mantiene igual
-  const handleDownloadPdf = async () => { /* ... */ };
+  const handleDownloadPdf = async () => {
+    if (!ganttExportRef.current || isGeneratingPdf) {
+      return;
+    }
+
+    try {
+      setIsGeneratingPdf(true);
+      const canvas = await html2canvas(ganttExportRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        scrollY: -window.scrollY,
+      });
+
+      const imageData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const ratio = Math.min(pageWidth / canvas.width, pageHeight / canvas.height);
+
+      const imgWidth = canvas.width * ratio;
+      const imgHeight = canvas.height * ratio;
+      const x = (pageWidth - imgWidth) / 2;
+      const y = (pageHeight - imgHeight) / 2;
+
+      pdf.addImage(imageData, 'PNG', x, y, imgWidth, imgHeight, undefined, 'FAST');
+      pdf.save(`cronograma-${new Date().toISOString().slice(0, 10)}.pdf`);
+    } catch (pdfError) {
+      console.error('Error generando PDF del cronograma:', pdfError);
+      setUploadStatus({
+        type: 'error',
+        message: 'No se pudo generar el PDF. Intenta nuevamente o reduce el zoom.',
+      });
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -228,6 +434,33 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
         <KPICard title="Avance Programado a la Fecha" value={`${projectSummary.planned.toFixed(1)}%`} />
         <KPICard title="Avance Ejecutado a la Fecha" value={`${projectSummary.executed.toFixed(1)}%`} progress={projectSummary.executed} />
         <KPICard title="Estado (Variación)" value={`${projectSummary.variance > 0 ? '+' : ''}${projectSummary.variance.toFixed(1)}%`} variance={projectSummary.variance} />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="p-5 border-brand-primary/20 bg-brand-primary/5">
+          <div className="flex items-center gap-3 text-brand-primary">
+            <CalendarIcon className="w-6 h-6" />
+            <span className="text-sm font-semibold uppercase tracking-wide">Fecha de Inicio</span>
+          </div>
+          <p className="mt-3 text-lg font-semibold text-gray-900">{formatFullDate(scheduleRange.start)}</p>
+        </Card>
+        <Card className="p-5 border-brand-secondary/20 bg-brand-secondary/5">
+          <div className="flex items-center gap-3 text-brand-secondary">
+            <CalendarIcon className="w-6 h-6" />
+            <span className="text-sm font-semibold uppercase tracking-wide">Fecha de Finalización</span>
+          </div>
+          <p className="mt-3 text-lg font-semibold text-gray-900">{formatFullDate(scheduleRange.end)}</p>
+        </Card>
+        <Card className="p-5">
+          <div className="flex items-center gap-3 text-gray-500">
+            <ListBulletIcon className="w-6 h-6" />
+            <span className="text-sm font-semibold uppercase tracking-wide">Resumen del Cronograma</span>
+          </div>
+          <div className="mt-3 text-gray-900">
+            <p className="text-lg font-semibold">{flattenedTasks.length} tareas</p>
+            <p className="text-sm text-gray-600">Duración estimada de {scheduleRange.days} días calendario</p>
+          </div>
+        </Card>
       </div>
 
       {/* Carga y Exportación */}
@@ -262,6 +495,20 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
           </Card>
       </div>
 
+      {uploadStatus && (
+        <div
+          className={`p-4 rounded-lg border text-sm font-medium ${
+            uploadStatus.type === 'success'
+              ? 'bg-green-50 border-green-200 text-green-800'
+              : uploadStatus.type === 'error'
+              ? 'bg-red-50 border-red-200 text-red-800'
+              : 'bg-blue-50 border-blue-200 text-blue-800'
+          }`}
+        >
+          {uploadStatus.message}
+        </div>
+      )}
+
       {/* Muestra errores */}
       {error && (
         <Card className="p-4 bg-red-50 border-red-200">
@@ -279,11 +526,13 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
 
       {/* Muestra el Gantt si no está cargando, no hay error y hay tareas procesadas */}
       {!isLoading && !error && Array.isArray(processedHierarchicalTasks) && processedHierarchicalTasks.length > 0 && (
-        <GanttChart
+        <div ref={ganttExportRef} className="print:bg-white">
+          <GanttChart
             tasks={processedHierarchicalTasks}
-            ref={ganttChartRef}
+            ref={ganttGridRef}
             onTasksUpdate={handleUpdateGanttTasks} // Aún actualiza solo localmente
-        />
+          />
+        </div>
       )}
 
       {/* Muestra EmptyState si no hay tareas después de cargar y no hay error */}

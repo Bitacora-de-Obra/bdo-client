@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import {
-  Project,
+  ProjectDetails,
   WorkActa,
   ContractItem,
   WorkActaStatus,
@@ -18,9 +18,13 @@ import WorkActaDetailModal from "./WorkActaDetailModal";
 import WorkActaFormModal from "./WorkActaFormModal";
 import ContractItemsSummaryTable from "./ContractItemsSummaryTable";
 import ContractModificationFormModal from "./ContractModificationFormModal";
+import ContractModificationDetailModal from "./ContractModificationDetailModal";
 
 interface WorkProgressDashboardProps {
-  project: Project; // Mantenemos project por ahora
+  project: ProjectDetails;
+  contractModifications: ContractModification[];
+  onContractModificationsRefresh?: () => Promise<void>;
+  contractModificationsLoading?: boolean;
 }
 
 const KPICard: React.FC<{
@@ -35,12 +39,16 @@ const KPICard: React.FC<{
   </Card>
 );
 
-const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({ project }) => {
+const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
+  project,
+  contractModifications,
+  onContractModificationsRefresh,
+  contractModificationsLoading = false,
+}) => {
   // --- Estado local para datos reales ---
   const [workActas, setWorkActas] = useState<WorkActa[]>([]);
   const [contractItems, setContractItems] = useState<ContractItem[]>([]);
-  // Mantenemos las modificaciones mock por ahora
-  const [contractModifications, setContractModifications] = useState<ContractModification[]>([]);
+  const [modifications, setModifications] = useState<ContractModification[]>(contractModifications ?? []);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   // ------------------------------------
@@ -50,6 +58,8 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({ project }
   const [isActaDetailModalOpen, setIsActaDetailModalOpen] = useState(false);
   const [isActaFormModalOpen, setIsActaFormModalOpen] = useState(false);
   const [isModFormModalOpen, setIsModFormModalOpen] = useState(false);
+  const [selectedModification, setSelectedModification] = useState<ContractModification | null>(null);
+  const [isModificationDetailOpen, setIsModificationDetailOpen] = useState(false);
 
   // --- useEffect para cargar datos ---
   useEffect(() => {
@@ -57,14 +67,12 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({ project }
       try {
         setIsLoading(true);
         setError(null);
-        const [itemsData, actasData, modificationsData] = await Promise.all([
+        const [itemsData, actasData] = await Promise.all([
           api.contractItems.getAll(),
           api.workActas.getAll(),
-          api.contractModifications.getAll(),
         ]);
         setContractItems(itemsData);
         setWorkActas(actasData);
-        setContractModifications(modificationsData);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error al cargar datos de avance.");
       } finally {
@@ -75,12 +83,27 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({ project }
   }, []); // El array vacío asegura que esto se ejecute solo una vez al montar el componente
   // ---------------------------------
 
+  useEffect(() => {
+    setModifications(contractModifications ?? []);
+  }, [contractModifications]);
+
+  useEffect(() => {
+    if (!selectedModification) return;
+    const fresh = (contractModifications || []).find((mod) => mod.id === selectedModification.id);
+    if (!fresh) {
+      setSelectedModification(null);
+      setIsModificationDetailOpen(false);
+    } else {
+      setSelectedModification(fresh);
+    }
+  }, [contractModifications, selectedModification]);
+
   const contractItemMap = useMemo(() => {
     return new Map(contractItems.map((item) => [item.id, item]));
   }, [contractItems]);
 
   const financialSummary = useMemo(() => {
-    const totalAdditions = contractModifications
+    const totalAdditions = modifications
       .filter((mod) => mod.type === ModificationType.ADDITION && mod.value)
       .reduce((sum, mod) => sum + (mod.value || 0), 0);
 
@@ -111,7 +134,7 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({ project }
       executionPercentage,
       updatedContractValue,
     };
-  }, [workActas, contractItemMap, contractModifications, project.initialValue]);
+  }, [workActas, contractItemMap, modifications, project.initialValue]);
 
   const itemsSummaryData = useMemo(() => {
     const executedQuantities = new Map<string, number>();
@@ -202,33 +225,75 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({ project }
   };
 
   // --- Implementaremos estas después ---
-const handleUpdateActa = async (updatedActa: WorkActa) => {
+  const handleUpdateActa = async (updatedActa: WorkActa) => {
     try {
-        // Llamamos al endpoint PUT con los datos actualizados (principalmente el estado)
-        const updatedActaFromServer = await apiFetch(`/work-actas/${updatedActa.id}`, {
-            method: 'PUT',
-            body: JSON.stringify({ status: updatedActa.status /*, items: updatedActa.items */ }), // Podríamos enviar 'items' si permitimos editar cantidades
-        });
+      // Llamamos al endpoint PUT con los datos actualizados (principalmente el estado)
+      const updatedActaFromServer = await api(`/work-actas/${updatedActa.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          status: updatedActa.status, /*, items: updatedActa.items */
+        }), // Podríamos enviar 'items' si permitimos editar cantidades
+      });
 
-        // Actualizamos el estado local
-        setWorkActas(prev =>
-            prev.map(acta => acta.id === updatedActaFromServer.id ? updatedActaFromServer : acta)
-        );
-        // Si el modal está abierto, actualizamos también la data seleccionada
-        if (selectedActa && selectedActa.id === updatedActaFromServer.id) {
-            setSelectedActa(updatedActaFromServer);
-        }
+      // Actualizamos el estado local
+      setWorkActas((prev) =>
+        prev.map((acta) =>
+          acta.id === updatedActaFromServer.id ? updatedActaFromServer : acta
+        )
+      );
+      // Si el modal está abierto, actualizamos también la data seleccionada
+      if (selectedActa && selectedActa.id === updatedActaFromServer.id) {
+        setSelectedActa(updatedActaFromServer);
+      }
     } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error al actualizar el acta de avance.');
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Error al actualizar el acta de avance."
+      );
     }
   };
 
   const handleSaveModification = async (
-    newModData: Omit<ContractModification, "id">
+    newModData: {
+      number: string;
+      type: ModificationType;
+      date: string;
+      value?: number;
+      days?: number;
+      justification: string;
+    },
+    file: File | null
   ) => {
-      // TODO: Llamar al endpoint POST /api/contract-modifications (aún no existe)
-      console.log("Guardar modificación (pendiente):", newModData);
+    try {
+      let attachmentId: string | undefined;
+      if (file) {
+        const uploadedAttachment = await api.upload.uploadFile(file, "document");
+        attachmentId = uploadedAttachment.id;
+      }
+
+      const createdModification = await api.contractModifications.create({
+        ...newModData,
+        attachmentId,
+      });
+
+      setModifications((prev) => {
+        const withoutDuplicate = prev.filter((mod) => mod.id !== createdModification.id);
+        return [createdModification, ...withoutDuplicate].sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+      });
+
+      if (onContractModificationsRefresh) {
+        await onContractModificationsRefresh();
+      }
+
       setIsModFormModalOpen(false);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Error al guardar la modificación contractual.";
+      throw new Error(message);
+    }
   };
   // ------------------------------------
 
@@ -312,7 +377,9 @@ const handleUpdateActa = async (updatedActa: WorkActa) => {
           </Button>
         </div>
         <div className="overflow-x-auto">
-          {contractModifications.length > 0 ? (
+          {contractModificationsLoading ? (
+            <div className="p-6 text-center">Cargando modificaciones...</div>
+          ) : modifications.length > 0 ? (
             <table className="w-full text-sm text-left text-gray-500">
               <thead className="text-xs text-gray-700 uppercase bg-gray-50">
                 <tr>
@@ -323,8 +390,15 @@ const handleUpdateActa = async (updatedActa: WorkActa) => {
                 </tr>
               </thead>
               <tbody>
-                {contractModifications.map((mod) => (
-                  <tr key={mod.id} className="bg-white border-b">
+                {modifications.map((mod) => (
+                  <tr
+                    key={mod.id}
+                    className="bg-white border-b hover:bg-gray-50 cursor-pointer"
+                    onClick={() => {
+                      setSelectedModification(mod);
+                      setIsModificationDetailOpen(true);
+                    }}
+                  >
                     <th scope="row" className="px-6 py-4 font-medium text-gray-900">{mod.number}</th>
                     <td className="px-6 py-4">{mod.type}</td>
                     <td className="px-6 py-4">{new Date(mod.date).toLocaleDateString("es-CO")}</td>
@@ -423,7 +497,7 @@ const handleUpdateActa = async (updatedActa: WorkActa) => {
           onClose={handleCloseDetail}
           acta={selectedActa}
           contractItems={contractItems} // Pasa los ítems reales
-          onUpdate={handleUpdateActa} // Función aún por implementar
+          onUpdate={handleUpdateActa} // Conectado al backend
         />
       )}
 
@@ -439,8 +513,18 @@ const handleUpdateActa = async (updatedActa: WorkActa) => {
       <ContractModificationFormModal
         isOpen={isModFormModalOpen}
         onClose={() => setIsModFormModalOpen(false)}
-        onSave={handleSaveModification} // Función aún por implementar
+        onSave={handleSaveModification} // Conectado al backend
       />
+      {selectedModification && (
+        <ContractModificationDetailModal
+          isOpen={isModificationDetailOpen}
+          onClose={() => {
+            setIsModificationDetailOpen(false);
+            setSelectedModification(null);
+          }}
+          modification={selectedModification}
+        />
+      )}
     </div>
   );
 };

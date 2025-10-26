@@ -9,6 +9,7 @@ import {
   ControlPoint,
   ProjectTask,
   ContractModification,
+  ModificationType,
   ProjectDetails,
   Report,
   Drawing,
@@ -21,7 +22,15 @@ import {
 } from "../../types";
 import { handleApiError, ApiError } from "../utils/error-handling";
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
+const apiUrlFromVite =
+  typeof import.meta !== "undefined" && (import.meta as any)?.env?.VITE_API_URL
+    ? ((import.meta as any).env.VITE_API_URL as string)
+    : undefined;
+
+const API_URL =
+  apiUrlFromVite ||
+  (typeof process !== "undefined" && process.env?.REACT_APP_API_URL) ||
+  "http://localhost:4001/api";
 
 /**
  * Función centralizada para realizar peticiones a la API.
@@ -335,11 +344,71 @@ export const logEntriesApi = {
     data: Omit<LogEntry, 'id' | 'folioNumber' | 'createdAt' | 'author' | 'comments' | 'history' | 'updatedAt' | 'attachments'> & {
       authorId?: string;
       projectId?: string;
-    }
+    },
+    files: File[] = []
   ) => {
+    const formData = new FormData();
+
+    const appendIfDefined = (key: string, value: unknown) => {
+      if (value === undefined || value === null) return;
+      if (typeof value === 'boolean') {
+        formData.append(key, value ? 'true' : 'false');
+        return;
+      }
+      formData.append(key, String(value));
+    };
+
+    appendIfDefined('title', data.title);
+    appendIfDefined('description', data.description);
+    appendIfDefined('type', data.type);
+    appendIfDefined('subject', data.subject);
+    appendIfDefined('location', data.location);
+    appendIfDefined('activityStartDate', data.activityStartDate);
+    appendIfDefined('activityEndDate', data.activityEndDate);
+    appendIfDefined('isConfidential', data.isConfidential ?? false);
+    appendIfDefined('status', data.status);
+    appendIfDefined('authorId', data.authorId);
+    appendIfDefined('projectId', data.projectId);
+
+    const serializeUsers = (users?: Array<Partial<User> | string>) => {
+      if (!users || users.length === 0) {
+        return undefined;
+      }
+      return JSON.stringify(
+        users.map((user) =>
+          typeof user === 'string'
+            ? { id: user }
+            : { id: user.id, fullName: user.fullName }
+        )
+      );
+    };
+
+    const assigneesJson = serializeUsers(
+      (data as any).assignees
+    );
+    if (assigneesJson) {
+      formData.append('assignees', assigneesJson);
+    }
+
+    const requiredSignatoriesJson = serializeUsers(
+      (data as any).requiredSignatories
+    );
+    if (requiredSignatoriesJson) {
+      formData.append('requiredSignatories', requiredSignatoriesJson);
+    }
+
+    const signatures = (data as any).signatures;
+    if (Array.isArray(signatures) && signatures.length > 0) {
+      formData.append('signatures', JSON.stringify(signatures));
+    }
+
+    files.forEach((file) => {
+      formData.append('attachments', file);
+    });
+
     return apiFetch('/log-entries', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: formData,
     });
   },
   update: async (id: string, data: Partial<LogEntry>) => {
@@ -517,6 +586,22 @@ export const projectTasksApi = {
   getAll: async () => {
     return apiFetch('/project-tasks');
   },
+  import: async (tasks: Array<{
+    id: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+    progress: number;
+    duration: number;
+    isSummary: boolean;
+    outlineLevel: number;
+    dependencies: string[];
+  }>) => {
+    return apiFetch('/project-tasks/import', {
+      method: 'POST',
+      body: JSON.stringify({ tasks }),
+    });
+  },
 };
 
 // API Functions for Contract Modifications
@@ -524,7 +609,15 @@ export const contractModificationsApi = {
   getAll: async () => {
     return apiFetch('/contract-modifications');
   },
-  create: async (data: Omit<ContractModification, 'id'>) => {
+  create: async (data: {
+    number: string;
+    type: ModificationType;
+    date: string;
+    value?: number;
+    days?: number;
+    justification: string;
+    attachmentId?: string;
+  }) => {
     return apiFetch('/contract-modifications', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -547,7 +640,12 @@ export const reportsApi = {
   getById: async (id: string) => {
     return apiFetch(`/reports/${id}`);
   },
-  create: async (data: Omit<Report, 'id' | 'author' | 'status' | 'attachments'>) => {
+  create: async (
+    data: Omit<
+      Report,
+      'id' | 'author' | 'status' | 'attachments' | 'version' | 'previousReportId' | 'versions'
+    > & { previousReportId?: string }
+  ) => {
     return apiFetch('/reports', {
       method: 'POST',
       body: JSON.stringify(data),

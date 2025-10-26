@@ -141,23 +141,14 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     }
 
     try {
-      const createdEntry = await api.logEntries.create({
-        ...newEntryData,
-        authorId: user.id,
-        projectId: project.id,
-      });
-
-      // Subir archivos si hay
-      if (files.length > 0) {
-        const uploadPromises = files.map(file => api.upload.uploadFile(file, 'document'));
-        const attachments = await Promise.all(uploadPromises);
-        
-        // Actualizar la entrada con los archivos adjuntos
-        await api.logEntries.update(createdEntry.id, {
-          ...createdEntry,
-          attachments: attachments,
-        });
-      }
+      await api.logEntries.create(
+        {
+          ...newEntryData,
+          authorId: user.id,
+          projectId: project.id,
+        },
+        files
+      );
 
       // Refrescar la lista de entradas
       refetchLogEntries();

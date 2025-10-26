@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Project, ControlPoint, PhotoEntry, Attachment, User } from '../types'; // Importa Attachment y User
-import apiFetch from '../src/services/api'; // Importa apiFetch
+import api from '../src/services/api'; // Cliente API centralizado
 import Button from './ui/Button';
 import { PlusIcon, CameraIcon } from './icons/Icon';
 import EmptyState from './ui/EmptyState';
@@ -35,7 +35,7 @@ const PhotographicProgressDashboard: React.FC<PhotographicProgressDashboardProps
       try {
         setIsLoading(true);
         setError(null);
-        const data = await apiFetch('/control-points');
+        const data = await api('/control-points');
         // Asegurarse de que 'photos' sea siempre un array y tengan 'attachment' si es necesario
         const formattedData = data.map((point: any) => ({
             ...point,
@@ -96,7 +96,7 @@ const PhotographicProgressDashboard: React.FC<PhotographicProgressDashboardProps
   const handleSaveControlPoint = async (data: Omit<ControlPoint, 'id' | 'photos'>) => {
     try {
         setError(null);
-        const newPoint = await apiFetch('/control-points', {
+        const newPoint = await api('/control-points', {
             method: 'POST',
             body: JSON.stringify(data)
         });
@@ -120,19 +120,7 @@ const PhotographicProgressDashboard: React.FC<PhotographicProgressDashboardProps
 
       try {
           // 1. Subir el archivo de la foto a /api/upload
-          const formData = new FormData();
-          formData.append('file', file);
-          const uploadResult: Attachment = await fetch('http://localhost:4000/api/upload', { // Ajusta URL si es necesario
-              method: 'POST',
-              body: formData,
-          }).then(async res => {
-              const result = await res.json();
-              if (!res.ok || !result.id) {
-                  console.error("Respuesta de /api/upload:", result);
-                  throw new Error(result.error || `Error subiendo ${file.name} o falta ID.`);
-              }
-              return result; // Devuelve el objeto Attachment completo con ID
-          });
+          const uploadResult: Attachment = await api.upload.uploadFile(file, "photo");
 
           // 2. Crear la PhotoEntry llamando a /api/control-points/:id/photos
           const photoPayload = {
@@ -141,7 +129,7 @@ const PhotographicProgressDashboard: React.FC<PhotographicProgressDashboardProps
               attachmentId: uploadResult.id // ID del Attachment creado
           };
 
-          const newPhotoEntry: PhotoEntry = await apiFetch(`/control-points/${selectedControlPoint.id}/photos`, {
+          const newPhotoEntry: PhotoEntry = await api(`/control-points/${selectedControlPoint.id}/photos`, {
               method: 'POST',
               body: JSON.stringify(photoPayload)
           });
