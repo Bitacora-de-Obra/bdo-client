@@ -188,6 +188,15 @@ const MainApp = () => {
             reportScope={ReportScope.INTERVENTORIA}
           />
         );
+      case "admin":
+        return <AdminDashboard />;
+      default:
+        return (
+          <ProjectSummaryDashboard
+            project={projectDetails}
+            contractModifications={contractModifications || []}
+          />
+        );
     }
   };
 

@@ -15,6 +15,8 @@ import {
   Drawing,
   WeeklyReport,
   User,
+  AppRole,
+  AppSettings,
   PhotoEntry,
   Comment,
   Attachment,
@@ -328,7 +330,49 @@ export const authApi = {
 // API Functions for Users
 export const usersApi = {
   getAll: async () => {
-    return apiFetch('/users');
+    return apiFetch('/public/demo-users');
+  },
+};
+
+export const adminApi = {
+  getUsers: async () => {
+    return apiFetch('/admin/users');
+  },
+  inviteUser: async (data: {
+    fullName: string;
+    email: string;
+    appRole: AppRole;
+    projectRole?: string;
+  }): Promise<{ user: User; temporaryPassword: string }> => {
+    return apiFetch('/admin/users/invite', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+  updateUser: async (
+    id: string,
+    data: Partial<{
+      appRole: AppRole;
+      status: "active" | "inactive";
+      projectRole: string;
+    }>
+  ): Promise<User> => {
+    return apiFetch(`/admin/users/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+  getAuditLogs: async () => {
+    return apiFetch('/admin/audit-logs');
+  },
+  getSettings: async () => {
+    return apiFetch('/admin/settings');
+  },
+  updateSettings: async (data: Partial<AppSettings>) => {
+    return apiFetch('/admin/settings', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
   },
 };
 
@@ -758,6 +802,7 @@ export const api = Object.assign(
     reports: reportsApi,
     drawings: drawingsApi,
     weeklyReports: weeklyReportsApi,
+    admin: adminApi,
     upload: uploadApi,
   }
 );

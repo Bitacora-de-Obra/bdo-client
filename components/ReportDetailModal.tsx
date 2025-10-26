@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Report, ReportStatus, ReportVersionInfo, User } from "../types";
+import {
+  Attachment,
+  Report,
+  ReportStatus,
+  ReportVersionInfo,
+  User,
+} from "../types";
 import Modal from "./ui/Modal";
 import Button from "./ui/Button";
 import Select from "./ui/Select";
@@ -23,7 +29,9 @@ interface ReportDetailModalProps {
   currentUser: User;
   onSelectVersion?: (reportId: string) => void | Promise<void>;
   onCreateVersion?: (report: Report) => void;
-  onGenerateExcel?: (reportId: string) => Promise<void>;
+  onGenerateExcel?: (
+    reportId: string
+  ) => Promise<{ attachment?: Attachment; report?: Report } | void>;
 }
 
 const DetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({
@@ -52,6 +60,7 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isGeneratingExcel, setIsGeneratingExcel] = useState(false);
   const [excelError, setExcelError] = useState<string | null>(null);
+  const [excelSuccess, setExcelSuccess] = useState<string | null>(null);
 
   const previousVersionInfo = React.useMemo(() => {
     if (!report.previousReportId || !report.versions) {
@@ -67,6 +76,7 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
     setIsSaving(false);
     setExcelError(null);
     setIsGeneratingExcel(false);
+    setExcelSuccess(null);
   }, [report, isOpen]);
 
   const handleStatusChange = (newStatus: ReportStatus) => {
@@ -77,8 +87,10 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
     if (!onGenerateExcel || isGeneratingExcel) return;
     try {
       setExcelError(null);
+      setExcelSuccess(null);
       setIsGeneratingExcel(true);
       await onGenerateExcel(report.id);
+      setExcelSuccess("El Excel se generó y descargó correctamente.");
     } catch (err) {
       console.error("Error generando Excel del informe:", err);
       const message =
@@ -210,6 +222,11 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
           {excelError && (
             <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
               {excelError}
+            </div>
+          )}
+          {excelSuccess && (
+            <div className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-600">
+              {excelSuccess}
             </div>
           )}
 

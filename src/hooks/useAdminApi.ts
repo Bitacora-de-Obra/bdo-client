@@ -1,134 +1,136 @@
-import { useState, useEffect } from "react";
-import { AppSettings, AuditLogEntry, User, UserRole } from "../../types";
+import { useState, useEffect, useCallback } from "react";
 import {
-  MOCK_APP_SETTINGS,
-  MOCK_AUDIT_LOGS,
-  MOCK_USERS,
-} from "../services/mockData";
+  AppRole,
+  AppSettings,
+  AuditLogEntry,
+  User,
+} from "../../types";
+import api from "../services/api";
 
-// This custom hook will simulate a backend for the admin panel.
+type InvitePayload = {
+  fullName: string;
+  email: string;
+  appRole: AppRole;
+  projectRole?: string;
+};
+
+type UpdateUserPayload = Partial<{
+  appRole: AppRole;
+  status: "active" | "inactive";
+  projectRole: string;
+}>;
+
 export const useAdminApi = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
   const [settings, setSettings] = useState<AppSettings | null>(null);
+
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchData = () => {
-      setIsLoading(true);
-      setError(null);
-      setTimeout(() => {
-        try {
-          setUsers(MOCK_USERS);
-          setAuditLogs(MOCK_AUDIT_LOGS);
-          setSettings(MOCK_APP_SETTINGS);
-        } catch (e) {
-          setError("Failed to load admin data.");
-          console.error(e);
-        } finally {
-          setIsLoading(false);
-        }
-      }, 500); // Simulate network delay
-    };
-    fetchData();
+  const fetchUsers = useCallback(async () => {
+    const data = await api.admin.getUsers();
+    setUsers(data);
   }, []);
 
-  const inviteUser = async (data: {
-    fullName: string;
-    email: string;
-    appRole: "admin" | "editor" | "viewer";
-  }): Promise<User | undefined> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        if (users.some((u) => u.email === data.email)) {
-          alert("Error: El email ya existe.");
-          resolve(undefined);
-          return;
-        }
-        const newUser: User = {
-          id: `user-${Date.now()}`,
-          fullName: data.fullName,
-          email: data.email,
-          appRole: data.appRole,
-          projectRole: UserRole.RESIDENT, // Default project role
-          status: "active",
-          avatarUrl: `https://i.pravatar.cc/150?u=${data.email}`,
-          lastLoginAt: undefined,
-        };
-        setUsers((prev) => [...prev, newUser]);
-        resolve(newUser);
-      }, 300);
-    });
-  };
+  const fetchAuditLogs = useCallback(async () => {
+    const data = await api.admin.getAuditLogs();
+    setAuditLogs(data);
+  }, []);
 
-  const updateUser = async (
-    id: string,
-    patch: Partial<User>
-  ): Promise<User | undefined> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        let updatedUser: User | undefined;
-        setUsers((prev) =>
-          prev.map((u) => {
-            if (u.id === id) {
-              updatedUser = { ...u, ...patch };
-              return updatedUser;
-            }
-            return u;
-          })
-        );
-        resolve(updatedUser);
-      }, 300);
-    });
-  };
+  const fetchSettings = useCallback(async () => {
+    const data = await api.admin.getSettings();
+    setSettings(data);
+  }, []);
 
-  const updateSettings = async (
-    patch: Partial<AppSettings>
-  ): Promise<AppSettings | undefined> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        setSettings((prev) => {
-          if (!prev) return null;
-          const newSettings = { ...prev, ...patch };
-
-          // Add to audit log
-          const newLog: AuditLogEntry = {
-            id: `log-${Date.now()}`,
-            timestamp: new Date().toISOString(),
-            actorEmail: "jorge.hernandez@idu.gov.co", // Assuming current admin user
-            action: "APP_SETTING_CHANGED",
-            entityType: "setting",
-            diff: createDiff(prev, newSettings),
-          };
-          setAuditLogs((logs) => [newLog, ...logs]);
-
-          return newSettings;
-        });
-        resolve(settings ?? undefined);
-      }, 300);
-    });
-  };
-
-  const createDiff = (original: any, updated: any) => {
-    const diff: Record<string, { from: any; to: any }> = {};
-    for (const key in updated) {
-      if (original[key] !== updated[key]) {
-        diff[key] = { from: original[key], to: updated[key] };
-      }
+  const loadAll = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await Promise.all([fetchUsers(), fetchAuditLogs(), fetchSettings()]);
+    } catch (err) {
+      console.error("Error cargando datos de administración:", err);
+      const message =
+        err instanceof Error
+          ? err.message
+          : "No se pudieron cargar los datos de administración.";
+      setError(message);
+    } finally {
+      setIsLoading(false);
     }
-    return diff;
-  };
+  }, [fetchUsers, fetchAuditLogs, fetchSettings]);
+
+  useEffect(() => {
+    loadAll();
+  }, [loadAll]);
+
+  const inviteUser = useCallback(
+    async (payload: InvitePayload) => {
+      try {
+        const response = await api.admin.inviteUser(payload);
+        setUsers((prev) => [...prev, response.user]);
+        await fetchAuditLogs();
+        return response;
+      } catch (err) {
+        console.error("Error invitando usuario:", err);
+        throw err;
+      }
+    },
+    [fetchAuditLogs]
+  );
+
+  const updateUser = useCallback(
+    async (id: string, patch: UpdateUserPayload) => {
+      try {
+        const updatedUser = await api.admin.updateUser(id, patch);
+        setUsers((prev) =>
+          prev.map((user) => (user.id === id ? updatedUser : user))
+        );
+        await fetchAuditLogs();
+        return updatedUser;
+      } catch (err) {
+        console.error("Error actualizando usuario:", err);
+        throw err;
+      }
+    },
+    [fetchAuditLogs]
+  );
+
+  const updateSettings = useCallback(
+    async (patch: Partial<AppSettings>) => {
+      try {
+        const updatedSettings = await api.admin.updateSettings(patch);
+        setSettings(updatedSettings);
+        await fetchAuditLogs();
+        return updatedSettings;
+      } catch (err) {
+        console.error("Error actualizando configuración:", err);
+        throw err;
+      }
+    },
+    [fetchAuditLogs]
+  );
+
+  const reload = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await loadAll();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [loadAll]);
 
   return {
     users,
     auditLogs,
     settings,
     isLoading,
+    isRefreshing,
     error,
     inviteUser,
     updateUser,
     updateSettings,
+    reload,
   };
 };
-

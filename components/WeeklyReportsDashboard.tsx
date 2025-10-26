@@ -243,7 +243,6 @@ const addSignature = async (
   };
 
   const handleGenerateWeeklyExcel = async (reportId: string) => {
-    setError(null);
     try {
       const { report: updatedReport, attachment } =
         await api.reports.generateWeeklyExcel(reportId);
@@ -278,11 +277,20 @@ const addSignature = async (
         link.click();
         document.body.removeChild(link);
       }
+
+      if (!attachment?.downloadUrl) {
+        throw new Error(
+          "El servidor no entregó un enlace de descarga para el Excel."
+        );
+      }
+
+      return { attachment, report: updatedReport };
     } catch (err: any) {
       const message =
-        err?.message || "Error al generar el Excel del informe semanal.";
-      setError(message);
-      throw (err instanceof Error ? err : new Error(message));
+        err instanceof Error
+          ? err.message
+          : "Error al generar el Excel del informe semanal.";
+      throw new Error(message);
     }
   };
 
