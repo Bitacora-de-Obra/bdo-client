@@ -6,9 +6,8 @@ import Select from "./ui/Select";
 import CostActaStatusBadge from "./CostActaStatusBadge";
 import PaymentComplianceAlert from "./PaymentComplianceAlert";
 import AttachmentItem from "./AttachmentItem";
-import apiFetch from '../src/services/api'; // <-- Se importa apiFetch
+import api from '../src/services/api';
 import { useAuth } from '../contexts/AuthContext';
-import { MOCK_USER } from "../../src/services/mockData"; // Asegúrate que MOCK_USER esté importado si lo usas, aunque ahora usamos useAuth
 
 interface CostActaDetailModalProps {
   isOpen: boolean;
@@ -77,12 +76,9 @@ const CostActaDetailModal: React.FC<CostActaDetailModalProps> = ({
       setObservationError(null);
       try {
           // Llama al endpoint POST para crear la observación
-          const createdObservation = await apiFetch(`/cost-actas/${acta.id}/observations`, {
-              method: 'POST',
-              body: JSON.stringify({
-                  text: newObservation,
-                  authorId: user.id
-              })
+          const createdObservation = await api.costActas.addObservation(acta.id, {
+            text: newObservation,
+            authorId: user.id,
           });
 
           // Actualiza el estado local para ver la nueva observación inmediatamente

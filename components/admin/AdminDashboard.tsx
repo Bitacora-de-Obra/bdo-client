@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Card from '../ui/Card';
-import { useAdminApi } from '../../hooks/useAdminApi';
+import { useAdminApi } from '../../src/hooks/useAdminApi';
 import { AppSettings, User } from '../../types';
 import Input from '../ui/Input';
 import Button from '../ui/Button';

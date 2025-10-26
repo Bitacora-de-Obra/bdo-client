@@ -170,19 +170,11 @@ const [monthlyReports, setMonthlyReports] = useState<Report[]>([]); // Define 'm
       );
 
       // Actualizamos el estado local (para el dashboard actual)
-      if (updatedReport.type === "Monthly") {
-        setMonthlyReports((prev) =>
-          prev.map((r) =>
-            r.id === updatedReportFromServer.id ? updatedReportFromServer : r
-          )
-        );
-      } else {
-        setMonthlyReports((prev) =>
-          prev.map((r) =>
-            r.id === updatedReportFromServer.id ? updatedReportFromServer : r
-          )
-        );
-      }
+      setMonthlyReports((prev) =>
+        prev.map((r) =>
+          r.id === updatedReportFromServer.id ? updatedReportFromServer : r
+        )
+      );
 
       // Actualizamos el modal si está abierto
       if (selectedReport && selectedReport.id === updatedReportFromServer.id) {
@@ -201,11 +193,9 @@ const [monthlyReports, setMonthlyReports] = useState<Report[]>([]); // Define 'm
     documentType: "report",
     signer: User,
     password?: string
-  ): Promise<Report | undefined> => {
-    // El modal de firma ahora pasa la contraseña
+  ): Promise<{ success: boolean; error?: string; updated?: Report }> => {
     if (!password) {
-      setError("Se requiere contraseña para firmar.");
-      return undefined;
+      return { success: false, error: "Se requiere contraseña para firmar." };
     }
     try {
       const updatedReportFromServer = await apiFetch(
@@ -214,36 +204,27 @@ const [monthlyReports, setMonthlyReports] = useState<Report[]>([]); // Define 'm
           method: "POST",
           body: JSON.stringify({
             signerId: signer.id,
-            password: password, // Enviamos la contraseña para verificación en backend
+            password,
           }),
         }
       );
 
-      // Actualizamos estado local
-      if (updatedReportFromServer.type === "Monthly") {
-        setMonthlyReports((prev) =>
-          prev.map((r) =>
-            r.id === updatedReportFromServer.id ? updatedReportFromServer : r
-          )
-        );
-      } else {
-        setMonthlyReports((prev) =>
-          prev.map((r) =>
-            r.id === updatedReportFromServer.id ? updatedReportFromServer : r
-          )
-        );
-      }
+      setMonthlyReports((prev) =>
+        prev.map((r) =>
+          r.id === updatedReportFromServer.id ? updatedReportFromServer : r
+        )
+      );
 
-      // Actualizamos el modal si está abierto
       if (selectedReport && selectedReport.id === updatedReportFromServer.id) {
         setSelectedReport(updatedReportFromServer);
       }
-      return updatedReportFromServer; // Devuelve el informe actualizado
+      return { success: true, updated: updatedReportFromServer };
     } catch (err: any) {
       console.error("Error al firmar:", err);
-      setError(err.message || "Error al procesar la firma.");
-      // Devuelve explícitamente undefined en caso de error para que SignatureModal sepa que falló
-      return undefined;
+      return {
+        success: false,
+        error: err?.message || "Error al procesar la firma.",
+      };
     }
   };
   // -------------------------------------------------------------

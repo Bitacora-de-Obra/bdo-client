@@ -1,30 +1,34 @@
 {
-  "name": "copy-of-bitácora-digital-de-obra-(bdo)",
+  "name": "bdo-appd",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "tsc && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.21.0",
     "@fullcalendar/core": "6.1.11",
     "@fullcalendar/react": "6.1.11",
     "@fullcalendar/daygrid": "6.1.11",
     "@fullcalendar/interaction": "6.1.11",
-    "xlsx": "latest",
+    "xlsx": "^0.18.5",
     "jszip": "3.10.1",
     "file-saver": "2.0.5",
     "jspdf": "2.5.1",
-    "html2canvas": "1.4.1"
+    "html2canvas": "1.4.1",
+    "axios": "^1.6.2"
   },
   "devDependencies": {
-    "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "@types/node": "^20.10.4",
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.17",
+    "@vitejs/plugin-react": "^4.2.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.10"
   }
 }

@@ -8,7 +8,6 @@ import {
   Attachment,
   ActaArea,
 } from "../types";
-import { MOCK_USERS } from "../src/services/mockData";
 import Modal from "./ui/Modal";
 import Button from "./ui/Button";
 import Input from "./ui/Input";
@@ -19,19 +18,14 @@ interface ActaFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (actaData: Omit<Acta, "id">) => void;
+  users: User[];
 }
-
-const emptyCommitment = (): Omit<Commitment, "id"> => ({
-  description: "",
-  responsible: MOCK_USERS[0],
-  dueDate: "",
-  status: CommitmentStatus.PENDING,
-});
 
 const ActaFormModal: React.FC<ActaFormModalProps> = ({
   isOpen,
   onClose,
   onSave,
+  users,
 }) => {
   const [number, setNumber] = useState("");
   const [title, setTitle] = useState("");
@@ -54,7 +48,7 @@ const ActaFormModal: React.FC<ActaFormModalProps> = ({
 
   const handleResponsibleChange = (index: number, userId: string) => {
     const newCommitments = [...commitments];
-    const user = MOCK_USERS.find((u) => u.id === userId);
+    const user = users.find((u) => u.id === userId);
     if (user) {
       newCommitments[index].responsible = user;
       setCommitments(newCommitments);
@@ -68,7 +62,19 @@ const ActaFormModal: React.FC<ActaFormModalProps> = ({
   };
 
   const addCommitment = () => {
-    setCommitments([...commitments, emptyCommitment()]);
+    if (users.length === 0) {
+      alert("No hay usuarios disponibles para asignar compromisos.");
+      return;
+    }
+    setCommitments([
+      ...commitments,
+      {
+        description: "",
+        responsible: users[0],
+        dueDate: "",
+        status: CommitmentStatus.PENDING,
+      },
+    ]);
   };
 
   const removeCommitment = (index: number) => {
@@ -237,7 +243,7 @@ const ActaFormModal: React.FC<ActaFormModalProps> = ({
                     }
                   >
                     {/* Fix: Replaced `u.name` with `u.fullName`. */}
-                    {MOCK_USERS.map((u) => (
+                    {users.map((u) => (
                       <option key={u.id} value={u.id}>
                         {u.fullName}
                       </option>

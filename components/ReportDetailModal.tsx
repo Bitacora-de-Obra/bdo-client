@@ -16,8 +16,9 @@ interface ReportDetailModalProps {
   onSign: (
     documentId: string,
     documentType: "report",
-    signer: User
-  ) => Promise<Report | any>;
+    signer: User,
+    password: string
+  ) => Promise<{ success: boolean; error?: string; updated?: Report }>;
   currentUser: User;
 }
 
@@ -54,25 +55,21 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
     password: string
   ): Promise<{ success: boolean; error?: string }> => {
     // Ya no hacemos la validación de contraseña aquí
-    const updatedReport = await onSign(
-      report.id,
-      "report",
-      currentUser,
-      password
-    ); // <-- Pasa la contraseña
-    if (updatedReport) {
-      // setEditedReport(updatedReport); // No es necesario si el padre actualiza selectedReport
-      setIsSignatureModalOpen(false);
-      return { success: true };
-    } else {
-      // El error lo debería manejar addSignature y mostrarse en el dashboard
-      // Podríamos obtener el mensaje de error de alguna forma si addSignature lo devuelve
+    const result = await onSign(report.id, "report", currentUser, password);
+    if (!result.success) {
       return {
         success: false,
         error:
+          result.error ||
           "La firma falló. Revisa la contraseña o contacta al administrador.",
       };
     }
+
+    if (result.updated) {
+      setEditedReport(result.updated);
+    }
+    setIsSignatureModalOpen(false);
+    return { success: true };
   };
 
   const handleSaveChanges = () => {

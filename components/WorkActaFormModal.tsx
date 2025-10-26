@@ -9,7 +9,7 @@ import { PlusIcon, XMarkIcon } from './icons/Icon';
 interface WorkActaFormModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (actaData: Omit<WorkActa, 'id'>) => void;
+  onSave: (actaData: Omit<WorkActa, 'id' | 'attachments'>, files: File[]) => void;
   contractItems: ContractItem[];
   suggestedNumber: string;
   itemsSummary: (ContractItem & { balance: number })[];
@@ -23,12 +23,17 @@ const WorkActaFormModal: React.FC<WorkActaFormModalProps> = ({ isOpen, onClose, 
   const [date, setDate] = useState('');
   const [items, setItems] = useState<WorkActaItem[]>([]);
   const [itemErrors, setItemErrors] = useState<Record<number, string>>({});
+  const [files, setFiles] = useState<File[]>([]);
 
   useEffect(() => {
     if (isOpen) {
         const now = new Date();
         setMonth(months[now.getMonth()]);
         setYear(now.getFullYear().toString());
+        setDate('');
+        setItems([]);
+        setItemErrors({});
+        setFiles([]);
     }
   }, [isOpen]);
 
@@ -90,6 +95,22 @@ const WorkActaFormModal: React.FC<WorkActaFormModalProps> = ({ isOpen, onClose, 
     const now = new Date();
     setMonth(months[now.getMonth()]);
     setYear(now.getFullYear().toString());
+    setFiles([]);
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files) return;
+    const selectedFiles = Array.from(event.target.files);
+    setFiles((prev) => [...prev, ...selectedFiles]);
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleCancel = () => {
+    resetForm();
+    onClose();
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -103,13 +124,16 @@ const WorkActaFormModal: React.FC<WorkActaFormModalProps> = ({ isOpen, onClose, 
       return;
     }
 
-    onSave({
-      number: suggestedNumber,
-      period: `${month} ${year}`,
-      date: new Date(date).toISOString(),
-      status: WorkActaStatus.DRAFT,
-      items,
-    });
+    onSave(
+      {
+        number: suggestedNumber,
+        period: `${month} ${year}`,
+        date: new Date(date).toISOString(),
+        status: WorkActaStatus.DRAFT,
+        items,
+      },
+      files
+    );
     
     resetForm();
   };
@@ -176,8 +200,75 @@ const WorkActaFormModal: React.FC<WorkActaFormModalProps> = ({ isOpen, onClose, 
           </Button>
         </div>
 
+        <div>
+          <label
+            htmlFor="work-acta-attachments"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
+            Adjuntar Documentos de Soporte
+          </label>
+          <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+            <div className="space-y-1 text-center">
+              <svg
+                className="mx-auto h-12 w-12 text-gray-400"
+                stroke="currentColor"
+                fill="none"
+                viewBox="0 0 48 48"
+                aria-hidden="true"
+              >
+                <path
+                  d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <div className="flex text-sm text-gray-600">
+                <label
+                  htmlFor="work-acta-attachments"
+                  className="relative cursor-pointer bg-white rounded-md font-medium text-brand-primary hover:text-brand-secondary focus-within:outline-none"
+                >
+                  <span>Carga uno o más archivos</span>
+                  <input
+                    id="work-acta-attachments"
+                    name="work-acta-attachments"
+                    type="file"
+                    className="sr-only"
+                    multiple
+                    onChange={handleFileChange}
+                  />
+                </label>
+              </div>
+              <p className="text-xs text-gray-500">
+                Archivos PDF o imágenes hasta 10MB
+              </p>
+            </div>
+          </div>
+          {files.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {files.map((file, index) => (
+                <div
+                  key={`${file.name}-${index}`}
+                  className="p-2 border rounded-md bg-gray-50 flex items-center justify-between text-sm"
+                >
+                  <p className="font-medium text-gray-700 truncate">
+                    {file.name}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveFile(index)}
+                    className="text-red-500 hover:text-red-700 ml-4"
+                  >
+                    <XMarkIcon className="h-5 w-5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="flex justify-end gap-2 pt-4 border-t mt-4">
-          <Button type="button" variant="secondary" onClick={onClose}>Cancelar</Button>
+          <Button type="button" variant="secondary" onClick={handleCancel}>Cancelar</Button>
           <Button type="submit">Guardar Acta</Button>
         </div>
       </form>

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Project, LogEntry, User } from "../types";
-import apiFetch from "../src/services/api"; // <-- AÑADE ESTA LÍNEA
+import { ProjectDetails, LogEntry, User } from "../types";
+import api from "../src/services/api";
 import FilterBar from "./FilterBar";
 import EntryCard from "./EntryCard";
 import EntryDetailModal from "./EntryDetailModal";
@@ -15,9 +15,9 @@ import {
   CalendarIcon,
 } from "./icons/Icon";
 import ExportModal from "./ExportModal";
-import { MOCK_USERS, MOCK_PROJECT } from "../src/services/mockData";
 import CalendarView from "./CalendarView";
 import { useAuth } from "../contexts/AuthContext";
+import { useApi } from "../src/hooks/useApi";
 
 interface ProjectDashboardProps {
   initialItemToOpen: { type: string; id: string } | null;
@@ -29,11 +29,9 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   clearInitialItem,
 }) => {
   const { user } = useAuth();
-  const project = MOCK_PROJECT;
-
-  const [logEntries, setLogEntries] = useState<LogEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: project, isLoading: isProjectLoading } = useApi.projectDetails();
+  const { data: logEntries, isLoading: isLogEntriesLoading, error, retry: refetchLogEntries } = useApi.logEntries();
+  const { data: users, isLoading: isUsersLoading } = useApi.users();
 
   const [selectedEntry, setSelectedEntry] = useState<LogEntry | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -53,38 +51,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   });
 
   useEffect(() => {
-const fetchLogEntries = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      // const response = await fetch("http://localhost:4000/api/log-entries"); // <-- LÍNEA ANTIGUA
-      // if (!response.ok) { // <-- LÍNEA ANTIGUA
-      //   throw new Error("La respuesta del servidor no fue exitosa."); // <-- LÍNEA ANTIGUA
-      // } // <-- LÍNEA ANTIGUA
-      // const data = await response.json(); // <-- LÍNEA ANTIGUA
-      const data = await apiFetch('/log-entries'); // <-- USA apiFetch
-      setLogEntries(data);
-    } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("Ocurrió un error desconocido.");
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchLogEntries();
-  }, []);
-
-  const handleOpenDetail = (entry: LogEntry) => {
-    setSelectedEntry(entry);
-    setIsDetailModalOpen(true);
-  };
-
-  useEffect(() => {
-    if (initialItemToOpen && initialItemToOpen.type === "logEntry") {
+    if (initialItemToOpen && initialItemToOpen.type === "logEntry" && logEntries) {
       const entryToOpen = logEntries.find((e) => e.id === initialItemToOpen.id);
       if (entryToOpen) {
         handleOpenDetail(entryToOpen);
@@ -93,7 +60,14 @@ const fetchLogEntries = async () => {
     }
   }, [initialItemToOpen, logEntries, clearInitialItem]);
 
+  const handleOpenDetail = (entry: LogEntry) => {
+    setSelectedEntry(entry);
+    setIsDetailModalOpen(true);
+  };
+
   const filteredEntries = useMemo(() => {
+    if (!logEntries) return [];
+
     return logEntries.filter((entry) => {
       const searchTermMatch =
         entry.title.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
@@ -159,57 +133,46 @@ const fetchLogEntries = async () => {
     files: File[]
   ) => {
     if (!user) {
-      setError("No estás autenticado.");
-      return;
+      throw new Error("No estás autenticado.");
     }
 
-    const dataToSend = {
-      ...newEntryData,
-      authorId: user.id,
-      projectId: project.id,
-    };
+    if (!project) {
+      throw new Error("No se ha cargado la información del proyecto.");
+    }
 
     try {
-      const response = await fetch("http://localhost:4000/api/log-entries", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(dataToSend),
+      const createdEntry = await api.logEntries.create({
+        ...newEntryData,
+        authorId: user.id,
+        projectId: project.id,
       });
 
-      if (!response.ok) {
-        throw new Error("Falló la creación de la anotación.");
+      // Subir archivos si hay
+      if (files.length > 0) {
+        const uploadPromises = files.map(file => api.upload.uploadFile(file, 'document'));
+        const attachments = await Promise.all(uploadPromises);
+        
+        // Actualizar la entrada con los archivos adjuntos
+        await api.logEntries.update(createdEntry.id, {
+          ...createdEntry,
+          attachments: attachments,
+        });
       }
 
-      const createdEntry = await response.json();
-      setLogEntries((prevEntries) => [createdEntry, ...prevEntries]);
+      // Refrescar la lista de entradas
+      refetchLogEntries();
       handleCloseForm();
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Ocurrió un error al guardar la anotación.");
-      }
+      throw err instanceof Error ? err : new Error("Ocurrió un error al guardar la anotación.");
     }
   };
 
   const handleDeleteEntry = async (entryId: string) => {
     try {
-      await apiFetch(`/log-entries/${entryId}`, {
-        method: "DELETE",
-      });
-
-      // Si la llamada a la API fue exitosa, eliminamos la anotación del estado local
-      setLogEntries((prevEntries) =>
-        prevEntries.filter((entry) => entry.id !== entryId)
-      );
+      await api.logEntries.delete(entryId);
+      refetchLogEntries();
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Ocurrió un error al eliminar la anotación.");
-      }
+      throw err instanceof Error ? err : new Error("Ocurrió un error al eliminar la anotación.");
     }
   };
 
@@ -219,88 +182,36 @@ const fetchLogEntries = async () => {
     files: File[]
   ) => {
     if (!user) {
-      setError("No estás autenticado para comentar.");
-      return;
+      throw new Error("No estás autenticado para comentar.");
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:4000/api/log-entries/${entryId}/comments`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            content: commentText,
-            authorId: user.id,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Falló la creación del comentario.");
+      if (files.length > 0) {
+        throw new Error("La carga de archivos en comentarios estará disponible próximamente.");
       }
 
-      const newComment = await response.json();
-
-      setLogEntries((prevEntries) =>
-        prevEntries.map((entry) => {
-          if (entry.id === entryId) {
-            return {
-              ...entry,
-              comments: [...(entry.comments || []), newComment],
-            };
-          }
-          return entry;
-        })
-      );
-
-      setSelectedEntry((prevSelected) => {
-        if (prevSelected && prevSelected.id === entryId) {
-          return {
-            ...prevSelected,
-            comments: [...(prevSelected.comments || []), newComment],
-          };
-        }
-        return prevSelected;
+      // Crear el comentario
+      await api.logEntries.addComment(entryId, {
+        content: commentText,
+        authorId: user.id,
       });
+
+      // Refrescar la entrada
+      const updatedEntry = await api.logEntries.getById(entryId);
+      setSelectedEntry(updatedEntry);
+      refetchLogEntries();
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Ocurrió un error al añadir el comentario.");
-      }
+      throw err instanceof Error ? err : new Error("Ocurrió un error al añadir el comentario.");
     }
   };
 
   const handleUpdateEntry = async (updatedEntryData: LogEntry) => {
     try {
-      // Usamos apiFetch para llamar a nuestro endpoint PUT
-      const updatedEntryFromServer = await apiFetch(
-        `/log-entries/${updatedEntryData.id}`,
-        {
-          method: "PUT",
-          body: JSON.stringify(updatedEntryData),
-        }
-      );
-
-      // Actualizamos el estado local con la respuesta fresca del servidor
-      setLogEntries((prevEntries) =>
-        prevEntries.map((entry) =>
-          entry.id === updatedEntryFromServer.id
-            ? updatedEntryFromServer
-            : entry
-        )
-      );
-      // Actualizamos también la entrada seleccionada si está abierta en el modal
-      setSelectedEntry(updatedEntryFromServer);
+      const updatedEntry = await api.logEntries.update(updatedEntryData.id, updatedEntryData);
+      setSelectedEntry(updatedEntry);
+      refetchLogEntries();
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Ocurrió un error al actualizar la anotación.");
-      }
+      throw err instanceof Error ? err : new Error("Ocurrió un error al actualizar la anotación.");
     }
   };
 
@@ -311,42 +222,24 @@ const fetchLogEntries = async () => {
     password: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      const response = await fetch(
-        `http://localhost:4000/api/log-entries/${documentId}/signatures`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ signerId: signer.id, password }),
-        }
-      );
+      const updatedEntry = await api.logEntries.addSignature(documentId, {
+        signerId: signer.id,
+        password,
+      });
 
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(responseData.error || "Falló el proceso de firma.");
-      }
-
-      // La respuesta del backend es la anotación actualizada, la usamos para refrescar el estado
-      const updatedEntryFromServer = responseData;
-
-      setLogEntries((prev) =>
-        prev.map((entry) =>
-          entry.id === updatedEntryFromServer.id
-            ? updatedEntryFromServer
-            : entry
-        )
-      );
-      setSelectedEntry(updatedEntryFromServer);
+      setSelectedEntry(updatedEntry);
+      refetchLogEntries();
 
       return { success: true };
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Ocurrió un error inesperado.";
-      setError(errorMessage);
+      const errorMessage = err instanceof Error ? err.message : "Ocurrió un error inesperado.";
       return { success: false, error: errorMessage };
     }
   };
+
   const handleExportEntries = () => {
+    if (!project || !logEntries) return;
+
     const header = `Extracto de Bitácora Digital de Obra\nProyecto: ${
       project.name
     }\nContrato: ${
@@ -358,7 +251,7 @@ const fetchLogEntries = async () => {
     }\n- Estado: ${filters.status}\n- Tipo: ${filters.type}\n- Usuario: ${
       filters.user === "all"
         ? "Todos"
-        : MOCK_USERS.find((u) => u.id === filters.user)?.fullName || "N/A"
+        : logEntries.find(entry => entry.author.id === filters.user)?.author.fullName || "N/A"
     }\n- Fecha Desde: ${filters.startDate || "N/A"}\n- Fecha Hasta: ${
       filters.endDate || "N/A"
     }\n\nTotal de Anotaciones: ${
@@ -425,14 +318,25 @@ const fetchLogEntries = async () => {
 
   if (!user) return null;
 
+  const isLoading = isProjectLoading || isLogEntriesLoading || isUsersLoading;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">{project.name}</h2>
-          <p className="text-sm text-gray-500">
-            Contrato: {project.contractId}
-          </p>
+          {project ? (
+            <>
+              <h2 className="text-2xl font-bold text-gray-900">{project.name}</h2>
+              <p className="text-sm text-gray-500">
+                Contrato: {project.contractId}
+              </p>
+            </>
+          ) : (
+            <div className="animate-pulse">
+              <div className="h-8 w-48 bg-gray-200 rounded mb-2"></div>
+              <div className="h-4 w-32 bg-gray-200 rounded"></div>
+            </div>
+          )}
         </div>
         <div className="flex items-center flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <div className="flex items-center bg-gray-200 rounded-lg p-1">
@@ -466,6 +370,7 @@ const fetchLogEntries = async () => {
             leftIcon={<DocumentArrowDownIcon />}
             variant="secondary"
             className="w-full sm:w-auto"
+            disabled={!project || !logEntries || filteredEntries.length === 0}
           >
             Exportar
           </Button>
@@ -473,18 +378,19 @@ const fetchLogEntries = async () => {
             onClick={handleOpenForm}
             leftIcon={<PlusIcon />}
             className="w-full sm:w-auto"
+            disabled={!project}
           >
             Nueva Anotación
           </Button>
         </div>
       </div>
 
-      <FilterBar filters={filters} setFilters={setFilters} />
+      <FilterBar filters={filters} setFilters={setFilters} users={users || []} />
 
       {isLoading && (
         <div className="text-center p-8">Cargando anotaciones...</div>
       )}
-      {error && <div className="text-center p-8 text-red-500">{error}</div>}
+      {error && <div className="text-center p-8 text-red-500">{error.message}</div>}
 
       {!isLoading && !error && (
         <>
@@ -504,7 +410,7 @@ const fetchLogEntries = async () => {
                   title="Aún no hay anotaciones"
                   message="Crea la primera anotación para iniciar el registro en la bitácora de obra. Puedes adjuntar archivos, fotos y más."
                   actionButton={
-                    <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
+                    <Button onClick={handleOpenForm} leftIcon={<PlusIcon />} disabled={!project}>
                       Crear Primera Anotación
                     </Button>
                   }
@@ -522,7 +428,7 @@ const fetchLogEntries = async () => {
         </>
       )}
 
-      {selectedEntry && (
+      {selectedEntry && logEntries && (
         <EntryDetailModal
           isOpen={isDetailModalOpen}
           onClose={handleCloseDetail}
@@ -534,16 +440,18 @@ const fetchLogEntries = async () => {
           }
           onDelete={handleDeleteEntry}
           currentUser={user}
-          allUsers={MOCK_USERS}
+          allUsers={users || []}
         />
       )}
-      <EntryFormModal
-        isOpen={isFormModalOpen}
-        onClose={handleCloseForm}
-        onSave={handleSaveEntry}
-        initialDate={newEntryDefaultDate}
-        allUsers={MOCK_USERS}
-      />
+      {logEntries && (
+        <EntryFormModal
+          isOpen={isFormModalOpen}
+          onClose={handleCloseForm}
+          onSave={handleSaveEntry}
+          initialDate={newEntryDefaultDate}
+          allUsers={users || []}
+        />
+      )}
       <ExportModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}

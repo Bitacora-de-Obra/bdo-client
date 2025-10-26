@@ -1,8 +1,5 @@
 import React from "react";
-// Fix: Corrected import path for types
-import { EntryStatus, EntryType } from "../types";
-// Fix: Corrected import path for mock data
-import { MOCK_USERS } from "../src/services/mockData";
+import { EntryStatus, EntryType, User } from "../types";
 import Input from "./ui/Input";
 import Select from "./ui/Select";
 // Fix: Corrected import path for icon
@@ -17,10 +14,11 @@ interface FilterBarProps {
     startDate: string;
     endDate: string;
   };
+  users: User[];
   setFilters: React.Dispatch<React.SetStateAction<any>>;
 }
 
-const FilterBar: React.FC<FilterBarProps> = ({ filters, setFilters }) => {
+const FilterBar: React.FC<FilterBarProps> = ({ filters, setFilters, users }) => {
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -65,8 +63,7 @@ const FilterBar: React.FC<FilterBarProps> = ({ filters, setFilters }) => {
         </Select>
         <Select name="user" value={filters.user} onChange={handleInputChange}>
           <option value="all">Todos los usuarios</option>
-          {MOCK_USERS.map((user) => (
-            // Fix: Replaced `user.name` with `user.fullName`.
+          {users.map((user) => (
             <option key={user.id} value={user.id}>
               {user.fullName}
             </option>

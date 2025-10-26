@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react"; // Añade useEffect
-import { Project, CostActa, Attachment, CostActaStatus } from "../types"; // Importa CostActaStatus
-import apiFetch from "../src/services/api"; // <-- Importa apiFetch
+import React, { useState, useEffect } from "react";
+import { Project, CostActa, Attachment, CostActaStatus } from "../types";
+import api from "../src/services/api";
 import Button from "./ui/Button";
 import { PlusIcon, DocumentChartBarIcon } from "./icons/Icon";
 import EmptyState from "./ui/EmptyState";
@@ -30,13 +30,12 @@ const CostDashboard: React.FC<CostDashboardProps> = ({ project }) => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
 
-  // --- useEffect para cargar datos ---
   useEffect(() => {
     const fetchCostActas = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const data = await apiFetch('/cost-actas'); // Llama al nuevo endpoint GET
+        const data = await api.costActas.getAll();
         setCostActas(data);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error al cargar las actas de costo.");
@@ -45,8 +44,7 @@ const CostDashboard: React.FC<CostDashboardProps> = ({ project }) => {
       }
     };
     fetchCostActas();
-  }, []); // Se ejecuta solo al montar
-  // ---------------------------------
+  }, []);
 
   const handleOpenDetail = (acta: CostActa) => {
     setSelectedActa(acta);
@@ -76,48 +74,20 @@ const CostDashboard: React.FC<CostDashboardProps> = ({ project }) => {
     setError(null);
 
     try {
-      // 1. Subir todos los archivos adjuntos en paralelo
-      const uploadPromises = files.map(file => {
-        const formData = new FormData();
-        formData.append('file', file);
-        // Usamos fetch directamente para la subida, ya que apiFetch asume JSON
-        return fetch('http://localhost:4000/api/upload', {
-          method: 'POST',
-          body: formData,
-        }).then(res => res.json());
-      });
-
-      const uploadResults = await Promise.all(uploadPromises);
-
-      // Verificar si hubo errores en la subida
-      const failedUploads = uploadResults.filter(result => result.error || !result.url);
-      if (failedUploads.length > 0) {
-        throw new Error(`Error al subir ${failedUploads.length} archivo(s).`);
+      const uploadedAttachments: Attachment[] = [];
+      if (files.length > 0) {
+        const uploadResults = await Promise.all(
+          files.map((file) => api.upload.uploadFile(file, "document"))
+        );
+        uploadedAttachments.push(...uploadResults);
       }
 
-      // 2. Preparar los datos para crear el acta, incluyendo los IDs/URLs de los adjuntos
-      const attachmentDataForPayload = uploadResults.map(result => ({
-          id: result.id, // Suponiendo que el backend devuelve un ID o usamos la URL como ID temporal
-          fileName: result.fileName,
-          url: result.url,
-          size: result.size,
-          type: result.type,
-      }));
-
-      // Creamos el payload final para /api/cost-actas
-      const actaPayload = {
-          ...newActaData,
-          attachments: attachmentDataForPayload // Enviamos la info de los archivos subidos
-      };
-
-      // 3. Crear el registro del acta de costo en la base de datos
-      const createdActa = await apiFetch('/cost-actas', {
-          method: 'POST',
-          body: JSON.stringify(actaPayload)
+      const createdActa = await api.costActas.create({
+        ...newActaData,
+        attachments: uploadedAttachments,
       });
 
-      // 4. Actualizar el estado local y cerrar el modal
-      setCostActas(prev => [createdActa, ...prev]);
+      setCostActas((prev) => [createdActa, ...prev]);
       handleCloseForm();
 
     } catch (err) {
@@ -129,26 +99,20 @@ const CostDashboard: React.FC<CostDashboardProps> = ({ project }) => {
   // -------------------------------------------------------------
 
   // --- Implementaremos esta después ---
-const handleUpdateActa = async (updatedActa: CostActa) => {
+  const handleUpdateActa = async (updatedActa: CostActa) => {
     try {
-        // Llamamos al endpoint PUT con el ID y los datos a actualizar
-        const updatedActaFromServer = await apiFetch(`/cost-actas/${updatedActa.id}`, {
-            method: 'PUT',
-            body: JSON.stringify({
-                status: updatedActa.status, // Enviamos el estado en formato frontend
-                relatedProgress: updatedActa.relatedProgress // También actualizamos este campo
-            }),
-        });
+      const updatedActaFromServer = await api.costActas.update(updatedActa.id, {
+        status: updatedActa.status,
+        relatedProgress: updatedActa.relatedProgress,
+      });
 
-        // Actualizamos el estado local
-        setCostActas(prev =>
-            prev.map(acta => acta.id === updatedActaFromServer.id ? updatedActaFromServer : acta)
-        );
-        // Actualizamos el modal si está abierto
-        if (selectedActa && selectedActa.id === updatedActaFromServer.id) {
-            setSelectedActa(updatedActaFromServer);
-        }
-        handleCloseDetail(); // Cerramos el modal
+      setCostActas((prev) =>
+        prev.map((acta) => (acta.id === updatedActaFromServer.id ? updatedActaFromServer : acta))
+      );
+      if (selectedActa && selectedActa.id === updatedActaFromServer.id) {
+        setSelectedActa(updatedActaFromServer);
+      }
+      handleCloseDetail();
     } catch (err) {
         setError(err instanceof Error ? err.message : 'Error al actualizar el acta de costo.');
     }

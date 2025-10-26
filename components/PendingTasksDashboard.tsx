@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Project, User, CommitmentStatus, EntryStatus, Acta, LogEntry } from '../types';
-import { useMockApi } from '../hooks/useMockApi';
+import { useApi } from '../src/hooks/useApi';
 import EmptyState from './ui/EmptyState';
 import { BellIcon, CalendarIcon, ListBulletIcon } from './icons/Icon';
 import PendingTaskCard from './PendingTaskCard';
@@ -28,17 +28,20 @@ export type PendingLogEntry = {
 export type PendingTask = PendingCommitment | PendingLogEntry;
 
 interface PendingTasksDashboardProps {
-  api: ReturnType<typeof useMockApi>;
   onNavigate: (view: string, item: { type: 'acta' | 'logEntry'; id: string }) => void;
 }
 
-const PendingTasksDashboard: React.FC<PendingTasksDashboardProps> = ({ api, onNavigate }) => {
+const PendingTasksDashboard: React.FC<PendingTasksDashboardProps> = ({ onNavigate }) => {
   const { user } = useAuth();
-  const { actas, logEntries, isLoading, error } = api;
+  const { data: actas, isLoading: actasLoading, error: actasError } = useApi.actas();
+  const { data: logEntries, isLoading: logEntriesLoading, error: logEntriesError } = useApi.logEntries();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
+  const isLoading = actasLoading || logEntriesLoading;
+  const error = actasError || logEntriesError;
+
   const pendingTasks = useMemo((): PendingTask[] => {
-    if (!user) return [];
+    if (!user || !actas || !logEntries) return [];
 
     const commitmentTasks: PendingCommitment[] = actas.flatMap((acta: Acta) =>
         acta.commitments
@@ -131,7 +134,7 @@ const PendingTasksDashboard: React.FC<PendingTasksDashboardProps> = ({ api, onNa
       </div>
 
       {isLoading && <div className="text-center p-8">Cargando tus tareas pendientes...</div>}
-      {error && <div className="text-center p-8 text-red-500">{error}</div>}
+      {error && <div className="text-center p-8 text-red-500">{error.message}</div>}
 
       {!isLoading && !error && (
         <>

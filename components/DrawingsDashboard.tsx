@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Project, Drawing, DrawingDiscipline } from "../types";
-import apiFetch from "../src/services/api"; // <-- ¡Importante!
+import api from "../src/services/api";
 import { useAuth } from "../contexts/AuthContext";
 import Button from "./ui/Button";
 import EmptyState from "./ui/EmptyState";
@@ -41,7 +41,7 @@ const DrawingsDashboard: React.FC<DrawingsDashboardProps> = ({ project }) => {
       try {
         setIsLoading(true);
         setError(null);
-        const data = await apiFetch("/drawings");
+        const data = await api.drawings.getAll();
         setDrawings(data);
       } catch (err) {
         setError(
@@ -91,18 +91,7 @@ const DrawingsDashboard: React.FC<DrawingsDashboardProps> = ({ project }) => {
     if (!user) return;
     try {
       // Paso 1: Subir el archivo
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const uploadResult = await fetch("http://localhost:4000/api/upload", {
-        method: "POST",
-        body: formData,
-        // ¡OJO! No pongas 'Content-Type', el navegador lo hace por ti con FormData
-      }).then((res) => res.json());
-
-      if (uploadResult.error) {
-        throw new Error(uploadResult.error);
-      }
+      const uploadResult = await api.upload.uploadFile(file, "drawing");
 
       // Paso 2: Crear el registro del plano con los datos del archivo subido
       const drawingPayload = {
@@ -115,10 +104,7 @@ const DrawingsDashboard: React.FC<DrawingsDashboardProps> = ({ project }) => {
         },
       };
 
-      const newDrawing = await apiFetch("/drawings", {
-        method: "POST",
-        body: JSON.stringify(drawingPayload),
-      });
+      const newDrawing = await api.drawings.create(drawingPayload);
 
       setDrawings((prev) => [newDrawing, ...prev]);
       setIsUploadModalOpen(false);
@@ -134,30 +120,17 @@ const DrawingsDashboard: React.FC<DrawingsDashboardProps> = ({ project }) => {
     if (!user) return;
     try {
       // Paso 1: Subir el nuevo archivo (igual que antes)
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const uploadResult = await fetch("http://localhost:4000/api/upload", {
-        method: "POST",
-        body: formData,
-      }).then((res) => res.json());
-
-      if (uploadResult.error) throw new Error(uploadResult.error);
+      const uploadResult = await api.upload.uploadFile(file, "drawing");
 
       // Paso 2: Llamar al nuevo endpoint para registrar la versión
       const versionPayload = {
-        version: {
-          fileName: uploadResult.fileName,
-          url: uploadResult.url,
-          size: uploadResult.size,
-          uploaderId: user.id,
-        },
+        fileName: uploadResult.fileName,
+        url: uploadResult.url,
+        size: uploadResult.size,
+        uploaderId: user.id,
       };
 
-      const updatedDrawing = await apiFetch(`/drawings/${drawingId}/versions`, {
-        method: "POST",
-        body: JSON.stringify(versionPayload),
-      });
+      const updatedDrawing = await api.drawings.addVersion(drawingId, versionPayload);
 
       // Actualizamos el estado local para reflejar el cambio al instante
       setDrawings((prev) =>
@@ -180,12 +153,9 @@ const handleAddCommentToDrawing = async (
     if (!user) return; // Guarda de seguridad
     try {
       // 1. Llama al endpoint del backend para crear el comentario
-      const newComment = await apiFetch(`/drawings/${drawingId}/comments`, {
-        method: 'POST',
-        body: JSON.stringify({
-          content: commentText,
-          authorId: user.id, // Envía el ID del usuario actual
-        }),
+      const newComment = await api.drawings.addComment(drawingId, {
+        content: commentText,
+        authorId: user.id,
       });
 
       // 2. Actualiza el estado local para que el cambio se vea al instante

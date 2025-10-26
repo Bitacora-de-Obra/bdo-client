@@ -1,8 +1,8 @@
 
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ProjectDetails, LogEntry, Communication, Acta, Report, Attachment } from '../types';
-import { useMockApi } from '../hooks/useMockApi';
+import { useApi } from '../src/hooks/useApi';
 import Card from './ui/Card';
 import Button from './ui/Button';
 import { DocumentArrowDownIcon, CheckCircleIcon } from './icons/Icon';
@@ -11,12 +11,16 @@ import saveAs from 'file-saver';
 
 interface ExportDashboardProps {
   project: ProjectDetails;
-  api: ReturnType<typeof useMockApi>;
 }
 
-const ExportDashboard: React.FC<ExportDashboardProps> = ({ project, api }) => {
+const ExportDashboard: React.FC<ExportDashboardProps> = ({ project }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgressMessage, setExportProgressMessage] = useState('');
+
+  const { data: logEntries } = useApi.logEntries();
+  const { data: communications } = useApi.communications();
+  const { data: actas } = useApi.actas();
+  const { data: reports } = useApi.reports();
 
   const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -34,7 +38,6 @@ Folio: #${entry.folioNumber}
 Título: ${entry.title}
 Estado: ${entry.status}
 Tipo: ${entry.type}
-// Fix: Removed invalid developer comment from inside template literal.
 Autor: ${entry.author.fullName}
 Fecha de Creación: ${new Date(entry.createdAt).toLocaleString('es-CO')}
 Fecha de Actividad: ${new Date(entry.activityStartDate).toLocaleDateString('es-CO')} a ${new Date(entry.activityEndDate).toLocaleDateString('es-CO')}
@@ -50,8 +53,7 @@ ${entry.description}
 --------------------------------------------------
 COMENTARIOS (${entry.comments.length})
 --------------------------------------------------
-// Fix: Removed invalid developer comment from inside template literal.
-${entry.comments.map(c => `[${new Date(c.timestamp).toLocaleString('es-CO')}] ${c.user.fullName}: ${c.content}`).join('\n') || 'Sin comentarios.'}
+${entry.comments.map(c => `[${new Date(c.timestamp).toLocaleString('es-CO')}] ${c.author.fullName}: ${c.content}`).join('\n') || 'Sin comentarios.'}
 
 --------------------------------------------------
 ADJUNTOS (${entry.attachments.length})
@@ -80,7 +82,6 @@ ${acta.summary}
 --------------------------------------------------
 COMPROMISOS (${acta.commitments.length})
 --------------------------------------------------
-// Fix: Removed invalid developer comment from inside template literal.
 ${acta.commitments.map(c => 
 `* [${c.status}] ${c.description}
   - Responsable: ${c.responsible.fullName}
@@ -128,9 +129,10 @@ ${acta.attachments.map(a => `- ${a.fileName}`).join('\n') || 'Sin adjuntos.'}
     await sleep(500);
 
     // 2. Export Log Entries
-    setExportProgressMessage(`Procesando ${api.logEntries.length} anotaciones de bitácora...`);
+    const bitacoraEntries = logEntries ?? [];
+    setExportProgressMessage(`Procesando ${bitacoraEntries.length} anotaciones de bitácora...`);
     const bitacoraFolder = projectFolder.folder('1_Bitacora');
-    for (const entry of api.logEntries) {
+    for (const entry of bitacoraEntries) {
         const entryText = formatLogEntryAsText(entry);
         const entryFolderName = sanitizeFilename(`Folio_${entry.folioNumber}_${entry.title}`);
         const entryFolder = bitacoraFolder?.folder(entryFolderName);
@@ -148,9 +150,10 @@ ${acta.attachments.map(a => `- ${a.fileName}`).join('\n') || 'Sin adjuntos.'}
     await sleep(1000);
 
     // 3. Export Actas
-    setExportProgressMessage(`Procesando ${api.actas.length} actas de comité...`);
+    const actasData = actas ?? [];
+    setExportProgressMessage(`Procesando ${actasData.length} actas de comité...`);
     const actasFolder = projectFolder.folder('2_Actas_de_Comite');
-    for (const acta of api.actas) {
+    for (const acta of actasData) {
         const actaText = formatActaAsText(acta);
         const actaFileName = sanitizeFilename(`${acta.number}.txt`);
         actasFolder?.file(actaFileName, actaText);
@@ -165,7 +168,41 @@ ${acta.attachments.map(a => `- ${a.fileName}`).join('\n') || 'Sin adjuntos.'}
     }
     await sleep(1000);
     
-    // (Add similar loops for Communications, Reports, etc.)
+    const communicationsData = communications ?? [];
+    const communicationsFolder = projectFolder.folder('3_Comunicaciones');
+    for (const comm of communicationsData) {
+      const commFileName = sanitizeFilename(`${comm.radicado}_${comm.subject}.txt`);
+      const commContent = `Radicado: ${comm.radicado}
+Asunto: ${comm.subject}
+Estado: ${comm.status}
+Remitente: ${comm.senderDetails.entity} - ${comm.senderDetails.personName}
+Destinatario: ${comm.recipientDetails.entity} - ${comm.recipientDetails.personName}
+Fecha de envío: ${new Date(comm.sentDate).toLocaleDateString('es-CO')}
+Fecha límite: ${comm.dueDate ? new Date(comm.dueDate).toLocaleDateString('es-CO') : 'N/A'}
+
+Descripción:
+${comm.description}
+`;
+      communicationsFolder?.file(commFileName, commContent);
+    }
+
+    const reportsData = reports ?? [];
+    const reportsFolder = projectFolder.folder('4_Informes');
+    for (const report of reportsData) {
+      const reportFileName = sanitizeFilename(`${report.number}_${report.type}_${report.reportScope}.txt`);
+      const reportContent = `Número: ${report.number}
+Tipo: ${report.type}
+Ámbito: ${report.reportScope}
+Estado: ${report.status}
+Autor: ${report.author.fullName}
+Periodo: ${report.period}
+Fecha de presentación: ${new Date(report.submissionDate).toLocaleDateString('es-CO')}
+
+Resumen:
+${report.summary}
+`;
+      reportsFolder?.file(reportFileName, reportContent);
+    }
 
     // 4. Generate ZIP and Download
     setExportProgressMessage('Comprimiendo archivos y preparando descarga...');

@@ -1,6 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react'; // <-- Se añade useEffect
+import React, { useState, useMemo } from 'react';
 import { Project, Communication, CommunicationStatus } from '../types';
-import apiFetch from '../src/services/api'; // <-- Se importa apiFetch
 import CommunicationFilterBar from './CommunicationFilterBar';
 import CommunicationCard from './CommunicationCard';
 import CommunicationFormModal from './CommunicationFormModal';
@@ -10,7 +9,8 @@ import EmptyState from './ui/EmptyState';
 import { PlusIcon, ChatBubbleLeftRightIcon, ListBulletIcon, TableCellsIcon } from './icons/Icon';
 import { useAuth } from '../contexts/AuthContext';
 import CommunicationsTable from './CommunicationsTable';
-import { MOCK_PROJECT } from '../src/services/mockData'; // Mantenemos el proyecto mock por ahora
+import { useApi } from '../src/hooks/useApi';
+import api from '../src/services/api';
 
 // Se elimina la interfaz de props, ya no recibe 'api'
 interface CommunicationsDashboardProps {
@@ -20,11 +20,7 @@ interface CommunicationsDashboardProps {
 const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({ project }) => {
   const { user } = useAuth();
 
-  // --- ¡NUEVO ESTADO LOCAL PARA DATOS REALES! ---
-  const [communications, setCommunications] = useState<Communication[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  // ------------------------------------------------
+  const { data: communications, isLoading, error, retry: refetchCommunications } = useApi.communications();
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -38,26 +34,9 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({ proje
     status: 'all',
   });
 
-  // --- useEffect PARA OBTENER DATOS DEL BACKEND ---
-  useEffect(() => {
-    const fetchCommunications = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const data = await apiFetch('/communications');
-        setCommunications(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Ocurrió un error desconocido.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchCommunications();
-  }, []);
-  // ----------------------------------------------------
 
   const filteredCommunications = useMemo(() => {
+    if (!communications) return [];
     return communications.filter(comm => {
         const searchTermMatch = comm.subject.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
                               comm.radicado.toLowerCase().includes(filters.searchTerm.toLowerCase());
@@ -81,24 +60,42 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({ proje
     setSelectedComm(null);
   };
 
-  const handleSaveCommunication = async (newCommData: Omit<Communication, 'id' | 'uploader' | 'attachments' | 'status' | 'statusHistory'>) => {
-    if (!user) return;
+  const handleSaveCommunication = async (
+    newCommData: Omit<Communication, 'id' | 'uploader' | 'attachments' | 'status' | 'statusHistory'>,
+    files: File[]
+  ) => {
+    if (!user) {
+      throw new Error('No estás autenticado.');
+    }
+
     try {
-        const dataToSend = { ...newCommData, uploaderId: user.id };
-        const createdComm = await apiFetch('/communications', {
-            method: 'POST',
-            body: JSON.stringify(dataToSend),
-        });
-        // Actualizamos el estado local para ver el cambio al instante
-        setCommunications(prev => [createdComm, ...prev]);
-        handleCloseForm();
+      const uploadedAttachments = await Promise.all(
+        files.map((file) => api.upload.uploadFile(file, "document"))
+      );
+
+      await api.communications.create({
+        ...newCommData,
+        uploaderId: user.id,
+        attachments: uploadedAttachments,
+      });
+      refetchCommunications();
+      handleCloseForm();
     } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error al guardar la comunicación.');
+      throw err instanceof Error ? err : new Error('Error al guardar la comunicación.');
     }
   }
 
   const handleStatusChange = async (commId: string, newStatus: CommunicationStatus) => {
-      // Lógica para actualizar estado (lo haremos más adelante)
+    try {
+      await api.communications.updateStatus(commId, newStatus);
+      refetchCommunications();
+      if (selectedComm?.id === commId) {
+        const updatedComm = await api.communications.getById(commId);
+        setSelectedComm(updatedComm);
+      }
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Error al actualizar el estado de la comunicación.');
+    }
   };
 
   return (
@@ -136,7 +133,7 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({ proje
       <CommunicationFilterBar filters={filters} setFilters={setFilters} />
 
       {isLoading && <div className="text-center p-8">Cargando comunicaciones...</div>}
-      {error && <div className="text-center p-8 text-red-500">{error}</div>}
+      {error && <div className="text-center p-8 text-red-500">{error.message}</div>}
 
       {!isLoading && !error && (
         <>
@@ -175,7 +172,7 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({ proje
         isOpen={isFormModalOpen}
         onClose={handleCloseForm}
         onSave={handleSaveCommunication}
-        communications={communications}
+        communications={communications || []}
       />
 
       {selectedComm && (

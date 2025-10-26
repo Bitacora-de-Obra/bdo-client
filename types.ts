@@ -97,6 +97,7 @@ export interface Attachment {
   url: string;
   size: number;
   type: string;
+  downloadUrl?: string;
 }
 
 export interface Comment {
@@ -343,6 +344,7 @@ export enum WorkActaStatus {
   APPROVED = 'Aprobada',
   IN_REVIEW = 'En Revisión',
   DRAFT = 'En Borrador',
+  REJECTED = 'Rechazada',
 }
 
 export interface WorkActa {
@@ -352,6 +354,7 @@ export interface WorkActa {
   date: string; // ISO date string
   status: WorkActaStatus;
   items: WorkActaItem[];
+  attachments: Attachment[];
 }
 
 export enum ModificationType {

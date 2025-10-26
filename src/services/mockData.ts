@@ -182,14 +182,14 @@ export const MOCK_DRAWINGS: Drawing[] = [
     comments: [
       {
         id: "d-comment-1",
-        user: MOCK_USERS[1],
+        author: MOCK_USERS[1],
         content:
           "Revisión preliminar OK. Favor verificar las cotas de la viga cabezal.",
         timestamp: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
       },
       {
         id: "d-comment-2",
-        user: MOCK_USERS[0],
+        author: MOCK_USERS[0],
         content:
           "Recibido. Estamos verificando las cotas y subiremos la revisión B a la brevedad.",
         timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
@@ -328,14 +328,14 @@ export const MOCK_PROJECT_DETAILS: ProjectDetails = {
 const MOCK_COMMENTS: Comment[] = [
   {
     id: "comment-1",
-    user: MOCK_USERS[1],
+    author: MOCK_USERS[1],
     content:
       "Recibido, procedemos con la revisión de la documentación adjunta.",
     timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: "comment-2",
-    user: MOCK_USERS[2],
+    author: MOCK_USERS[2],
     content: "Quedamos atentos a sus comentarios para proceder.",
     timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
   },

@@ -33,8 +33,15 @@ interface EntryDetailModalProps {
     commentText: string,
     files: File[]
   ) => Promise<void>;
-
-onSign: (documentId: string, documentType: 'logEntry', signer: User, password: string) => Promise<{ success: boolean, error?: string }>;
+  onSign: (
+    documentId: string,
+    documentType: "logEntry",
+    signer: User,
+    password: string
+  ) => Promise<{ success: boolean; error?: string }>;
+  onDelete: (entryId: string) => Promise<void>;
+  currentUser: User;
+  allUsers: User[];
 }
 
 const DetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({

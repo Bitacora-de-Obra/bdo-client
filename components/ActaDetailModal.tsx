@@ -35,8 +35,9 @@ interface ActaDetailModalProps {
   onSign: (
     documentId: string,
     documentType: "acta",
-    signer: User
-  ) => Promise<Acta | any>;
+    signer: User,
+    password: string
+  ) => Promise<{ success: boolean; error?: string; updated?: Acta }>;
   currentUser: User;
 }
 
@@ -103,14 +104,14 @@ const ActaDetailModal: React.FC<ActaDetailModalProps> = ({
   const handleConfirmSignature = async (
     password: string
   ): Promise<{ success: boolean; error?: string }> => {
-    // Mock password check
-    if (password !== "password123") {
-      return { success: false, error: "Contraseña incorrecta." };
+    const result = await onSign(acta.id, "acta", currentUser, password);
+    if (!result.success) {
+      return { success: false, error: result.error };
     }
-    const updatedActa = await onSign(acta.id, "acta", currentUser);
-    if (updatedActa) {
-      setEditedActa(updatedActa);
-      onUpdate(updatedActa); // also notify parent of the immediate change
+
+    if (result.updated) {
+      setEditedActa(result.updated);
+      onUpdate(result.updated);
     }
     setIsSignatureModalOpen(false);
     return { success: true };

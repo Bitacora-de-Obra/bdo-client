@@ -1,15 +1,19 @@
-import React, { useState, useMemo, useEffect } from "react"; // Añade useEffect
+import React, { useState, useMemo, useEffect } from "react";
 import {
-  Project, WorkActa, ContractItem, WorkActaStatus,
-  ModificationType, ContractModification
-} from "../types"; // Asegúrate de que Project está importado
-import apiFetch from "../src/services/api"; // <-- Importa apiFetch
+  Project,
+  WorkActa,
+  ContractItem,
+  WorkActaStatus,
+  ModificationType,
+  ContractModification,
+  Attachment,
+} from "../types";
+import api from "../src/services/api";
 import Button from "./ui/Button";
 import { PlusIcon, CalculatorIcon } from "./icons/Icon";
 import EmptyState from "./ui/EmptyState";
 import Card from "./ui/Card";
 import WorkActaStatusBadge from "./WorkActaStatusBadge";
-import { MOCK_MAIN_CONTRACT_VALUE, MOCK_CONTRACT_MODIFICATIONS } from "../src/services/mockData"; // Mantenemos mocks para lo que aún no conectamos
 import WorkActaDetailModal from "./WorkActaDetailModal";
 import WorkActaFormModal from "./WorkActaFormModal";
 import ContractItemsSummaryTable from "./ContractItemsSummaryTable";
@@ -36,7 +40,7 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({ project }
   const [workActas, setWorkActas] = useState<WorkActa[]>([]);
   const [contractItems, setContractItems] = useState<ContractItem[]>([]);
   // Mantenemos las modificaciones mock por ahora
-  const [contractModifications, setContractModifications] = useState<ContractModification[]>(MOCK_CONTRACT_MODIFICATIONS);
+  const [contractModifications, setContractModifications] = useState<ContractModification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   // ------------------------------------
@@ -53,13 +57,14 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({ project }
       try {
         setIsLoading(true);
         setError(null);
-        // Usamos Promise.all para cargar ítems y actas en paralelo
-        const [itemsData, actasData] = await Promise.all([
-          apiFetch('/contract-items'),
-          apiFetch('/work-actas')
+        const [itemsData, actasData, modificationsData] = await Promise.all([
+          api.contractItems.getAll(),
+          api.workActas.getAll(),
+          api.contractModifications.getAll(),
         ]);
         setContractItems(itemsData);
         setWorkActas(actasData);
+        setContractModifications(modificationsData);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error al cargar datos de avance.");
       } finally {
@@ -79,7 +84,7 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({ project }
       .filter((mod) => mod.type === ModificationType.ADDITION && mod.value)
       .reduce((sum, mod) => sum + (mod.value || 0), 0);
 
-    const updatedContractValue = MOCK_MAIN_CONTRACT_VALUE + totalAdditions;
+    const updatedContractValue = project.initialValue + totalAdditions;
 
     const totalExecutedValue = workActas
       .filter((acta) => acta.status === WorkActaStatus.APPROVED)
@@ -106,7 +111,7 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({ project }
       executionPercentage,
       updatedContractValue,
     };
-  }, [workActas, contractItemMap, contractModifications]);
+  }, [workActas, contractItemMap, contractModifications, project.initialValue]);
 
   const itemsSummaryData = useMemo(() => {
     const executedQuantities = new Map<string, number>();
@@ -166,23 +171,35 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({ project }
     setIsActaDetailModalOpen(false);
   };
 
-  // --- Conecta handleSaveActa ---
-  const handleSaveActa = async (newActaData: Omit<WorkActa, "id">) => {
+  const handleSaveActa = async (
+    newActaData: Omit<WorkActa, "id" | "attachments">,
+    files: File[]
+  ) => {
     try {
-        // Llamamos al endpoint POST con los datos del formulario
-        const createdActa = await apiFetch('/work-actas', {
-            method: 'POST',
-            body: JSON.stringify(newActaData)
-        });
-        // Añadimos la nueva acta al estado local para verla inmediatamente
-        setWorkActas(prev => [createdActa, ...prev]);
-        setIsActaFormModalOpen(false); // Cerramos el modal
+      setError(null);
+      let uploadedAttachments: Attachment[] = [];
+      if (files.length > 0) {
+        const uploadResults = await Promise.all(
+          files.map((file) => api.upload.uploadFile(file, "document"))
+        );
+        uploadedAttachments = uploadResults;
+      }
+
+      const createdActa = await api.workActas.create({
+        ...newActaData,
+        attachments: uploadedAttachments,
+      });
+
+      setWorkActas((prev) => [createdActa, ...prev]);
+      setIsActaFormModalOpen(false);
     } catch (err) {
-        // Mostramos un error si algo falla
-        setError(err instanceof Error ? err.message : 'Error al guardar el acta de avance.');
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Error al guardar el acta de avance."
+      );
     }
   };
-  // -----------------------------
 
   // --- Implementaremos estas después ---
 const handleUpdateActa = async (updatedActa: WorkActa) => {

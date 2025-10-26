@@ -4,7 +4,6 @@ import Modal from "./ui/Modal";
 import Button from "./ui/Button";
 import Input from "./ui/Input";
 import { XMarkIcon } from "./icons/Icon";
-import { MOCK_USERS } from "../src/services/mockData";
 
 interface ReportFormModalProps {
   isOpen: boolean;

@@ -1,29 +1,78 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
-import { MOCK_USERS } from "../../src/services/mockData";
+import { User } from "../../types";
+import api from "../../src/services/api";
 
 const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login, error, isLoading } = useAuth();
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [sampleUsers, setSampleUsers] = useState<User[]>([]);
+  const { login, error: contextError, isLoading, isAuthenticated } = useAuth();
 
-const handleSubmit = (e: React.FormEvent) => {
-  e.preventDefault();
-  console.log("LoginScreen: handleSubmit llamado con email:", email); // <-- LOG 1
-  if (!isLoading) { // Solo llama a login si no está ya cargando
-      console.log("LoginScreen: Llamando a context.login..."); // <-- LOG 2
-      login(email, password); // Llama a la función del contexto
-  } else {
-      console.log("LoginScreen: Intento de login mientras isLoading=true"); // <-- LOG 3 (Por si acaso)
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchSampleUsers = async () => {
+      try {
+        const users = await api.users.getAll();
+        if (isMounted && Array.isArray(users)) {
+          setSampleUsers(users.filter((u) => u.status === "active"));
+        }
+      } catch (err) {
+        console.error("LoginScreen: No se pudo cargar la lista de usuarios de prueba", err);
+      }
+    };
+
+    fetchSampleUsers();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const formatRole = (role: string) => {
+    const roleMap: Record<string, string> = {
+      RESIDENT: "Residente de Obra",
+      SUPERVISOR: "Supervisor",
+      CONTRACTOR_REP: "Representante Contratista",
+      ADMIN: "Administrador IDU",
+    };
+    return roleMap[role] || role;
+  };
+
+  // Si el usuario ya está autenticado, no mostramos el formulario de login
+  if (isAuthenticated) {
+    console.log("LoginScreen: Usuario ya autenticado, redirigiendo...");
+    return null;
   }
-};
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLocalError(null);
+    
+    if (isLoading) {
+      console.log("LoginScreen: Intento de login mientras isLoading=true");
+      return;
+    }
+
+    try {
+      console.log("LoginScreen: Iniciando login con email:", email);
+      await login(email, password);
+      console.log("LoginScreen: Login exitoso");
+    } catch (error: any) {
+      console.error("LoginScreen: Error durante el login:", error);
+      setLocalError(error.message || "Error al iniciar sesión. Por favor, intente nuevamente.");
+    }
+  };
 
   const handleQuickLogin = (userEmail: string) => {
     setEmail(userEmail);
     setPassword("password123");
   };
+
+  const error = localError || contextError;
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -62,7 +111,11 @@ const handleSubmit = (e: React.FormEvent) => {
             autoComplete="current-password"
           />
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && (
+            <p className="text-sm text-red-600 bg-red-50 p-2 rounded">
+              {error}
+            </p>
+          )}
 
           <div>
             <Button type="submit" className="w-full" disabled={isLoading}>
@@ -79,7 +132,7 @@ const handleSubmit = (e: React.FormEvent) => {
             La contraseña para todos es: `password123`
           </p>
           <div className="grid grid-cols-2 gap-2">
-            {MOCK_USERS.map((user) => (
+            {sampleUsers.map((user) => (
               <button
                 key={user.id}
                 onClick={() => handleQuickLogin(user.email!)}
@@ -88,7 +141,7 @@ const handleSubmit = (e: React.FormEvent) => {
                 <p className="font-bold truncate">
                   {user.fullName.split("(")[0]}
                 </p>
-                <p className="text-gray-600">{user.projectRole}</p>
+                <p className="text-gray-600">{formatRole(user.projectRole)}</p>
               </button>
             ))}
           </div>

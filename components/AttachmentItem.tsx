@@ -27,7 +27,12 @@ const AttachmentItem: React.FC<AttachmentItemProps> = ({ attachment }) => {
       </div>
       <div className="flex-shrink-0 ml-4">
         <span className="text-gray-500 mr-4">{formatBytes(attachment.size)}</span>
-        <a href={attachment.url} download className="font-medium text-brand-primary hover:text-brand-secondary">
+        <a
+          href={attachment.downloadUrl || attachment.url}
+          download={attachment.fileName}
+          className="font-medium text-brand-primary hover:text-brand-secondary"
+          rel="noreferrer"
+        >
           Descargar
         </a>
       </div>

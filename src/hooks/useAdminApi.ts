@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { AppSettings, AuditLogEntry, User, UserRole } from "../types";
+import { AppSettings, AuditLogEntry, User, UserRole } from "../../types";
 import {
   MOCK_APP_SETTINGS,
   MOCK_AUDIT_LOGS,
   MOCK_USERS,
-} from "../src/services/mockData";
+} from "../services/mockData";
 
 // This custom hook will simulate a backend for the admin panel.
 export const useAdminApi = () => {
@@ -131,3 +131,4 @@ export const useAdminApi = () => {
     updateSettings,
   };
 };
+

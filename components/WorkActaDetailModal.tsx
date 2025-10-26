@@ -4,6 +4,7 @@ import Modal from './ui/Modal';
 import Button from './ui/Button';
 import Select from './ui/Select';
 import WorkActaStatusBadge from './WorkActaStatusBadge';
+import AttachmentItem from './AttachmentItem';
 
 interface WorkActaDetailModalProps {
   isOpen: boolean;
@@ -99,6 +100,19 @@ const WorkActaDetailModal: React.FC<WorkActaDetailModalProps> = ({ isOpen, onClo
                             </tfoot>
                         </table>
                     </div>
+                </div>
+
+                <div>
+                    <h4 className="text-md font-semibold text-gray-800 mb-2">Documentos Soporte</h4>
+                    {(acta.attachments || []).length > 0 ? (
+                        <ul className="space-y-2">
+                            {(acta.attachments || []).map((attachment) => (
+                                <AttachmentItem key={attachment.id} attachment={attachment} />
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-sm text-gray-500">Este acta no tiene adjuntos cargados.</p>
+                    )}
                 </div>
 
                 <div>

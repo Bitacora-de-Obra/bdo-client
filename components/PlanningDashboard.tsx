@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Project, ProjectTask } from '../types';
-import apiFetch from '../src/services/api'; // <-- Importa apiFetch
-// import { useMockApi } from '../hooks/useMockApi'; // <-- Se elimina useMockApi
 import FileUpload from './FileUpload';
 import GanttChart, { ProcessedProjectTask } from './GanttChart';
 import Card from './ui/Card';
@@ -9,6 +7,7 @@ import Button from './ui/Button';
 import { DocumentArrowDownIcon } from './icons/Icon';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { useApi } from '../src/hooks/useApi';
 
 // Helper function to build the task tree from a flat list with outline levels
 const buildTaskTree = (tasks: Omit<ProjectTask, 'children'>[]): ProjectTask[] => {
@@ -83,76 +82,33 @@ interface PlanningDashboardProps { // <-- Interfaz de Props actualizada
 }
 
 const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { // <-- Usa la interfaz actualizada
-  // --- Estado local para datos reales ---
-  const [flatTasks, setFlatTasks] = useState<Omit<ProjectTask, 'children'>[]>([]);
+  const { data: flatTasks, isLoading, error, retry: refetchTasks } = useApi.projectTasks();
   const [hierarchicalTasks, setHierarchicalTasks] = useState<ProjectTask[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // Añade estado de carga
-  const [error, setError] = useState<string | null>(null);
-  // ------------------------------------
-
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const ganttChartRef = useRef<HTMLDivElement>(null);
 
 
-  // --- useEffect para cargar datos desde el backend ---
-  useEffect(() => {
-    const fetchTasks = async () => {
-        try {
-            setIsLoading(true);
-            setError(null);
-            console.log("Frontend: Intentando llamar a GET /api/project-tasks"); // Log para confirmar llamada
-            const data = await apiFetch('/project-tasks'); // Llama al endpoint GET
-            console.log("Frontend: Datos recibidos de /api/project-tasks:", data); // Log para ver datos recibidos
-            // El backend ya devuelve fechas como ISO strings y children/dependencies vacíos
-            setFlatTasks(data);
-        } catch (err) {
-            // Captura el error específico y lo muestra
-            const errorMessage = err instanceof Error ? err.message : "Error desconocido al cargar las tareas del cronograma.";
-            setError(errorMessage);
-            console.error("Error fetching tasks:", err); // Log para depuración
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    fetchTasks();
-  }, []); // Se ejecuta solo al montar
-  // ---------------------------------
-
   // Este useEffect reconstruye el árbol cuando flatTasks cambia
   useEffect(() => {
-      // Verifica que flatTasks sea un array antes de procesar
-      if (Array.isArray(flatTasks) && flatTasks.length > 0) {
-          try {
-              setHierarchicalTasks(buildTaskTree(flatTasks));
-          } catch (treeError) {
-               console.error("Error construyendo el árbol de tareas:", treeError);
-               setError("Error al procesar la estructura del cronograma.");
-               setHierarchicalTasks([]); // Limpia en caso de error
-          }
-      } else {
-          setHierarchicalTasks([]); // Limpia si no hay tareas o no es un array
+    if (Array.isArray(flatTasks) && flatTasks.length > 0) {
+      try {
+        setHierarchicalTasks(buildTaskTree(flatTasks));
+      } catch (treeError) {
+        console.error("Error construyendo el árbol de tareas:", treeError);
+        setHierarchicalTasks([]); // Limpia en caso de error
       }
+    } else {
+      setHierarchicalTasks([]); // Limpia si no hay tareas o no es un array
+    }
   }, [flatTasks]);
 
-  // handleUpdateGanttTasks se mantiene igual por ahora (actualiza estado local)
-  const handleUpdateGanttTasks = (taskId: string, newDates: { startDate: Date; endDate: Date }) => {
-    setFlatTasks(prevTasks => {
-        const taskIndex = prevTasks.findIndex(t => t.id === taskId);
-        if (taskIndex === -1) return prevTasks;
-
-        const updatedTask = {
-            ...prevTasks[taskIndex],
-            startDate: newDates.startDate.toISOString(),
-            endDate: newDates.endDate.toISOString(),
-            // Recalcula duración basada en las nuevas fechas (considera días completos)
-            duration: Math.max(1, Math.ceil((newDates.endDate.getTime() - newDates.startDate.getTime()) / (1000 * 3600 * 24)) + 1) // Asegura al menos 1 día
-        };
-
-        const newTasks = [...prevTasks];
-        newTasks[taskIndex] = updatedTask;
-        return newTasks;
-    });
-    // TODO: En un paso futuro, llamar al backend (PUT /api/project-tasks/:id) para guardar este cambio
+  const handleUpdateGanttTasks = async (taskId: string, newDates: { startDate: Date; endDate: Date }) => {
+    try {
+      console.warn("Actualización remota de tareas aún no implementada.", taskId, newDates);
+      refetchTasks();
+    } catch (err) {
+      throw err instanceof Error ? err : new Error("Error al actualizar la tarea.");
+    }
   };
 
   // processedHierarchicalTasks se mantiene igual (calcula progreso planificado, etc.)
@@ -224,7 +180,6 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
             return Array.isArray(hierarchicalTasks) ? hierarchicalTasks.map(processTask) : [];
         } catch (calcError) {
             console.error("Error calculando tareas procesadas:", calcError);
-            setError("Error al calcular los datos del cronograma.");
             return []; // Devuelve vacío en caso de error
         }
     }, [hierarchicalTasks]);
@@ -254,10 +209,8 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
   }, [processedHierarchicalTasks]);
 
 
-  // handleFileUpload se mantiene igual por ahora (solo actualiza estado local)
-  const handleFileUpload = (file: File) => {
-    // ... (código existente para leer XML y llamar a setFlatTasks)
-    // TODO: Llamar a POST /api/project-tasks/import
+  const handleFileUpload = async (file: File) => {
+    console.warn("Importación de cronograma no implementada aún.", file.name);
   };
 
   // handleDownloadPdf se mantiene igual
@@ -313,7 +266,7 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
       {error && (
         <Card className="p-4 bg-red-50 border-red-200">
             <p className="text-sm text-red-700 font-semibold">Error</p>
-            <p className="text-sm text-red-600 mt-1">{error}</p>
+            <p className="text-sm text-red-600 mt-1">{error.message}</p>
         </Card>
       )}
 

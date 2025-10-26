@@ -1,19 +1,13 @@
-import React, {
-  createContext,
-  useState,
-  useContext,
-  useEffect,
-  ReactNode,
-} from "react";
+import React, { createContext, useState, useContext, useEffect, ReactNode } from "react";
 import { User } from "../types";
-import apiFetch from "../src/services/api"; // <-- Usamos nuestro nuevo servicio
+import { api } from "../src/services/api";
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   isLoading: boolean;
+  isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   error: string | null;
 }
 
@@ -22,100 +16,83 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  console.log("AuthProvider: Component rendering"); // <-- AÑADE ESTE LOG AQUÍ
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(() =>
-    localStorage.getItem("authToken")
-  ); // <-- Leemos el token al inicio
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isAuthenticated = !!user;
 
   useEffect(() => {
     const initializeAuth = async () => {
-      // Si tenemos un token guardado, intentamos verificarlo con el backend
-      if (token) {
-        try {
-          const userData = await apiFetch("/auth/me");
-          setUser(userData);
-        } catch (e) {
-          // Si el token es inválido o expiró, lo limpiamos
-          console.error(
-            "AuthProvider: Fallo al verificar el token con /api/auth/me.",
-            e
-          ); // <-- LOG 5 (Error)
-          localStorage.removeItem("authToken");
-          setToken(null);
-          setUser(null);
-        }
-      } else {
-        console.log("AuthProvider: No se encontró token en el estado inicial."); // <-- LOG 6 (No hay token)
+      try {
+        console.log('AuthProvider: Verificando autenticación...');
+        const userData = await api.auth.getProfile();
+        console.log('AuthProvider: Usuario autenticado:', userData);
+        setUser(userData);
+      } catch (e) {
+        console.error("AuthProvider: Error al obtener el perfil del usuario", e);
+        setUser(null);
+      } finally {
+        setIsLoading(false);
       }
-      console.log(
-        "AuthProvider: Finalizando inicialización, setLoading(false)"
-      ); // <-- LOG 7
-      setIsLoading(false);
     };
 
     initializeAuth();
-  }, [token]); // La dependencia [token] está bien
 
-const login = async (email: string, password: string) => {
-  console.log("!!! AuthProvider: Función login INICIADA."); // <-- Log aquí
-  setError(null);
-    setIsLoading(true); // <--- Mueve setIsLoading(true) aquí
-    console.log("AuthProvider: Iniciando login..."); // <-- LOG NUEVO
+    // Escuchar eventos de logout
+    const handleLogoutEvent = () => {
+      console.log("AuthProvider: Evento auth:logout recibido");
+      logout();
+    };
+
+    window.addEventListener('auth:logout', handleLogoutEvent);
+    return () => {
+      window.removeEventListener('auth:logout', handleLogoutEvent);
+    };
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    console.log("AuthProvider: Iniciando login...");
+    setError(null);
+    setIsLoading(true);
+
     try {
-      console.log(`!!! AuthProvider: Llamando a apiFetch('/auth/login') con email: ${email}`);
-      const result = await apiFetch("/auth/login", {
-        // <-- USA apiFetch
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
-
+      const result = await api.auth.login(email, password);
+      console.log("AuthProvider: Login exitoso, guardando usuario:", result.user);
       setUser(result.user);
-      setToken(result.token);
-      localStorage.setItem("authToken", result.token);
-
-      // 'token' in result ya no aplica directamente con apiFetch,
-      // asumimos que si no hay error, la respuesta es correcta.
-      setUser(result.user);
-      setToken(result.token);
-      console.log(
-        "AuthProvider: setToken y setUser llamados con:",
-        result.token,
-        result.user
-      ); // <-- LOG NUEVO
-      localStorage.setItem("authToken", result.token);
-      // localStorage.setItem('authUser', JSON.stringify(result.user)); // No es necesario guardar todo el usuario, el token es suficiente.
-      localStorage.removeItem("authUser"); // Limpiamos el usuario viejo si existía
-      // setIsLoading(false); // <--- QUITA setIsLoading(false) de aquí
-
-      // } catch (e) { // <-- Cambia el tipo de error
     } catch (e: any) {
-      // <-- Usa 'any' o un tipo más específico si lo tienes
-      console.error("AuthProvider: Error durante el login:", e); // <-- LOG NUEVO (Error)
-      setError(e.message || "Error desconocido durante el login."); // <-- Muestra el error de la API
-      // Limpiamos en caso de error
+      console.error("AuthProvider: Error durante el login:", e);
+      setError(e.message || "Error desconocido durante el login.");
       setUser(null);
-      setToken(null);
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("authUser");
+      throw e;
     } finally {
-      console.log("AuthProvider: Finalizando login, setLoading(false)"); // <-- LOG NUEVO
-      setIsLoading(false); // <--- Mueve setIsLoading(false) aquí al finally
+      setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem("authToken");
+  const logout = async () => {
+    try {
+      console.log("AuthProvider: Iniciando logout...");
+      await api.auth.logout();
+      console.log("AuthProvider: Logout exitoso");
+    } catch (e) {
+      console.error("AuthProvider: Error durante el logout:", e);
+    } finally {
+      setUser(null);
+      setError(null);
+    }
+  };
+
+  const value = {
+    user,
+    isLoading,
+    isAuthenticated,
+    login,
+    logout,
+    error,
   };
 
   return (
-    <AuthContext.Provider
-      value={{ user, token, isLoading, login, logout, error }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

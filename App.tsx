@@ -5,12 +5,11 @@ import ProjectDashboard from "./components/ProjectDashboard";
 import CommunicationsDashboard from "./components/CommunicationsDashboard";
 import MinutesDashboard from "./components/MinutesDashboard";
 import CostDashboard from "./components/CostDashboard";
-import WorkProgressDashboard from "./components/WorkProgressDashboard"; // <-- Se usa este componente
+import WorkProgressDashboard from "./components/WorkProgressDashboard";
 import PhotographicProgressDashboard from "./components/PhotographicProgressDashboard";
 import PlanningDashboard from "./components/PlanningDashboard";
-import { MOCK_PROJECT } from "./src/services/mockData";
 import ProjectSummaryDashboard from "./components/ProjectSummaryDashboard";
-import { useMockApi } from "./hooks/useMockApi"; // <-- Todavía se usa para otros módulos
+import { useApi } from "./src/hooks/useApi";
 import WeeklyReportsDashboard from "./components/WeeklyReportsDashboard";
 import MonthlyReportsDashboard from "./components/MonthlyReportsDashboard";
 import PendingTasksDashboard from "./components/PendingTasksDashboard";
@@ -26,28 +25,23 @@ type InitialItemToOpen = { type: "acta" | "logEntry"; id: string };
 const MainApp = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentView, setCurrentView] = useState("summary");
-  const [initialItemToOpen, setInitialItemToOpen] =
-    useState<InitialItemToOpen | null>(null);
+  const [initialItemToOpen, setInitialItemToOpen] = useState<InitialItemToOpen | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  // useMockApi todavía se usa aquí porque otros componentes aún lo necesitan
-  const api = useMockApi();
   const { user } = useAuth();
-  const {
-    projectDetails,
-    contractModifications,
-    isLoading,
-    actas: apiActas, // Obtenemos las actas del mock para las notificaciones (temporal)
-  } = api;
+  const { data: projectDetails, isLoading: isProjectLoading } = useApi.projectDetails();
+  const { data: contractModifications, isLoading: isModificationsLoading } = useApi.contractModifications();
+  const { data: actas, isLoading: isActasLoading } = useApi.actas();
+
+  const isLoading = isProjectLoading || isModificationsLoading || isActasLoading;
 
   useEffect(() => {
-    // Lógica de notificaciones (se mantiene igual por ahora)
-    if (!apiActas || !user) return;
+    if (!actas || !user) return;
     const generatedNotifications: Notification[] = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    apiActas.forEach((acta) => {
+    actas.forEach((acta) => {
       acta.commitments.forEach((commitment) => {
         if (
           commitment.responsible.id === user.id &&
@@ -60,14 +54,35 @@ const MainApp = () => {
           localDueDate.setHours(0, 0, 0, 0);
           const timeDiff = localDueDate.getTime() - today.getTime();
           const daysUntilDue = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
           let notification: Notification | null = null;
           if (daysUntilDue < 0) {
             notification = {
-              /* ... */
+              id: `commitment-${commitment.id}-overdue`,
+              type: "commitment_due",
+              urgency: "overdue",
+              message: `Compromiso vencido: ${commitment.description}`,
+              sourceDescription: `Acta ${acta.number} · ${acta.title}`,
+              relatedView: "minutes",
+              relatedItemType: "acta",
+              relatedItemId: acta.id,
+              createdAt: new Date().toISOString(),
+              isRead: false,
             };
           } else if (daysUntilDue <= 3) {
             notification = {
-              /* ... */
+              id: `commitment-${commitment.id}-due-soon`,
+              type: "commitment_due",
+              urgency: "due_soon",
+              message: `Compromiso próximo a vencer (${daysUntilDue} día${
+                daysUntilDue === 1 ? "" : "s"
+              }): ${commitment.description}`,
+              sourceDescription: `Acta ${acta.number} · ${acta.title}`,
+              relatedView: "minutes",
+              relatedItemType: "acta",
+              relatedItemId: acta.id,
+              createdAt: new Date().toISOString(),
+              isRead: false,
             };
           }
           if (notification) generatedNotifications.push(notification);
@@ -75,7 +90,7 @@ const MainApp = () => {
       });
     });
     setNotifications(generatedNotifications);
-  }, [apiActas, user]);
+  }, [actas, user]);
 
   const handleNavigateAndOpen = (view: string, item: InitialItemToOpen) => {
     setInitialItemToOpen(item);
@@ -88,9 +103,7 @@ const MainApp = () => {
 
   const renderContent = () => {
     if (isLoading || !projectDetails) {
-      return (
-        <div className="text-center p-8">Cargando datos del proyecto...</div>
-      );
+      return <div className="text-center p-8">Cargando datos del proyecto...</div>;
     }
 
     if (currentView === "admin" && user?.appRole !== "admin") {
@@ -113,61 +126,54 @@ const MainApp = () => {
           />
         );
       case "pending_tasks":
-        return (
-          <PendingTasksDashboard api={api} onNavigate={handleNavigateAndOpen} />
-        );
-      case "logbook": // Ya está conectado
+        return <PendingTasksDashboard onNavigate={handleNavigateAndOpen} />;
+      case "logbook":
         return (
           <ProjectDashboard
             initialItemToOpen={initialItemToOpen}
             clearInitialItem={clearInitialItem}
           />
         );
-      case "drawings": // Ya está conectado
-        return <DrawingsDashboard project={MOCK_PROJECT} />;
-      case "work_progress": // <-- ¡MODIFICADO AQUÍ! Ya no pasamos 'api'
-        return <WorkProgressDashboard project={MOCK_PROJECT} />;
-      case "photographic_progress": // Aún usa mock
-        return (
-          <PhotographicProgressDashboard project={MOCK_PROJECT} api={api} />
-        );
-      case "planning": // Aún usa mock
-        return <PlanningDashboard project={MOCK_PROJECT} />; // <-- MODIFICA ESTA LÍNEA
-      case "communications": // Ya está conectado
-        return <CommunicationsDashboard project={MOCK_PROJECT} />;
-      case "minutes": // Ya está conectado
+      case "drawings":
+        return <DrawingsDashboard project={projectDetails} />;
+      case "work_progress":
+        return <WorkProgressDashboard project={projectDetails} />;
+      case "photographic_progress":
+        return <PhotographicProgressDashboard project={projectDetails} />;
+      case "planning":
+        return <PlanningDashboard project={projectDetails} />;
+      case "communications":
+        return <CommunicationsDashboard project={projectDetails} />;
+      case "minutes":
         return (
           <MinutesDashboard
             initialItemToOpen={initialItemToOpen}
             clearInitialItem={clearInitialItem}
           />
         );
-      case "costs": // Aún usa mock
-        return <CostDashboard project={MOCK_PROJECT} api={api} />;
+      case "costs":
+        return <CostDashboard project={projectDetails} />;
       case "weekly_reports":
-        // Asigna el scope correcto aquí (Obra o Interventoría)
-        // Usaremos projectDetails que viene del mockApi (eventualmente vendrá del backend)
         return (
           <WeeklyReportsDashboard
             project={projectDetails}
             reportScope={ReportScope.INTERVENTORIA}
           />
-        ); // O ReportScope.OBRA
+        );
       case "monthly_reports_obra":
         return (
           <MonthlyReportsDashboard
-            project={MOCK_PROJECT} // Puedes usar projectDetails si lo necesitas aquí
-            reportScope={ReportScope.OBRA} // Pasamos el scope correcto
+            project={projectDetails}
+            reportScope={ReportScope.OBRA}
           />
         );
-
-  case "monthly_reports_interventoria":
-    return (
-      <MonthlyReportsDashboard
-        project={MOCK_PROJECT} // Puedes usar projectDetails si lo necesitas
-        reportScope={ReportScope.INTERVENTORIA} // Pasamos el scope correcto
-      />
-    );
+      case "monthly_reports_interventoria":
+        return (
+          <MonthlyReportsDashboard
+            project={projectDetails}
+            reportScope={ReportScope.INTERVENTORIA}
+          />
+        );
     }
   };
 
@@ -199,13 +205,12 @@ const MainApp = () => {
   );
 };
 
-// --- AppContent y App se quedan igual ---
 const AppContent = () => {
   console.log("AppContent: Rendering...");
-  const { token, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
-    console.log("AppContent: Showing Loading..."); // <-- LOG ADICIONAL
+    console.log("AppContent: Showing Loading...");
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-xl font-semibold">Cargando...</div>
@@ -213,16 +218,17 @@ const AppContent = () => {
     );
   }
 
-  if (!token) {
-    console.log("AppContent: No token, showing LoginScreen..."); // <-- LOG ADICIONAL
+  if (!isAuthenticated) {
+    console.log("AppContent: Not authenticated, showing LoginScreen...");
     return <LoginScreen />;
   }
 
+  console.log("AppContent: Authenticated, showing MainApp...");
   return <MainApp />;
 };
 
 function App() {
-  console.log("App: Rendering AuthProvider..."); // Mantén este log si quieres
+  console.log("App: Rendering AuthProvider...");
   return (
     <AuthProvider>
       <AppContent />
