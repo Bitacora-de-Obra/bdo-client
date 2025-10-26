@@ -7,6 +7,7 @@ import ReportStatusBadge from "./ReportStatusBadge";
 import AttachmentItem from "./AttachmentItem";
 import SignatureBlock from "./SignatureBlock";
 import SignatureModal from "./SignatureModal";
+import { DocumentArrowDownIcon } from "./icons/Icon";
 
 interface ReportDetailModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ interface ReportDetailModalProps {
   currentUser: User;
   onSelectVersion?: (reportId: string) => void | Promise<void>;
   onCreateVersion?: (report: Report) => void;
+  onGenerateExcel?: (reportId: string) => Promise<void>;
 }
 
 const DetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({
@@ -43,10 +45,13 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
   currentUser,
   onSelectVersion,
   onCreateVersion,
+  onGenerateExcel,
 }) => {
   const [editedReport, setEditedReport] = useState<Report>(report);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isGeneratingExcel, setIsGeneratingExcel] = useState(false);
+  const [excelError, setExcelError] = useState<string | null>(null);
 
   const previousVersionInfo = React.useMemo(() => {
     if (!report.previousReportId || !report.versions) {
@@ -60,10 +65,30 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
   useEffect(() => {
     setEditedReport(report);
     setIsSaving(false);
+    setExcelError(null);
+    setIsGeneratingExcel(false);
   }, [report, isOpen]);
 
   const handleStatusChange = (newStatus: ReportStatus) => {
     setEditedReport((prev) => ({ ...prev, status: newStatus }));
+  };
+
+  const handleGenerateExcelClick = async () => {
+    if (!onGenerateExcel || isGeneratingExcel) return;
+    try {
+      setExcelError(null);
+      setIsGeneratingExcel(true);
+      await onGenerateExcel(report.id);
+    } catch (err) {
+      console.error("Error generando Excel del informe:", err);
+      const message =
+        err instanceof Error
+          ? err.message
+          : "No se pudo generar el Excel del informe.";
+      setExcelError(message);
+    } finally {
+      setIsGeneratingExcel(false);
+    }
   };
 
   const handleConfirmSignature = async (
@@ -122,6 +147,19 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
               </div>
               <div className="flex items-center gap-2">
                 <ReportStatusBadge status={editedReport.status} />
+                {onGenerateExcel && report.type === "Weekly" && (
+                  <Button
+                    variant="secondary"
+                    onClick={handleGenerateExcelClick}
+                    size="sm"
+                    disabled={isGeneratingExcel}
+                    leftIcon={
+                      <DocumentArrowDownIcon className="w-4 h-4 -ml-0.5" />
+                    }
+                  >
+                    {isGeneratingExcel ? "Generando..." : "Generar Excel"}
+                  </Button>
+                )}
                 {onCreateVersion && (
                   <Button
                     variant="secondary"
@@ -168,6 +206,12 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
               </div>
             )}
           </div>
+
+          {excelError && (
+            <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+              {excelError}
+            </div>
+          )}
 
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6">
             <DetailRow

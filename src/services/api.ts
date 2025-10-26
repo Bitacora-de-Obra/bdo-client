@@ -657,6 +657,13 @@ export const reportsApi = {
       body: JSON.stringify(data),
     });
   },
+  generateWeeklyExcel: async (
+    id: string
+  ): Promise<{ report: Report; attachment: Attachment }> => {
+    return apiFetch(`/reports/${id}/generate-weekly-excel`, {
+      method: 'POST',
+    });
+  },
 };
 
 // API Functions for Drawings

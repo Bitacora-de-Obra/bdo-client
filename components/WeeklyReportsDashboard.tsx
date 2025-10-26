@@ -8,7 +8,7 @@ import {
 } from "../types"; // Importa tipos necesarios
 import api from "../src/services/api"; // Cliente API centralizado
 import Button from "./ui/Button";
-import { PlusIcon, DocumentChartBarIcon, CalendarIcon } from "./icons/Icon"; // Importa CalendarIcon
+import { PlusIcon, CalendarIcon } from "./icons/Icon"; // Importa CalendarIcon
 import EmptyState from "./ui/EmptyState";
 // import WeeklyReportGenerator from './reports/WeeklyReportGenerator'; // Comentamos esto por ahora
 import Card from "./ui/Card"; // Para mostrar los informes existentes
@@ -242,6 +242,50 @@ const addSignature = async (
     }
   };
 
+  const handleGenerateWeeklyExcel = async (reportId: string) => {
+    setError(null);
+    try {
+      const { report: updatedReport, attachment } =
+        await api.reports.generateWeeklyExcel(reportId);
+
+      if (updatedReport) {
+        setWeeklyReports((prev) => {
+          const index = prev.findIndex((item) => item.id === updatedReport.id);
+          if (index === -1) {
+            return prev;
+          }
+          const next = [...prev];
+          next[index] = updatedReport;
+          return next;
+        });
+
+        if (isDetailModalOpen && selectedReport?.id === updatedReport.id) {
+          setSelectedReport(updatedReport);
+        }
+      }
+
+      if (
+        attachment?.downloadUrl &&
+        typeof window !== "undefined" &&
+        typeof document !== "undefined"
+      ) {
+        const link = document.createElement("a");
+        link.href = attachment.downloadUrl;
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.download = attachment.fileName || "informe-semanal.xlsx";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (err: any) {
+      const message =
+        err?.message || "Error al generar el Excel del informe semanal.";
+      setError(message);
+      throw (err instanceof Error ? err : new Error(message));
+    }
+  };
+
   if (!user) return null; // Necesario por si el usuario se desloguea
 
   return (
@@ -300,6 +344,7 @@ const addSignature = async (
           currentUser={user}
           onSelectVersion={handleSelectVersion}
           onCreateVersion={handleCreateVersion}
+          onGenerateExcel={handleGenerateWeeklyExcel}
         />
       )}
 
