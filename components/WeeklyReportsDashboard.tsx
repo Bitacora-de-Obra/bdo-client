@@ -16,6 +16,7 @@ import ReportCard from "./ReportCard"; // Reutilizamos ReportCard
 import ReportFormModal from "./ReportFormModal"; // Usamos el modal genérico
 import ReportDetailModal from "./ReportDetailModal"; // Importa el modal de detalle
 import { useAuth } from "../contexts/AuthContext"; // Importa useAuth
+import { useToast } from "./ui/ToastProvider";
 
 interface WeeklyReportsDashboardProps {
   project: ProjectDetails;
@@ -27,6 +28,7 @@ const WeeklyReportsDashboard: React.FC<WeeklyReportsDashboardProps> = ({
   reportScope,
 }) => {
   const { user } = useAuth(); // Obtenemos el usuario
+  const { showToast } = useToast();
 
   // --- Estado local para datos reales ---
   const [weeklyReports, setWeeklyReports] = useState<Report[]>([]); // Usamos el tipo genérico Report
@@ -148,6 +150,12 @@ const WeeklyReportsDashboard: React.FC<WeeklyReportsDashboardProps> = ({
         setIsDetailModalOpen(true);
       }
 
+      showToast({
+        variant: "success",
+        title: "Informe creado",
+        message: "El informe semanal se registró correctamente.",
+      });
+
       handleCloseForm();
     } catch (err) {
       console.error("Error detallado al guardar:", err); // Log más detallado
@@ -156,6 +164,14 @@ const WeeklyReportsDashboard: React.FC<WeeklyReportsDashboardProps> = ({
           ? err.message
           : "Error al guardar el informe semanal. Revisa la consola para más detalles."
       );
+      showToast({
+        variant: "error",
+        title: "Error al guardar",
+        message:
+          err instanceof Error
+            ? err.message
+            : "No se pudo registrar el informe semanal.",
+      });
     } finally {
       // setIsLoading(false); // Quitar feedback visual
     }
@@ -184,10 +200,23 @@ const WeeklyReportsDashboard: React.FC<WeeklyReportsDashboardProps> = ({
         setSelectedReport(updatedReportFromServer);
       }
       handleCloseDetail();
+      showToast({
+        variant: "success",
+        title: "Informe actualizado",
+        message: "Los cambios se guardaron correctamente.",
+      });
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Error al actualizar el informe."
       );
+      showToast({
+        variant: "error",
+        title: "Error al actualizar",
+        message:
+          err instanceof Error
+            ? err.message
+            : "No se pudo actualizar el informe.",
+      });
     }
   };
 
@@ -284,12 +313,25 @@ const addSignature = async (
         );
       }
 
+      showToast({
+        variant: "success",
+        title: "Excel generado",
+        message: attachment.fileName
+          ? `Se descargó ${attachment.fileName}.`
+          : "El archivo Excel se generó correctamente.",
+      });
+
       return { attachment, report: updatedReport };
     } catch (err: any) {
       const message =
         err instanceof Error
           ? err.message
           : "Error al generar el Excel del informe semanal.";
+      showToast({
+        variant: "error",
+        title: "Error al generar Excel",
+        message,
+      });
       throw new Error(message);
     }
   };

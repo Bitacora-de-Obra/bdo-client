@@ -35,6 +35,12 @@ const ReportFormModal: React.FC<ReportFormModalProps> = ({
   const [files, setFiles] = useState<File[]>([]);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{
+    number?: string;
+    period?: string;
+    submissionDate?: string;
+    summary?: string;
+  }>({});
 
   const reportTypeName = reportType === "Weekly" ? "Semanal" : "Mensual";
 
@@ -46,6 +52,7 @@ const ReportFormModal: React.FC<ReportFormModalProps> = ({
     setFiles([]);
     setValidationError(null);
     setIsSubmitting(false);
+    setFieldErrors({});
   };
 
   React.useEffect(() => {
@@ -82,16 +89,38 @@ const ReportFormModal: React.FC<ReportFormModalProps> = ({
     e.preventDefault();
     setValidationError(null);
 
-    if (!number || !period || !submissionDate || !summary) {
-      setValidationError("Todos los campos son obligatorios.");
-      return;
+    const errors: typeof fieldErrors = {};
+    const trimmedNumber = number.trim();
+    const trimmedPeriod = period.trim();
+    const trimmedSummary = summary.trim();
+
+    if (!trimmedNumber) {
+      errors.number = "Ingresa el número del informe.";
+    }
+    if (!trimmedPeriod) {
+      errors.period = "Describe el periodo cubierto.";
     }
 
-    const todayString = new Date().toISOString().split("T")[0];
-    if (submissionDate > todayString) {
-      setValidationError(
-        "La fecha de presentación no puede ser una fecha futura."
-      );
+    if (!submissionDate) {
+      errors.submissionDate = "Selecciona la fecha de presentación.";
+    } else {
+      const parsedDate = new Date(submissionDate);
+      if (Number.isNaN(parsedDate.getTime())) {
+        errors.submissionDate = "La fecha no es válida.";
+      } else if (parsedDate > new Date()) {
+        errors.submissionDate = "La fecha no puede ser futura.";
+      }
+    }
+
+    if (!trimmedSummary) {
+      errors.summary = "Incluye un resumen ejecutivo.";
+    } else if (trimmedSummary.length < 20) {
+      errors.summary = "Amplía el resumen con al menos 20 caracteres.";
+    }
+
+    setFieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
       return;
     }
 
@@ -99,10 +128,10 @@ const ReportFormModal: React.FC<ReportFormModalProps> = ({
       setIsSubmitting(true);
       await onSave(
         {
-          number,
-          period,
+          number: trimmedNumber,
+          period: trimmedPeriod,
           submissionDate: new Date(submissionDate).toISOString(),
-          summary,
+          summary: trimmedSummary,
           type: reportType,
           reportScope,
           requiredSignatories: [],
@@ -118,6 +147,9 @@ const ReportFormModal: React.FC<ReportFormModalProps> = ({
       setValidationError(
         saveError?.message || "No se pudo guardar el informe. Intenta nuevamente."
       );
+      if (saveError?.fieldErrors) {
+        setFieldErrors(saveError.fieldErrors);
+      }
       setIsSubmitting(false);
     }
   };
@@ -156,7 +188,8 @@ const ReportFormModal: React.FC<ReportFormModalProps> = ({
             onChange={(e) => setNumber(e.target.value)}
             required
             placeholder={`Ej: Informe ${reportTypeName} No. 15`}
-            disabled={mode === "newVersion"}
+            disabled={mode === "newVersion" || isSubmitting}
+            error={fieldErrors.number}
           />
           <Input
             label="Fecha de Presentación"
@@ -165,6 +198,8 @@ const ReportFormModal: React.FC<ReportFormModalProps> = ({
             value={submissionDate}
             onChange={(e) => setSubmissionDate(e.target.value)}
             required
+            disabled={isSubmitting}
+            error={fieldErrors.submissionDate}
           />
         </div>
         <Input
@@ -178,6 +213,8 @@ const ReportFormModal: React.FC<ReportFormModalProps> = ({
               ? "Ej: Semana del 15 al 21 de Julio, 2024"
               : "Ej: Julio 2024"
           }
+          disabled={isSubmitting}
+          error={fieldErrors.period}
         />
         <div>
           <label
@@ -191,9 +228,19 @@ const ReportFormModal: React.FC<ReportFormModalProps> = ({
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
             rows={4}
-            className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+            className={`block w-full border ${
+              fieldErrors.summary ? "border-red-400" : "border-gray-300"
+            } rounded-md shadow-sm focus:outline-none focus:ring-2 ${
+              fieldErrors.summary
+                ? "focus:ring-red-200 focus:border-red-400"
+                : "focus:ring-brand-primary/50 focus:border-brand-primary"
+            } sm:text-sm p-2`}
             required
+            disabled={isSubmitting}
           ></textarea>
+          {fieldErrors.summary && (
+            <p className="mt-1 text-xs text-red-600">{fieldErrors.summary}</p>
+          )}
         </div>
 
         <div>
@@ -232,9 +279,14 @@ const ReportFormModal: React.FC<ReportFormModalProps> = ({
                     className="sr-only"
                     onChange={handleFileChange}
                     multiple
+                    disabled={isSubmitting}
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.jpg,.jpeg,.png"
                   />
                 </label>
               </div>
+              <p className="text-xs text-gray-500">
+                Archivos PDF, Office, imágenes o comprimidos. Máximo 10&nbsp;MB por archivo.
+              </p>
             </div>
           </div>
           {files.length > 0 && (
@@ -250,7 +302,8 @@ const ReportFormModal: React.FC<ReportFormModalProps> = ({
                   <button
                     type="button"
                     onClick={() => removeFile(file)}
-                    className="text-red-500 hover:text-red-700 ml-4"
+                    className="text-red-500 hover:text-red-700 ml-4 disabled:opacity-50"
+                    disabled={isSubmitting}
                   >
                     <XMarkIcon className="h-5 w-5" />
                   </button>
@@ -267,7 +320,12 @@ const ReportFormModal: React.FC<ReportFormModalProps> = ({
         )}
 
         <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
             Cancelar
           </Button>
           <Button type="submit" disabled={isSubmitting}>

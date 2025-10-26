@@ -7,6 +7,7 @@ import Modal from "../ui/Modal";
 import { AppRole, AppSettings, AuditLogEntry, User } from "../../types";
 import { useAdminApi } from "../../src/hooks/useAdminApi";
 import { ShieldCheckIcon } from "../icons/Icon";
+import { useToast } from "../ui/ToastProvider";
 
 const APP_ROLE_OPTIONS: { value: AppRole; label: string }[] = [
   { value: "viewer", label: "Viewer" },
@@ -45,6 +46,8 @@ type UsersViewProps = {
   ) => Promise<{ user: User; temporaryPassword: string }>;
   onRefresh: () => Promise<void>;
   onUpdate: (id: string, patch: UserAdminPatch) => Promise<User>;
+  onSuccess: (message: string) => void;
+  onError: (message: string) => void;
 };
 
 type AuditLogViewProps = {
@@ -53,6 +56,7 @@ type AuditLogViewProps = {
   error: string | null;
   isRefreshing: boolean;
   onRefresh: () => Promise<void>;
+  onError: (message: string) => void;
 };
 
 type SettingsViewProps = {
@@ -60,6 +64,8 @@ type SettingsViewProps = {
   isLoading: boolean;
   error: string | null;
   onSave: (patch: Partial<AppSettings>) => Promise<AppSettings | undefined>;
+  onSuccess: (message: string) => void;
+  onError: (message: string) => void;
 };
 
 const AdminDashboard: React.FC = () => {
@@ -68,6 +74,7 @@ const AdminDashboard: React.FC = () => {
   );
 
   const admin = useAdminApi();
+  const { showToast } = useToast();
 
   const tabs = useMemo(
     () => [
@@ -132,6 +139,20 @@ const AdminDashboard: React.FC = () => {
               onInvite={admin.inviteUser}
               onRefresh={admin.reload}
               onUpdate={admin.updateUser}
+              onSuccess={(message) =>
+                showToast({
+                  variant: "success",
+                  title: "Usuarios",
+                  message,
+                })
+              }
+              onError={(message) =>
+                showToast({
+                  variant: "error",
+                  title: "Usuarios",
+                  message,
+                })
+              }
             />
           )}
           {activeTab === "audit" && (
@@ -141,6 +162,13 @@ const AdminDashboard: React.FC = () => {
               error={admin.error}
               isRefreshing={admin.isRefreshing}
               onRefresh={admin.reload}
+              onError={(message) =>
+                showToast({
+                  variant: "error",
+                  title: "Auditoría",
+                  message,
+                })
+              }
             />
           )}
           {activeTab === "settings" && (
@@ -149,6 +177,20 @@ const AdminDashboard: React.FC = () => {
               isLoading={admin.isLoading}
               error={admin.error}
               onSave={admin.updateSettings}
+              onSuccess={(message) =>
+                showToast({
+                  variant: "success",
+                  title: "Configuración",
+                  message,
+                })
+              }
+              onError={(message) =>
+                showToast({
+                  variant: "error",
+                  title: "Configuración",
+                  message,
+                })
+              }
             />
           )}
         </div>
@@ -165,11 +207,48 @@ const UsersView: React.FC<UsersViewProps> = ({
   onInvite,
   onRefresh,
   onUpdate,
+  onSuccess,
+  onError,
 }) => {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [editUser, setEditUser] = useState<User | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [appRoleFilter, setAppRoleFilter] = useState<"all" | AppRole>("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
+  const filteredUsers = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+    return users.filter((user) => {
+      const matchesSearch =
+        !normalizedSearch ||
+        user.fullName.toLowerCase().includes(normalizedSearch) ||
+        user.email?.toLowerCase().includes(normalizedSearch) ||
+        user.projectRole.toLowerCase().includes(normalizedSearch);
+
+      const matchesAppRole =
+        appRoleFilter === "all" || user.appRole === appRoleFilter;
+
+      const matchesStatus =
+        statusFilter === "all" || user.status === statusFilter;
+
+      return matchesSearch && matchesAppRole && matchesStatus;
+    });
+  }, [users, search, appRoleFilter, statusFilter]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, appRoleFilter, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / ITEMS_PER_PAGE));
+  const currentPage = Math.min(page, totalPages);
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredUsers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredUsers, currentPage]);
 
   const handleInvite = async (payload: {
     fullName: string;
@@ -179,27 +258,32 @@ const UsersView: React.FC<UsersViewProps> = ({
   }) => {
     setLocalError(null);
     try {
-      return await onInvite(payload);
+      const result = await onInvite(payload);
+      onSuccess(`Se invitó a ${payload.fullName || payload.email}.`);
+      return result;
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "No se pudo invitar al usuario.";
       setLocalError(message);
+      onError(message);
       throw err;
     }
   };
+
+  useEffect(() => {
+    if (error) {
+      onError(error);
+    }
+  }, [error, onError]);
 
   if (isLoading) {
     return <div>Cargando usuarios...</div>;
   }
 
-  if (error) {
-    return <div className="text-red-500">{error}</div>;
-  }
-
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-1">
           <h3 className="text-lg font-semibold text-gray-900">
             Usuarios registrados
           </h3>
@@ -207,7 +291,34 @@ const UsersView: React.FC<UsersViewProps> = ({
             Controla la membresía y permisos dentro de la plataforma.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            placeholder="Buscar por nombre, email o rol"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            wrapperClassName="min-w-[220px]"
+          />
+          <Select
+            value={appRoleFilter}
+            onChange={(e) => setAppRoleFilter(e.target.value as typeof appRoleFilter)}
+            label="Rol"
+          >
+            <option value="all">Todos los roles</option>
+            {APP_ROLE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </Select>
+          <Select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+            label="Estado"
+          >
+            <option value="all">Todos</option>
+            <option value="active">Activos</option>
+            <option value="inactive">Inactivos</option>
+          </Select>
           <Button
             variant="secondary"
             onClick={onRefresh}
@@ -228,9 +339,9 @@ const UsersView: React.FC<UsersViewProps> = ({
       )}
 
       <Card>
-        {users.length === 0 ? (
+        {filteredUsers.length === 0 ? (
           <div className="p-6 text-sm text-gray-500">
-            No hay usuarios registrados todavía.
+            No encontramos usuarios que coincidan con los filtros.
           </div>
         ) : (
           <table className="w-full text-sm text-left text-gray-600">
@@ -260,7 +371,7 @@ const UsersView: React.FC<UsersViewProps> = ({
               </tr>
             </thead>
             <tbody>
-              {users.map((user) => (
+              {paginatedUsers.map((user) => (
                 <tr
                   key={user.id}
                   className="bg-white border-b last:border-b-0 hover:bg-gray-50 transition"
@@ -306,6 +417,32 @@ const UsersView: React.FC<UsersViewProps> = ({
         )}
       </Card>
 
+      {filteredUsers.length > ITEMS_PER_PAGE && (
+        <div className="flex items-center justify-end gap-3 text-sm text-gray-600">
+          <span>
+            Página {currentPage} de {totalPages}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              Anterior
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Siguiente
+            </Button>
+          </div>
+        </div>
+      )}
+
       <InviteUserModal
         isOpen={isInviteModalOpen}
         onClose={() => setIsInviteModalOpen(false)}
@@ -320,9 +457,19 @@ const UsersView: React.FC<UsersViewProps> = ({
         }}
         onSave={async (patch) => {
           if (!editUser) return;
-          const updated = await onUpdate(editUser.id, patch);
-          setEditUser(updated);
-          setIsEditModalOpen(false);
+          try {
+            const updated = await onUpdate(editUser.id, patch);
+            setEditUser(updated);
+            setIsEditModalOpen(false);
+            onSuccess(`Se actualizaron los permisos de ${updated.fullName}.`);
+          } catch (error) {
+            const message =
+              error instanceof Error
+                ? error.message
+                : "No se pudo actualizar el usuario.";
+            onError(message);
+            throw error;
+          }
         }}
       />
     </div>
@@ -335,19 +482,52 @@ const AuditLogView: React.FC<AuditLogViewProps> = ({
   error,
   isRefreshing,
   onRefresh,
+  onError,
 }) => {
+  const [search, setSearch] = useState("");
+  const [actionFilter, setActionFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
+  useEffect(() => {
+    if (error) {
+      onError(error);
+    }
+  }, [error, onError]);
+
+  const filteredLogs = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+    return auditLogs.filter((log) => {
+      const matchesAction =
+        actionFilter === "all" || log.action === actionFilter;
+      const matchesSearch =
+        !normalizedSearch ||
+        log.actorEmail?.toLowerCase().includes(normalizedSearch) ||
+        log.action.toLowerCase().includes(normalizedSearch) ||
+        log.entityType.toLowerCase().includes(normalizedSearch);
+      return matchesAction && matchesSearch;
+    });
+  }, [auditLogs, search, actionFilter]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, actionFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredLogs.length / ITEMS_PER_PAGE));
+  const currentPage = Math.min(page, totalPages);
+  const paginatedLogs = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredLogs.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredLogs, currentPage]);
+
   if (isLoading) {
     return <div>Cargando registros de auditoría...</div>;
   }
 
-  if (error) {
-    return <div className="text-red-500">{error}</div>;
-  }
-
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-1">
           <h3 className="text-lg font-semibold text-gray-900">
             Registro de Auditoría
           </h3>
@@ -356,19 +536,39 @@ const AuditLogView: React.FC<AuditLogViewProps> = ({
             plataforma.
           </p>
         </div>
-        <Button
-          variant="secondary"
-          onClick={onRefresh}
-          disabled={isRefreshing}
-        >
-          {isRefreshing ? "Refrescando..." : "Actualizar"}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            placeholder="Buscar por actor, acción o entidad"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            wrapperClassName="min-w-[220px]"
+          />
+          <Select
+            value={actionFilter}
+            onChange={(e) => setActionFilter(e.target.value)}
+            label="Acción"
+          >
+            <option value="all">Todas</option>
+            {[...new Set(auditLogs.map((log) => log.action))].map((action) => (
+              <option key={action} value={action}>
+                {action}
+              </option>
+            ))}
+          </Select>
+          <Button
+            variant="secondary"
+            onClick={onRefresh}
+            disabled={isRefreshing}
+          >
+            {isRefreshing ? "Refrescando..." : "Actualizar"}
+          </Button>
+        </div>
       </div>
 
       <Card>
-        {auditLogs.length === 0 ? (
+        {filteredLogs.length === 0 ? (
           <div className="p-6 text-sm text-gray-500">
-            No se encontraron registros recientes.
+            No se encontraron eventos que coincidan con los filtros.
           </div>
         ) : (
           <table className="w-full text-sm text-left text-gray-600">
@@ -389,7 +589,7 @@ const AuditLogView: React.FC<AuditLogViewProps> = ({
               </tr>
             </thead>
             <tbody>
-              {auditLogs.map((log) => (
+              {paginatedLogs.map((log) => (
                 <tr
                   key={log.id}
                   className="bg-white border-b last:border-b-0 hover:bg-gray-50 transition"
@@ -408,6 +608,32 @@ const AuditLogView: React.FC<AuditLogViewProps> = ({
           </table>
         )}
       </Card>
+
+      {filteredLogs.length > ITEMS_PER_PAGE && (
+        <div className="flex items-center justify-end gap-3 text-sm text-gray-600">
+          <span>
+            Página {currentPage} de {totalPages}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              Anterior
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Siguiente
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -417,6 +643,8 @@ const SettingsView: React.FC<SettingsViewProps> = ({
   isLoading,
   error,
   onSave,
+  onSuccess,
+  onError,
 }) => {
   const [formState, setFormState] = useState<Partial<AppSettings>>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -428,6 +656,12 @@ const SettingsView: React.FC<SettingsViewProps> = ({
       setFormState(settings);
     }
   }, [settings]);
+
+  useEffect(() => {
+    if (error) {
+      onError(error);
+    }
+  }, [error, onError]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -451,12 +685,14 @@ const SettingsView: React.FC<SettingsViewProps> = ({
     try {
       await onSave(formState);
       setFeedback("Configuración actualizada con éxito.");
+      onSuccess("Configuración actualizada con éxito.");
     } catch (err) {
       const message =
         err instanceof Error
           ? err.message
           : "No se pudo guardar la configuración.";
       setLocalError(message);
+      onError(message);
     } finally {
       setIsSaving(false);
     }
@@ -464,10 +700,6 @@ const SettingsView: React.FC<SettingsViewProps> = ({
 
   if (isLoading) {
     return <div>Cargando configuración...</div>;
-  }
-
-  if (error) {
-    return <div className="text-red-500">{error}</div>;
   }
 
   if (!settings) {

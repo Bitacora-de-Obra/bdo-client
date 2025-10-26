@@ -9,19 +9,24 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fullcalendar/core": "6.1.11",
+    "@fullcalendar/daygrid": "6.1.11",
+    "@fullcalendar/interaction": "6.1.11",
+    "@fullcalendar/react": "6.1.11",
+    "axios": "^1.6.2",
+    "file-saver": "2.0.5",
+    "html2canvas": "1.4.1",
+    "jest": "^30.2.0",
+    "jspdf": "2.5.1",
+    "jszip": "3.10.1",
+    "node-cron": "^4.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.0",
-    "@fullcalendar/core": "6.1.11",
-    "@fullcalendar/react": "6.1.11",
-    "@fullcalendar/daygrid": "6.1.11",
-    "@fullcalendar/interaction": "6.1.11",
+    "swagger-ui-express": "^5.0.1",
+    "winston": "^3.18.3",
     "xlsx": "^0.18.5",
-    "jszip": "3.10.1",
-    "file-saver": "2.0.5",
-    "jspdf": "2.5.1",
-    "html2canvas": "1.4.1",
-    "axios": "^1.6.2"
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
     "@types/node": "^20.10.4",

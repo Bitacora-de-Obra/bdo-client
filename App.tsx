@@ -15,6 +15,7 @@ import MonthlyReportsDashboard from "./components/MonthlyReportsDashboard";
 import PendingTasksDashboard from "./components/PendingTasksDashboard";
 import ExportDashboard from "./components/ExportDashboard";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ToastProvider } from "./components/ui/ToastProvider";
 import LoginScreen from "./components/auth/LoginScreen";
 import { ReportScope, Notification, CommitmentStatus, User } from "./types";
 import AdminDashboard from "./components/admin/AdminDashboard";
@@ -254,7 +255,9 @@ function App() {
   console.log("App: Rendering AuthProvider...");
   return (
     <AuthProvider>
-      <AppContent />
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
     </AuthProvider>
   );
 }
