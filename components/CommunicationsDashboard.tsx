@@ -32,20 +32,47 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({ proje
     sender: '',
     recipient: '',
     status: 'all',
+    direction: 'all',
   });
 
 
   const filteredCommunications = useMemo(() => {
-    if (!communications) return [];
+    if (!communications || !user) return [];
+    
     return communications.filter(comm => {
         const searchTermMatch = comm.subject.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
                               comm.radicado.toLowerCase().includes(filters.searchTerm.toLowerCase());
         const senderMatch = filters.sender === '' || comm.senderDetails.entity.toLowerCase().includes(filters.sender.toLowerCase());
         const recipientMatch = filters.recipient === '' || comm.recipientDetails.entity.toLowerCase().includes(filters.recipient.toLowerCase());
         const statusMatch = filters.status === 'all' || comm.status === filters.status;
-        return searchTermMatch && senderMatch && recipientMatch && statusMatch;
+
+        // Determine if the communication is sent or received based on user's role
+        let isUserSender = false;
+        let isUserRecipient = false;
+
+        switch (user.projectRole) {
+          case 'Residente de Obra':
+          case 'Representante Contratista':
+            isUserSender = comm.senderDetails.entity.toLowerCase().includes('contratista');
+            isUserRecipient = comm.recipientDetails.entity.toLowerCase().includes('contratista');
+            break;
+          case 'Supervisor':
+            isUserSender = comm.senderDetails.entity.toLowerCase().includes('interventoría');
+            isUserRecipient = comm.recipientDetails.entity.toLowerCase().includes('interventoría');
+            break;
+          case 'Administrador IDU':
+            isUserSender = comm.senderDetails.entity.toLowerCase().includes('idu');
+            isUserRecipient = comm.recipientDetails.entity.toLowerCase().includes('idu');
+            break;
+        }
+
+        const directionMatch = filters.direction === 'all' ||
+                             (filters.direction === 'sent' && isUserSender) ||
+                             (filters.direction === 'received' && isUserRecipient);
+
+        return searchTermMatch && senderMatch && recipientMatch && statusMatch && directionMatch;
     });
-  }, [communications, filters]);
+  }, [communications, filters, user]);
 
   const handleOpenForm = () => setIsFormModalOpen(true);
   const handleCloseForm = () => setIsFormModalOpen(false);
@@ -130,7 +157,7 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({ proje
         </div>
       </div>
 
-      <CommunicationFilterBar filters={filters} setFilters={setFilters} />
+      <CommunicationFilterBar filters={filters} setFilters={setFilters} userRole={user?.projectRole || ''} />
 
       {isLoading && <div className="text-center p-8">Cargando comunicaciones...</div>}
       {error && <div className="text-center p-8 text-red-500">{error.message}</div>}
