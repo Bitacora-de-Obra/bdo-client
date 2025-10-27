@@ -20,17 +20,20 @@ import LoginScreen from "./components/auth/LoginScreen";
 import { ReportScope, Notification, CommitmentStatus, User } from "./types";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import DrawingsDashboard from "./components/DrawingsDashboard";
+import { ChatbotWidget } from "./components/chatbot/ChatbotWidget"; // <-- Añade esta línea
 
 type InitialItemToOpen = { type: "acta" | "logEntry"; id: string };
 
 const MainApp = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentView, setCurrentView] = useState("summary");
-  const [initialItemToOpen, setInitialItemToOpen] = useState<InitialItemToOpen | null>(null);
+  const [initialItemToOpen, setInitialItemToOpen] =
+    useState<InitialItemToOpen | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const { user } = useAuth();
-  const { data: projectDetails, isLoading: isProjectLoading } = useApi.projectDetails();
+  const { data: projectDetails, isLoading: isProjectLoading } =
+    useApi.projectDetails();
   const {
     data: contractModifications,
     isLoading: isModificationsLoading,
@@ -111,7 +114,9 @@ const MainApp = () => {
 
   const renderContent = () => {
     if (isLoading || !projectDetails) {
-      return <div className="text-center p-8">Cargando datos del proyecto...</div>;
+      return (
+        <div className="text-center p-8">Cargando datos del proyecto...</div>
+      );
     }
 
     if (currentView === "admin" && user?.appRole !== "admin") {
@@ -248,7 +253,12 @@ const AppContent = () => {
   }
 
   console.log("AppContent: Authenticated, showing MainApp...");
-  return <MainApp />;
+  return (
+    <>
+      <MainApp />
+      <ChatbotWidget />
+    </>
+  );
 };
 
 function App() {

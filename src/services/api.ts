@@ -45,7 +45,7 @@ let isRefreshing = false;
 let failedQueue: { resolve: Function; reject: Function }[] = [];
 
 const processQueue = (error: any = null) => {
-  failedQueue.forEach(prom => {
+  failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
     } else {
@@ -57,18 +57,18 @@ const processQueue = (error: any = null) => {
 
 async function apiFetch(endpoint: string, options: RequestInit = {}) {
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     ...options.headers,
   };
 
   // Añadir token de acceso si existe
-  const accessToken = localStorage.getItem('accessToken');
+  const accessToken = localStorage.getItem("accessToken");
   if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
+    headers["Authorization"] = `Bearer ${accessToken}`;
   }
 
   if (options.body instanceof FormData) {
-    delete (headers as Record<string, string>)['Content-Type'];
+    delete (headers as Record<string, string>)["Content-Type"];
   }
 
   const fetchUrl = `${API_URL}${endpoint}`;
@@ -77,7 +77,7 @@ async function apiFetch(endpoint: string, options: RequestInit = {}) {
     const response = await fetch(fetchUrl, {
       ...options,
       headers,
-      credentials: 'include', // Siempre incluir cookies
+      credentials: "include", // Siempre incluir cookies
     });
 
     // Manejar errores específicos de autenticación
@@ -88,52 +88,55 @@ async function apiFetch(endpoint: string, options: RequestInit = {}) {
         try {
           // Intentar refrescar el token
           const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
-            method: 'POST',
-            credentials: 'include',
+            method: "POST",
+            credentials: "include",
           });
 
           if (refreshResponse.ok) {
             const { accessToken } = await refreshResponse.json();
-            localStorage.setItem('accessToken', accessToken);
-            
+            localStorage.setItem("accessToken", accessToken);
+
             // Actualizar el token en las opciones originales
             if (!options.headers) options.headers = {};
-            (options.headers as any)['Authorization'] = `Bearer ${accessToken}`;
-            
+            (options.headers as any)["Authorization"] = `Bearer ${accessToken}`;
+
             isRefreshing = false;
             processQueue();
-            
+
             // Reintentar la petición original con el nuevo token
             return apiFetch(endpoint, options);
           } else {
             isRefreshing = false;
-            processQueue(new Error('Failed to refresh token'));
-            window.dispatchEvent(new CustomEvent('auth:logout'));
+            processQueue(new Error("Failed to refresh token"));
+            window.dispatchEvent(new CustomEvent("auth:logout"));
             throw handleApiError({
               statusCode: 401,
-              message: 'Sesión expirada. Por favor, inicie sesión nuevamente.',
-              code: 'SESSION_EXPIRED'
+              message: "Sesión expirada. Por favor, inicie sesión nuevamente.",
+              code: "SESSION_EXPIRED",
             });
           }
         } catch (refreshError) {
           isRefreshing = false;
           processQueue(refreshError);
-          window.dispatchEvent(new CustomEvent('auth:logout'));
+          window.dispatchEvent(new CustomEvent("auth:logout"));
           throw handleApiError({
             statusCode: 401,
-            message: 'Error de autenticación. Por favor, inicie sesión nuevamente.',
-            code: 'AUTH_ERROR'
+            message:
+              "Error de autenticación. Por favor, inicie sesión nuevamente.",
+            code: "AUTH_ERROR",
           });
         }
       } else {
         // Si ya hay un refresh en proceso, encolar esta petición
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
-        }).then(() => {
-          return apiFetch(endpoint, options);
-        }).catch(err => {
-          throw err;
-        });
+        })
+          .then(() => {
+            return apiFetch(endpoint, options);
+          })
+          .catch((err) => {
+            throw err;
+          });
       }
     }
 
@@ -141,22 +144,25 @@ async function apiFetch(endpoint: string, options: RequestInit = {}) {
     if (!response.ok) {
       let errorData;
       try {
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
           errorData = await response.json();
         } else {
           errorData = { error: await response.text() };
         }
       } catch (parseError) {
-        console.error(`Error al parsear respuesta de error de ${endpoint}:`, parseError);
-        errorData = { error: 'Error al procesar la respuesta del servidor' };
+        console.error(
+          `Error al parsear respuesta de error de ${endpoint}:`,
+          parseError
+        );
+        errorData = { error: "Error al procesar la respuesta del servidor" };
       }
 
       throw handleApiError({
         statusCode: response.status,
         message: errorData.error || `Error HTTP: ${response.status}`,
         details: errorData.details,
-        code: errorData.code
+        code: errorData.code,
       });
     }
 
@@ -176,31 +182,31 @@ async function apiFetch(endpoint: string, options: RequestInit = {}) {
         case 403:
           throw handleApiError({
             statusCode: 403,
-            message: 'No tiene permisos para realizar esta acción.',
+            message: "No tiene permisos para realizar esta acción.",
             details: errorData?.details,
           });
         case 404:
           throw handleApiError({
             statusCode: 404,
-            message: 'El recurso solicitado no existe.',
+            message: "El recurso solicitado no existe.",
             details: errorData?.details,
           });
         case 422:
           throw handleApiError({
             statusCode: 422,
-            message: 'Datos inválidos.',
+            message: "Datos inválidos.",
             details: errorData?.details,
           });
         case 429:
           throw handleApiError({
             statusCode: 429,
-            message: 'Demasiadas solicitudes. Por favor, espere un momento.',
+            message: "Demasiadas solicitudes. Por favor, espere un momento.",
             details: errorData?.details,
           });
         case 500:
           throw handleApiError({
             statusCode: 500,
-            message: 'Error interno del servidor.',
+            message: "Error interno del servidor.",
             details: errorData?.details,
           });
         default:
@@ -213,7 +219,11 @@ async function apiFetch(endpoint: string, options: RequestInit = {}) {
     }
 
     const contentType = response.headers.get("content-type");
-    if (response.status === 204 || !contentType || contentType.indexOf("application/json") === -1) {
+    if (
+      response.status === 204 ||
+      !contentType ||
+      contentType.indexOf("application/json") === -1
+    ) {
       return {};
     }
 
@@ -243,16 +253,16 @@ type ApiMessageResponse = {
 // API Functions for Authentication
 export const authApi = {
   login: async (email: string, password: string): Promise<LoginResponse> => {
-    const response = await apiFetch('/auth/login', {
-      method: 'POST',
+    const response = await apiFetch("/auth/login", {
+      method: "POST",
       body: JSON.stringify({ email, password }),
-      credentials: 'include',
+      credentials: "include",
     });
-    
+
     if (response.accessToken) {
-      localStorage.setItem('accessToken', response.accessToken);
+      localStorage.setItem("accessToken", response.accessToken);
     }
-    
+
     return response;
   },
 
@@ -263,66 +273,72 @@ export const authApi = {
     projectRole: string;
     appRole: string;
   }): Promise<RegisterResponse> => {
-    const response = await apiFetch('/auth/register', {
-      method: 'POST',
+    const response = await apiFetch("/auth/register", {
+      method: "POST",
       body: JSON.stringify(userData),
-      credentials: 'include',
+      credentials: "include",
     });
     return response;
   },
 
   logout: async () => {
-    await apiFetch('/auth/logout', {
-      method: 'POST',
-      credentials: 'include',
+    await apiFetch("/auth/logout", {
+      method: "POST",
+      credentials: "include",
     });
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('user');
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("user");
   },
 
   refreshToken: async () => {
-    const response = await apiFetch('/auth/refresh', {
-      method: 'POST',
-      credentials: 'include',
+    const response = await apiFetch("/auth/refresh", {
+      method: "POST",
+      credentials: "include",
     });
     return response;
   },
 
   verifyEmail: async (token: string): Promise<ApiMessageResponse> => {
     const response = await apiFetch(`/auth/verify-email/${token}`, {
-      method: 'POST',
+      method: "POST",
     });
     return response;
   },
 
   forgotPassword: async (email: string): Promise<ApiMessageResponse> => {
-    const response = await apiFetch('/auth/forgot-password', {
-      method: 'POST',
+    const response = await apiFetch("/auth/forgot-password", {
+      method: "POST",
       body: JSON.stringify({ email }),
     });
     return response;
   },
 
-  resetPassword: async (token: string, newPassword: string): Promise<ApiMessageResponse> => {
+  resetPassword: async (
+    token: string,
+    newPassword: string
+  ): Promise<ApiMessageResponse> => {
     const response = await apiFetch(`/auth/reset-password/${token}`, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify({ password: newPassword }),
     });
     return response;
   },
 
-  changePassword: async (oldPassword: string, newPassword: string): Promise<ApiMessageResponse> => {
-    const response = await apiFetch('/auth/change-password', {
-      method: 'POST',
+  changePassword: async (
+    oldPassword: string,
+    newPassword: string
+  ): Promise<ApiMessageResponse> => {
+    const response = await apiFetch("/auth/change-password", {
+      method: "POST",
       body: JSON.stringify({ oldPassword, newPassword }),
-      credentials: 'include',
+      credentials: "include",
     });
     return response;
   },
 
   getProfile: async () => {
-    const response = await apiFetch('/auth/me', {
-      credentials: 'include',
+    const response = await apiFetch("/auth/me", {
+      credentials: "include",
     });
     return response;
   },
@@ -332,10 +348,10 @@ export const authApi = {
     email?: string;
     avatarUrl?: string;
   }) => {
-    const response = await apiFetch('/auth/profile', {
-      method: 'PUT',
+    const response = await apiFetch("/auth/profile", {
+      method: "PUT",
       body: JSON.stringify(profileData),
-      credentials: 'include',
+      credentials: "include",
     });
     return response;
   },
@@ -344,13 +360,13 @@ export const authApi = {
 // API Functions for Users
 export const usersApi = {
   getAll: async () => {
-    return apiFetch('/public/demo-users');
+    return apiFetch("/public/demo-users");
   },
 };
 
 export const adminApi = {
   getUsers: async () => {
-    return apiFetch('/admin/users');
+    return apiFetch("/admin/users");
   },
   inviteUser: async (data: {
     fullName: string;
@@ -358,8 +374,8 @@ export const adminApi = {
     appRole: AppRole;
     projectRole?: string;
   }): Promise<{ user: User; temporaryPassword: string }> => {
-    return apiFetch('/admin/users/invite', {
-      method: 'POST',
+    return apiFetch("/admin/users/invite", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   },
@@ -372,19 +388,19 @@ export const adminApi = {
     }>
   ): Promise<User> => {
     return apiFetch(`/admin/users/${id}`, {
-      method: 'PATCH',
+      method: "PATCH",
       body: JSON.stringify(data),
     });
   },
   getAuditLogs: async () => {
-    return apiFetch('/admin/audit-logs');
+    return apiFetch("/admin/audit-logs");
   },
   getSettings: async () => {
-    return apiFetch('/admin/settings');
+    return apiFetch("/admin/settings");
   },
   updateSettings: async (data: Partial<AppSettings>) => {
-    return apiFetch('/admin/settings', {
-      method: 'PUT',
+    return apiFetch("/admin/settings", {
+      method: "PUT",
       body: JSON.stringify(data),
     });
   },
@@ -393,13 +409,23 @@ export const adminApi = {
 // API Functions for Log Entries
 export const logEntriesApi = {
   getAll: async () => {
-    return apiFetch('/log-entries');
+    return apiFetch("/log-entries");
   },
   getById: async (id: string) => {
     return apiFetch(`/log-entries/${id}`);
   },
   create: async (
-    data: Omit<LogEntry, 'id' | 'folioNumber' | 'createdAt' | 'author' | 'comments' | 'history' | 'updatedAt' | 'attachments'> & {
+    data: Omit<
+      LogEntry,
+      | "id"
+      | "folioNumber"
+      | "createdAt"
+      | "author"
+      | "comments"
+      | "history"
+      | "updatedAt"
+      | "attachments"
+    > & {
       authorId?: string;
       projectId?: string;
     },
@@ -409,24 +435,24 @@ export const logEntriesApi = {
 
     const appendIfDefined = (key: string, value: unknown) => {
       if (value === undefined || value === null) return;
-      if (typeof value === 'boolean') {
-        formData.append(key, value ? 'true' : 'false');
+      if (typeof value === "boolean") {
+        formData.append(key, value ? "true" : "false");
         return;
       }
       formData.append(key, String(value));
     };
 
-    appendIfDefined('title', data.title);
-    appendIfDefined('description', data.description);
-    appendIfDefined('type', data.type);
-    appendIfDefined('subject', data.subject);
-    appendIfDefined('location', data.location);
-    appendIfDefined('activityStartDate', data.activityStartDate);
-    appendIfDefined('activityEndDate', data.activityEndDate);
-    appendIfDefined('isConfidential', data.isConfidential ?? false);
-    appendIfDefined('status', data.status);
-    appendIfDefined('authorId', data.authorId);
-    appendIfDefined('projectId', data.projectId);
+    appendIfDefined("title", data.title);
+    appendIfDefined("description", data.description);
+    appendIfDefined("type", data.type);
+    appendIfDefined("subject", data.subject);
+    appendIfDefined("location", data.location);
+    appendIfDefined("activityStartDate", data.activityStartDate);
+    appendIfDefined("activityEndDate", data.activityEndDate);
+    appendIfDefined("isConfidential", data.isConfidential ?? false);
+    appendIfDefined("status", data.status);
+    appendIfDefined("authorId", data.authorId);
+    appendIfDefined("projectId", data.projectId);
 
     const serializeUsers = (users?: Array<Partial<User> | string>) => {
       if (!users || users.length === 0) {
@@ -434,44 +460,42 @@ export const logEntriesApi = {
       }
       return JSON.stringify(
         users.map((user) =>
-          typeof user === 'string'
+          typeof user === "string"
             ? { id: user }
             : { id: user.id, fullName: user.fullName }
         )
       );
     };
 
-    const assigneesJson = serializeUsers(
-      (data as any).assignees
-    );
+    const assigneesJson = serializeUsers((data as any).assignees);
     if (assigneesJson) {
-      formData.append('assignees', assigneesJson);
+      formData.append("assignees", assigneesJson);
     }
 
     const requiredSignatoriesJson = serializeUsers(
       (data as any).requiredSignatories
     );
     if (requiredSignatoriesJson) {
-      formData.append('requiredSignatories', requiredSignatoriesJson);
+      formData.append("requiredSignatories", requiredSignatoriesJson);
     }
 
     const signatures = (data as any).signatures;
     if (Array.isArray(signatures) && signatures.length > 0) {
-      formData.append('signatures', JSON.stringify(signatures));
+      formData.append("signatures", JSON.stringify(signatures));
     }
 
     files.forEach((file) => {
-      formData.append('attachments', file);
+      formData.append("attachments", file);
     });
 
-    return apiFetch('/log-entries', {
-      method: 'POST',
+    return apiFetch("/log-entries", {
+      method: "POST",
       body: formData,
     });
   },
   update: async (id: string, data: Partial<LogEntry>) => {
     return apiFetch(`/log-entries/${id}`, {
-      method: 'PUT',
+      method: "PUT",
       body: JSON.stringify(data),
     });
   },
@@ -480,18 +504,21 @@ export const logEntriesApi = {
     comment: { content: string; authorId: string }
   ) => {
     return apiFetch(`/log-entries/${entryId}/comments`, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(comment),
     });
   },
   delete: async (id: string) => {
     return apiFetch(`/log-entries/${id}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
   },
-  addSignature: async (entryId: string, data: { signerId: string; password: string }) => {
+  addSignature: async (
+    entryId: string,
+    data: { signerId: string; password: string }
+  ) => {
     return apiFetch(`/log-entries/${entryId}/signatures`, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(data),
     });
   },
@@ -500,25 +527,28 @@ export const logEntriesApi = {
 // API Functions for Communications
 export const communicationsApi = {
   getAll: async () => {
-    return apiFetch('/communications');
+    return apiFetch("/communications");
   },
   getById: async (id: string) => {
     return apiFetch(`/communications/${id}`);
   },
   create: async (
-    data: Omit<Communication, 'id' | 'uploader' | 'attachments' | 'status' | 'statusHistory'> & {
+    data: Omit<
+      Communication,
+      "id" | "uploader" | "attachments" | "status" | "statusHistory"
+    > & {
       uploaderId: string;
       attachments?: Attachment[];
     }
   ) => {
-    return apiFetch('/communications', {
-      method: 'POST',
+    return apiFetch("/communications", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   },
   updateStatus: async (id: string, status: CommunicationStatus) => {
     return apiFetch(`/communications/${id}/status`, {
-      method: 'PUT',
+      method: "PUT",
       body: JSON.stringify({ status }),
     });
   },
@@ -527,37 +557,44 @@ export const communicationsApi = {
 // API Functions for Actas
 export const actasApi = {
   getAll: async () => {
-    return apiFetch('/actas');
+    return apiFetch("/actas");
   },
   getById: async (id: string) => {
     return apiFetch(`/actas/${id}`);
   },
-  create: async (data: Omit<Acta, 'id'>) => {
-    return apiFetch('/actas', {
-      method: 'POST',
+  create: async (data: Omit<Acta, "id">) => {
+    return apiFetch("/actas", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   },
   update: async (id: string, data: Partial<Acta>) => {
     return apiFetch(`/actas/${id}`, {
-      method: 'PUT',
+      method: "PUT",
       body: JSON.stringify(data),
     });
   },
-  updateCommitment: async (actaId: string, commitmentId: string, data: Partial<Commitment>) => {
+  updateCommitment: async (
+    actaId: string,
+    commitmentId: string,
+    data: Partial<Commitment>
+  ) => {
     return apiFetch(`/actas/${actaId}/commitments/${commitmentId}`, {
-      method: 'PUT',
+      method: "PUT",
       body: JSON.stringify(data),
     });
   },
   sendCommitmentReminder: async (actaId: string, commitmentId: string) => {
     return apiFetch(`/actas/${actaId}/commitments/${commitmentId}/reminder`, {
-      method: 'POST',
+      method: "POST",
     });
   },
-  addSignature: async (actaId: string, data: { signerId: string; password: string }) => {
+  addSignature: async (
+    actaId: string,
+    data: { signerId: string; password: string }
+  ) => {
     return apiFetch(`/actas/${actaId}/signatures`, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(data),
     });
   },
@@ -566,26 +603,29 @@ export const actasApi = {
 // API Functions for Cost Actas
 export const costActasApi = {
   getAll: async () => {
-    return apiFetch('/cost-actas');
+    return apiFetch("/cost-actas");
   },
   getById: async (id: string) => {
     return apiFetch(`/cost-actas/${id}`);
   },
-  create: async (data: Omit<CostActa, 'id' | 'observations'>) => {
-    return apiFetch('/cost-actas', {
-      method: 'POST',
+  create: async (data: Omit<CostActa, "id" | "observations">) => {
+    return apiFetch("/cost-actas", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   },
   update: async (id: string, data: Partial<CostActa>) => {
     return apiFetch(`/cost-actas/${id}`, {
-      method: 'PUT',
+      method: "PUT",
       body: JSON.stringify(data),
     });
   },
-  addObservation: async (actaId: string, data: { text: string; authorId: string }) => {
+  addObservation: async (
+    actaId: string,
+    data: { text: string; authorId: string }
+  ) => {
     return apiFetch(`/cost-actas/${actaId}/observations`, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(data),
     });
   },
@@ -594,20 +634,20 @@ export const costActasApi = {
 // API Functions for Work Actas
 export const workActasApi = {
   getAll: async () => {
-    return apiFetch('/work-actas');
+    return apiFetch("/work-actas");
   },
   getById: async (id: string) => {
     return apiFetch(`/work-actas/${id}`);
   },
-  create: async (data: Omit<WorkActa, 'id'>) => {
-    return apiFetch('/work-actas', {
-      method: 'POST',
+  create: async (data: Omit<WorkActa, "id">) => {
+    return apiFetch("/work-actas", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   },
   update: async (id: string, data: Partial<WorkActa>) => {
     return apiFetch(`/work-actas/${id}`, {
-      method: 'PUT',
+      method: "PUT",
       body: JSON.stringify(data),
     });
   },
@@ -616,24 +656,27 @@ export const workActasApi = {
 // API Functions for Contract Items
 export const contractItemsApi = {
   getAll: async () => {
-    return apiFetch('/contract-items');
+    return apiFetch("/contract-items");
   },
 };
 
 // API Functions for Control Points
 export const controlPointsApi = {
   getAll: async () => {
-    return apiFetch('/control-points');
+    return apiFetch("/control-points");
   },
-  create: async (data: Omit<ControlPoint, 'id' | 'photos'>) => {
-    return apiFetch('/control-points', {
-      method: 'POST',
+  create: async (data: Omit<ControlPoint, "id" | "photos">) => {
+    return apiFetch("/control-points", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   },
-  addPhoto: async (pointId: string, data: Omit<PhotoEntry, 'id' | 'author' | 'date'>) => {
+  addPhoto: async (
+    pointId: string,
+    data: Omit<PhotoEntry, "id" | "author" | "date">
+  ) => {
     return apiFetch(`/control-points/${pointId}/photos`, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(data),
     });
   },
@@ -642,21 +685,23 @@ export const controlPointsApi = {
 // API Functions for Project Tasks
 export const projectTasksApi = {
   getAll: async () => {
-    return apiFetch('/project-tasks');
+    return apiFetch("/project-tasks");
   },
-  import: async (tasks: Array<{
-    id: string;
-    name: string;
-    startDate: string;
-    endDate: string;
-    progress: number;
-    duration: number;
-    isSummary: boolean;
-    outlineLevel: number;
-    dependencies: string[];
-  }>) => {
-    return apiFetch('/project-tasks/import', {
-      method: 'POST',
+  import: async (
+    tasks: Array<{
+      id: string;
+      name: string;
+      startDate: string;
+      endDate: string;
+      progress: number;
+      duration: number;
+      isSummary: boolean;
+      outlineLevel: number;
+      dependencies: string[];
+    }>
+  ) => {
+    return apiFetch("/project-tasks/import", {
+      method: "POST",
       body: JSON.stringify({ tasks }),
     });
   },
@@ -665,7 +710,7 @@ export const projectTasksApi = {
 // API Functions for Contract Modifications
 export const contractModificationsApi = {
   getAll: async () => {
-    return apiFetch('/contract-modifications');
+    return apiFetch("/contract-modifications");
   },
   create: async (data: {
     number: string;
@@ -676,8 +721,8 @@ export const contractModificationsApi = {
     justification: string;
     attachmentId?: string;
   }) => {
-    return apiFetch('/contract-modifications', {
-      method: 'POST',
+    return apiFetch("/contract-modifications", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   },
@@ -686,14 +731,14 @@ export const contractModificationsApi = {
 // API Functions for Project Details
 export const projectDetailsApi = {
   get: async () => {
-    return apiFetch('/project-details');
+    return apiFetch("/project-details");
   },
 };
 
 // API Functions for Reports
 export const reportsApi = {
   getAll: async () => {
-    return apiFetch('/reports');
+    return apiFetch("/reports");
   },
   getById: async (id: string) => {
     return apiFetch(`/reports/${id}`);
@@ -701,17 +746,23 @@ export const reportsApi = {
   create: async (
     data: Omit<
       Report,
-      'id' | 'author' | 'status' | 'attachments' | 'version' | 'previousReportId' | 'versions'
+      | "id"
+      | "author"
+      | "status"
+      | "attachments"
+      | "version"
+      | "previousReportId"
+      | "versions"
     > & { previousReportId?: string }
   ) => {
-    return apiFetch('/reports', {
-      method: 'POST',
+    return apiFetch("/reports", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   },
   update: async (id: string, data: Partial<Report>) => {
     return apiFetch(`/reports/${id}`, {
-      method: 'PUT',
+      method: "PUT",
       body: JSON.stringify(data),
     });
   },
@@ -719,7 +770,7 @@ export const reportsApi = {
     id: string
   ): Promise<{ report: Report; attachment: Attachment }> => {
     return apiFetch(`/reports/${id}/generate-weekly-excel`, {
-      method: 'POST',
+      method: "POST",
     });
   },
 };
@@ -727,13 +778,13 @@ export const reportsApi = {
 // API Functions for Drawings
 export const drawingsApi = {
   getAll: async () => {
-    return apiFetch('/drawings');
+    return apiFetch("/drawings");
   },
   getById: async (id: string) => {
     return apiFetch(`/drawings/${id}`);
   },
   create: async (
-    data: Omit<Drawing, 'id' | 'status' | 'versions' | 'comments'> & {
+    data: Omit<Drawing, "id" | "status" | "versions" | "comments"> & {
       version: {
         fileName: string;
         url: string;
@@ -742,8 +793,8 @@ export const drawingsApi = {
       };
     }
   ) => {
-    return apiFetch('/drawings', {
-      method: 'POST',
+    return apiFetch("/drawings", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   },
@@ -757,13 +808,16 @@ export const drawingsApi = {
     }
   ) => {
     return apiFetch(`/drawings/${drawingId}/versions`, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify({ version }),
     });
   },
-  addComment: async (drawingId: string, comment: { content: string; authorId: string }) => {
+  addComment: async (
+    drawingId: string,
+    comment: { content: string; authorId: string }
+  ) => {
     return apiFetch(`/drawings/${drawingId}/comments`, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(comment),
     });
   },
@@ -772,11 +826,11 @@ export const drawingsApi = {
 // API Functions for Weekly Reports
 export const weeklyReportsApi = {
   getAll: async () => {
-    return apiFetch('/weekly-reports');
+    return apiFetch("/weekly-reports");
   },
-  create: async (data: Omit<WeeklyReport, 'id'>) => {
-    return apiFetch('/weekly-reports', {
-      method: 'POST',
+  create: async (data: Omit<WeeklyReport, "id">) => {
+    return apiFetch("/weekly-reports", {
+      method: "POST",
       body: JSON.stringify(data),
     });
   },
@@ -784,15 +838,28 @@ export const weeklyReportsApi = {
 
 // API Functions for File Upload
 export const uploadApi = {
-  uploadFile: async (file: File, type: 'document' | 'photo' | 'drawing'): Promise<Attachment> => {
+  uploadFile: async (
+    file: File,
+    type: "document" | "photo" | "drawing"
+  ): Promise<Attachment> => {
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('type', type);
-    
-    return apiFetch('/upload', {
-      method: 'POST',
+    formData.append("file", file);
+    formData.append("type", type);
+
+    return apiFetch("/upload", {
+      method: "POST",
       body: formData,
       headers: {}, // Let browser set Content-Type with boundary for FormData
+    });
+  },
+};
+
+// API Functions for Chatbot
+export const chatbotApi = {
+  query: async (query: string): Promise<{ response: string }> => {
+    return apiFetch("/chatbot/query", {
+      method: "POST",
+      body: JSON.stringify({ query }),
     });
   },
 };
@@ -818,6 +885,7 @@ export const api = Object.assign(
     weeklyReports: weeklyReportsApi,
     admin: adminApi,
     upload: uploadApi,
+    chatbot: chatbotApi, // <-- ¡Añade esto aquí!
   }
 );
 
