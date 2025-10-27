@@ -1,23 +1,24 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { api } from '../../src/services/api';
-import { Icon } from '../../components/icons/Icon';
+import React, { useState, useRef, useEffect } from "react";
+import { api } from "../../src/services/api";
+import { Icon } from "../../components/icons/Icon";
+import { HardHatIcon, XMarkIcon, PaperAirplaneIcon } from "../icons/Icon";
 
 type Message = {
   id: string;
   text: string;
-  sender: 'user' | 'bot';
+  sender: "user" | "bot";
 };
 
 export const ChatbotWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(scrollToBottom, [messages]);
@@ -27,9 +28,9 @@ export const ChatbotWidget: React.FC = () => {
     if (isOpen && messages.length === 0) {
       setMessages([
         {
-          id: 'initial-greeting',
-          text: 'Hola. Soy tu asistente de bitácora. ¿En qué puedo ayudarte hoy?',
-          sender: 'bot',
+          id: "initial-greeting",
+          text: "Hola. Soy tu asistente de bitácora. ¿En qué puedo ayudarte hoy?",
+          sender: "bot",
         },
       ]);
     }
@@ -42,11 +43,11 @@ export const ChatbotWidget: React.FC = () => {
     const userMessage: Message = {
       id: `msg-${Date.now()}`,
       text: inputValue,
-      sender: 'user',
+      sender: "user",
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    setInputValue('');
+    setInputValue("");
     setIsLoading(true);
 
     try {
@@ -56,17 +57,17 @@ export const ChatbotWidget: React.FC = () => {
       const botMessage: Message = {
         id: `msg-${Date.now() + 1}`,
         text: response,
-        sender: 'bot',
+        sender: "bot",
       };
       setMessages((prev) => [...prev, botMessage]);
     } catch (error: any) {
-      console.error('Error al contactar al chatbot:', error);
+      console.error("Error al contactar al chatbot:", error);
       const errorMessage: Message = {
         id: `msg-error-${Date.now()}`,
         text: `Lo siento, no pude procesar tu solicitud. Error: ${
-          error?.message || 'Error desconocido'
+          error?.message || "Error desconocido"
         }`,
-        sender: 'bot',
+        sender: "bot",
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -76,97 +77,97 @@ export const ChatbotWidget: React.FC = () => {
 
   // --- Estilos CSS (embebidos para simplicidad) ---
   // (En un proyecto más grande, esto iría en un archivo .css)
-const styles: { [key: string]: React.CSSProperties } = {
+  const styles: { [key: string]: React.CSSProperties } = {
     widgetContainer: {
-      position: 'fixed',
-      bottom: '20px',
-      right: '20px',
+      position: "fixed",
+      bottom: "20px",
+      right: "20px",
       zIndex: 1000,
     }, // <--- SIN "as React.CSSProperties"
     bubble: {
-      width: '60px',
-      height: '60px',
-      borderRadius: '50%',
-      backgroundColor: '#007BFF',
-      color: 'white',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      cursor: 'pointer',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-      transition: 'transform 0.2s ease',
+      width: "60px",
+      height: "60px",
+      borderRadius: "50%",
+      backgroundColor: "#007BFF",
+      color: "white",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      cursor: "pointer",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+      transition: "transform 0.2s ease",
     }, // <--- SIN "as React.CSSProperties"
     chatWindow: {
-      position: 'fixed',
-      bottom: '90px',
-      right: '20px',
-      width: '350px',
-      height: '450px',
-      backgroundColor: 'white',
-      borderRadius: '12px',
-      boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden',
+      position: "fixed",
+      bottom: "90px",
+      right: "20px",
+      width: "350px",
+      height: "450px",
+      backgroundColor: "white",
+      borderRadius: "12px",
+      boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+      display: "flex",
+      flexDirection: "column",
+      overflow: "hidden",
     }, // <--- SIN "as React.CSSProperties"
     chatHeader: {
-      padding: '16px',
-      backgroundColor: '#f1f1f1',
-      borderBottom: '1px solid #e0e0e0',
+      padding: "16px",
+      backgroundColor: "#f1f1f1",
+      borderBottom: "1px solid #e0e0e0",
       fontWeight: 600,
-      color: '#333',
+      color: "#333",
     }, // <--- ... etc.
     messageList: {
       flex: 1,
-      overflowY: 'auto',
-      padding: '12px',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '10px',
-      backgroundColor: '#f9f9f9',
+      overflowY: "auto",
+      padding: "12px",
+      display: "flex",
+      flexDirection: "column",
+      gap: "10px",
+      backgroundColor: "#f9f9f9",
     },
     message: {
-      padding: '10px 14px',
-      borderRadius: '18px',
-      maxWidth: '80%',
-      wordWrap: 'break-word',
+      padding: "10px 14px",
+      borderRadius: "18px",
+      maxWidth: "80%",
+      wordWrap: "break-word",
     },
     userMessage: {
-      backgroundColor: '#007BFF',
-      color: 'white',
-      alignSelf: 'flex-end',
-      borderBottomRightRadius: '4px',
+      backgroundColor: "#007BFF",
+      color: "white",
+      alignSelf: "flex-end",
+      borderBottomRightRadius: "4px",
     },
     botMessage: {
-      backgroundColor: '#E5E5EA',
-      color: 'black',
-      alignSelf: 'flex-start',
-      borderBottomLeftRadius: '4px',
+      backgroundColor: "#E5E5EA",
+      color: "black",
+      alignSelf: "flex-start",
+      borderBottomLeftRadius: "4px",
     },
     inputForm: {
-      display: 'flex',
-      borderTop: '1px solid #e0e0e0',
-      padding: '10px',
+      display: "flex",
+      borderTop: "1px solid #e0e0e0",
+      padding: "10px",
     },
     input: {
       flex: 1,
-      border: '1px solid #ccc',
-      borderRadius: '20px',
-      padding: '8px 14px',
-      marginRight: '8px',
-      fontSize: '14px',
+      border: "1px solid #ccc",
+      borderRadius: "20px",
+      padding: "8px 14px",
+      marginRight: "8px",
+      fontSize: "14px",
     },
     sendButton: {
-      border: 'none',
-      backgroundColor: '#007BFF',
-      color: 'white',
-      borderRadius: '50%',
-      width: '40px',
-      height: '40px',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+      border: "none",
+      backgroundColor: "#007BFF",
+      color: "white",
+      borderRadius: "50%",
+      width: "40px",
+      height: "40px",
+      cursor: "pointer",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
     },
   };
 
@@ -175,23 +176,23 @@ const styles: { [key: string]: React.CSSProperties } = {
       {isOpen && (
         <div style={styles.chatWindow} role="dialog" aria-live="polite">
           <div style={styles.chatHeader}>Asistente de Bitácora</div>
-          
+
           <div style={styles.messageList}>
             {messages.map((msg) => (
               <div
                 key={msg.id}
                 style={{
                   ...styles.message,
-                  ...(msg.sender === 'user' ? styles.userMessage : styles.botMessage),
+                  ...(msg.sender === "user"
+                    ? styles.userMessage
+                    : styles.botMessage),
                 }}
               >
                 {msg.text}
               </div>
             ))}
             {isLoading && (
-              <div style={{ ...styles.message, ...styles.botMessage }}>
-                ...
-              </div>
+              <div style={{ ...styles.message, ...styles.botMessage }}>...</div>
             )}
             <div ref={messagesEndRef} />
           </div>
@@ -212,7 +213,7 @@ const styles: { [key: string]: React.CSSProperties } = {
               aria-label="Enviar"
               disabled={isLoading}
             >
-              <Icon name="Send" size={20} />
+              <PaperAirplaneIcon className="w-5 h-5" />
             </button>
           </form>
         </div>
@@ -221,12 +222,16 @@ const styles: { [key: string]: React.CSSProperties } = {
       <button
         style={{
           ...styles.bubble,
-          transform: isOpen ? 'scale(0.9)' : 'scale(1)',
+          transform: isOpen ? "scale(0.9)" : "scale(1)",
         }}
         onClick={() => setIsOpen((prev) => !prev)}
         aria-label={isOpen ? "Cerrar chat" : "Abrir chat"}
       >
-        <Icon name={isOpen ? "Close" : "Chat"} size={28} />
+        {isOpen ? (
+          <XMarkIcon className="w-7 h-7" />
+        ) : (
+          <HardHatIcon className="w-7 h-7" />
+        )}
       </button>
     </div>
   );

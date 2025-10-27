@@ -212,3 +212,17 @@ export const MapIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 18.75a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zm0 0h16.5" />
   </Icon>
 );
+
+export const HardHatIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <Icon {...props}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M17.5 9.5A5.5 5.5 0 0012 4a5.5 5.5 0 00-5.5 5.5V12h11V9.5z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 15.5V18a2 2 0 002 2h12a2 2 0 002-2v-2.5a1 1 0 00-1-1H5a1 1 0 00-1 1z" />
+    </Icon>
+);
+
+export const PaperAirplaneIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <Icon {...props}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.875L6 12z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 12h11.63" />
+    </Icon>
+);
