@@ -57,6 +57,7 @@ interface AuthContextType {
   changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
   clearError: () => void;
+  acknowledgeVerificationEmail: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -71,6 +72,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const isAuthenticated = !!user;
 
   const clearError = useCallback(() => setError(null), []);
+  const acknowledgeVerificationEmail = useCallback(
+    () => setVerificationEmailSent(false),
+    []
+  );
 
   const logout = useCallback(async () => {
     try {
@@ -266,6 +271,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     changePassword,
     refreshProfile: loadProfile,
     clearError,
+    acknowledgeVerificationEmail,
   };
 
   return (
