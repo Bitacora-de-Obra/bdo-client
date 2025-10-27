@@ -54,6 +54,7 @@ export interface User {
   permissions?: Partial<Permission>;
   status: "active" | "inactive";
   lastLoginAt?: string; // ISO
+  emailVerifiedAt?: string | null;
 }
 
 export interface Project {

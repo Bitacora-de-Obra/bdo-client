@@ -226,9 +226,23 @@ async function apiFetch(endpoint: string, options: RequestInit = {}) {
   }
 }
 
+type LoginResponse = {
+  accessToken: string;
+  user: User;
+};
+
+type RegisterResponse = User & {
+  verificationEmailSent?: boolean;
+};
+
+type ApiMessageResponse = {
+  success?: boolean;
+  message?: string;
+};
+
 // API Functions for Authentication
 export const authApi = {
-  login: async (email: string, password: string) => {
+  login: async (email: string, password: string): Promise<LoginResponse> => {
     const response = await apiFetch('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
@@ -248,7 +262,7 @@ export const authApi = {
     fullName: string;
     projectRole: string;
     appRole: string;
-  }) => {
+  }): Promise<RegisterResponse> => {
     const response = await apiFetch('/auth/register', {
       method: 'POST',
       body: JSON.stringify(userData),
@@ -274,14 +288,14 @@ export const authApi = {
     return response;
   },
 
-  verifyEmail: async (token: string) => {
+  verifyEmail: async (token: string): Promise<ApiMessageResponse> => {
     const response = await apiFetch(`/auth/verify-email/${token}`, {
       method: 'POST',
     });
     return response;
   },
 
-  forgotPassword: async (email: string) => {
+  forgotPassword: async (email: string): Promise<ApiMessageResponse> => {
     const response = await apiFetch('/auth/forgot-password', {
       method: 'POST',
       body: JSON.stringify({ email }),
@@ -289,7 +303,7 @@ export const authApi = {
     return response;
   },
 
-  resetPassword: async (token: string, newPassword: string) => {
+  resetPassword: async (token: string, newPassword: string): Promise<ApiMessageResponse> => {
     const response = await apiFetch(`/auth/reset-password/${token}`, {
       method: 'POST',
       body: JSON.stringify({ password: newPassword }),
@@ -297,7 +311,7 @@ export const authApi = {
     return response;
   },
 
-  changePassword: async (oldPassword: string, newPassword: string) => {
+  changePassword: async (oldPassword: string, newPassword: string): Promise<ApiMessageResponse> => {
     const response = await apiFetch('/auth/change-password', {
       method: 'POST',
       body: JSON.stringify({ oldPassword, newPassword }),
