@@ -15,6 +15,17 @@ export const ChatbotWidget: React.FC = () => {
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  const quickActions = [
+    "¿Cuál es el estado actual del proyecto?",
+    "¿Qué comunicaciones hay pendientes?",
+    "¿Cuáles son los compromisos próximos a vencer?",
+    "¿Cómo va el avance de obra?",
+    "¿Qué planos están vigentes?",
+    "¿Cuáles son las últimas anotaciones?",
+    "¿Hay modificaciones contractuales recientes?",
+    "¿Qué informes se han presentado?",
+  ];
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -73,6 +84,43 @@ export const ChatbotWidget: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleQuickAction = (action: string) => {
+    setInputValue(action);
+    // Auto-submit the quick action
+    const userMessage: Message = {
+      id: `msg-${Date.now()}`,
+      text: action,
+      sender: "user",
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setIsLoading(true);
+
+    api.chatbot.query(action)
+      .then(({ response }) => {
+        const botMessage: Message = {
+          id: `msg-${Date.now() + 1}`,
+          text: response,
+          sender: "bot",
+        };
+        setMessages((prev) => [...prev, botMessage]);
+      })
+      .catch((error: any) => {
+        console.error("Error al contactar al chatbot:", error);
+        const errorMessage: Message = {
+          id: `msg-error-${Date.now()}`,
+          text: `Lo siento, no pude procesar tu solicitud. Error: ${
+            error?.message || "Error desconocido"
+          }`,
+          sender: "bot",
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
 
   // --- Estilos CSS (embebidos para simplicidad) ---
@@ -169,6 +217,31 @@ export const ChatbotWidget: React.FC = () => {
       alignItems: "center",
       justifyContent: "center",
     },
+    quickActionsContainer: {
+      padding: "10px",
+      borderTop: "1px solid #eee",
+    },
+    quickActionsTitle: {
+      fontSize: "12px",
+      fontWeight: "bold",
+      color: "#666",
+      marginBottom: "8px",
+    },
+    quickActionsGrid: {
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: "6px",
+    },
+    quickActionButton: {
+      padding: "6px 8px",
+      fontSize: "11px",
+      backgroundColor: "#f8f9fa",
+      border: "1px solid #dee2e6",
+      borderRadius: "4px",
+      cursor: "pointer",
+      textAlign: "left",
+      transition: "all 0.2s",
+    },
   };
 
   return (
@@ -193,6 +266,36 @@ export const ChatbotWidget: React.FC = () => {
             ))}
             {isLoading && (
               <div style={{ ...styles.message, ...styles.botMessage }}>...</div>
+            )}
+            {messages.length === 1 && (
+              <div style={styles.quickActionsContainer}>
+                <div style={styles.quickActionsTitle}>Preguntas frecuentes:</div>
+                <div style={styles.quickActionsGrid}>
+                  {quickActions.map((action, index) => (
+                    <button
+                      key={index}
+                      style={{
+                        ...styles.quickActionButton,
+                        ...(isLoading ? { opacity: 0.5, cursor: "not-allowed" } : {}),
+                      }}
+                      onClick={() => handleQuickAction(action)}
+                      disabled={isLoading}
+                      onMouseEnter={(e) => {
+                        if (!isLoading) {
+                          e.currentTarget.style.backgroundColor = "#e9ecef";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isLoading) {
+                          e.currentTarget.style.backgroundColor = "#f8f9fa";
+                        }
+                      }}
+                    >
+                      {action}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
             <div ref={messagesEndRef} />
           </div>
