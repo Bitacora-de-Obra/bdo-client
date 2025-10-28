@@ -21,6 +21,7 @@ import { ReportScope, Notification, CommitmentStatus, User, CommunicationStatus,
 import AdminDashboard from "./components/admin/AdminDashboard";
 import DrawingsDashboard from "./components/DrawingsDashboard";
 import { ChatbotWidget } from "./components/chatbot/ChatbotWidget"; // <-- Añade esta línea
+import SignatureManagerModal from "./components/account/SignatureManagerModal";
 
 type InitialItemToOpen = { type: "acta" | "logEntry" | "communication"; id: string };
 
@@ -30,6 +31,7 @@ const MainApp = () => {
   const [initialItemToOpen, setInitialItemToOpen] =
     useState<InitialItemToOpen | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
 
   const { user } = useAuth();
   const { data: projectDetails, isLoading: isProjectLoading } =
@@ -282,10 +284,15 @@ const MainApp = () => {
               id: notification.relatedItemId,
             })
           }
+          onOpenSignatureManager={() => setIsSignatureModalOpen(true)}
         />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
           <div className="container mx-auto px-6 py-8">{renderContent()}</div>
         </main>
+        <SignatureManagerModal
+          isOpen={isSignatureModalOpen}
+          onClose={() => setIsSignatureModalOpen(false)}
+        />
       </div>
     </div>
   );

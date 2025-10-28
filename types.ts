@@ -99,6 +99,8 @@ export interface Attachment {
   size: number;
   type: string;
   downloadUrl?: string;
+  storagePath?: string;
+  createdAt?: string;
 }
 
 export interface Comment {
@@ -123,6 +125,32 @@ export interface Signature {
   signedAt: string; // ISO date string
 }
 
+export interface UserSignature {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  url: string;
+  hash: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SignatureTask {
+  id: string;
+  status: 'PENDING' | 'SIGNED' | 'DECLINED' | 'CANCELLED';
+  assignedAt: string;
+  signedAt?: string;
+  signer: User | null;
+}
+
+export interface SignatureSummary {
+  total: number;
+  signed: number;
+  pending: number;
+  completed: boolean;
+}
+
 
 // LOGBOOK ENTRIES (ANOTACIONES)
 export enum EntryStatus {
@@ -131,6 +159,7 @@ export enum EntryStatus {
   SUBMITTED = 'Radicado',
   REJECTED = 'Rechazado',
   DRAFT = 'Borrador',
+  SIGNED = 'Firmado',
 }
 
 export enum EntryType {
@@ -167,6 +196,9 @@ export interface LogEntry {
   history?: Change[];
   requiredSignatories: User[];
   signatures: Signature[];
+  signatureTasks?: SignatureTask[];
+  signatureSummary?: SignatureSummary;
+  pendingSignatureSignatories?: User[];
 }
 
 // DRAWINGS (PLANOS)

@@ -457,6 +457,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
           }
           onDelete={handleDeleteEntry}
           currentUser={user}
+          availableUsers={users || []}
           onRefresh={refetchLogEntries}
         />
       )}
@@ -466,6 +467,8 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
           onClose={handleCloseForm}
           onSave={handleSaveEntry}
           initialDate={newEntryDefaultDate}
+          availableUsers={users || []}
+          currentUser={user}
         />
       )}
       <ExportModal

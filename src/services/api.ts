@@ -34,13 +34,6 @@ const API_URL =
   (typeof process !== "undefined" && process.env?.REACT_APP_API_URL) ||
   "http://localhost:4001/api";
 
-/**
- * Función centralizada para realizar peticiones a la API.
- * Automáticamente añade el token de autenticación si existe.
- * @param endpoint El endpoint de la API al que se llamará (ej. '/auth/login').
- * @param options Opciones de la petición fetch (method, body, etc.).
- * @returns La respuesta de la API en formato JSON.
- */
 let isRefreshing = false;
 let failedQueue: { resolve: Function; reject: Function }[] = [];
 
@@ -55,20 +48,102 @@ const processQueue = (error: any = null) => {
   failedQueue = [];
 };
 
-async function apiFetch(endpoint: string, options: RequestInit = {}) {
-  const headers: HeadersInit = {
+type ParsedErrorResponse = {
+  error?: string;
+  message?: string;
+  details?: any;
+  code?: string;
+};
+
+const NON_REFRESHABLE_ENDPOINTS = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/refresh",
+  "/auth/logout",
+];
+
+const REFRESHABLE_ERROR_CODES = new Set([
+  "TOKEN_EXPIRED",
+  "INVALID_ACCESS_TOKEN",
+  "NO_ACCESS_TOKEN",
+  "INVALID_AUTH_HEADER",
+  "TOKEN_VERSION_INVALID",
+]);
+
+const parseErrorResponse = async (
+  response: Response
+): Promise<ParsedErrorResponse> => {
+  try {
+    const rawBody = await response.text();
+    if (!rawBody) {
+      return {};
+    }
+
+    try {
+      const parsed = JSON.parse(rawBody);
+      if (parsed && typeof parsed === "object") {
+        return parsed as ParsedErrorResponse;
+      }
+      return { error: rawBody };
+    } catch {
+      return { error: rawBody };
+    }
+  } catch (parseError) {
+    console.error("Error al leer la respuesta de error:", parseError);
+    return {};
+  }
+};
+
+const shouldAttemptTokenRefresh = (
+  endpoint: string,
+  errorData: ParsedErrorResponse,
+  retryOn401: boolean
+) => {
+  if (!retryOn401) return false;
+
+  if (NON_REFRESHABLE_ENDPOINTS.some((path) => endpoint.startsWith(path))) {
+    return false;
+  }
+
+  const code = errorData?.code;
+  if (code) {
+    return REFRESHABLE_ERROR_CODES.has(code);
+  }
+
+  const message = (errorData?.error || errorData?.message || "").toLowerCase();
+  return message.includes("token");
+};
+
+async function apiFetch(
+  endpoint: string,
+  options: RequestInit = {},
+  retryOn401 = true
+) {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...options.headers,
   };
 
-  // Añadir token de acceso si existe
+  if (options.headers) {
+    if (options.headers instanceof Headers) {
+      options.headers.forEach((value, key) => {
+        headers[key] = value;
+      });
+    } else if (Array.isArray(options.headers)) {
+      options.headers.forEach(([key, value]) => {
+        headers[key] = value;
+      });
+    } else {
+      Object.assign(headers, options.headers as Record<string, string>);
+    }
+  }
+
   const accessToken = localStorage.getItem("accessToken");
   if (accessToken) {
     headers["Authorization"] = `Bearer ${accessToken}`;
   }
 
   if (options.body instanceof FormData) {
-    delete (headers as Record<string, string>)["Content-Type"];
+    delete headers["Content-Type"];
   }
 
   const fetchUrl = `${API_URL}${endpoint}`;
@@ -77,42 +152,60 @@ async function apiFetch(endpoint: string, options: RequestInit = {}) {
     const response = await fetch(fetchUrl, {
       ...options,
       headers,
-      credentials: "include", // Siempre incluir cookies
+      credentials: "include",
     });
 
-    // Manejar errores específicos de autenticación
     if (response.status === 401) {
+      const errorData = await parseErrorResponse(response);
+      const canRetry = shouldAttemptTokenRefresh(endpoint, errorData, retryOn401);
+
+      if (!canRetry) {
+        throw handleApiError({
+          statusCode: 401,
+          message:
+            errorData.error ||
+            errorData.message ||
+            "Error de autenticación. Por favor, inicie sesión nuevamente.",
+          details: errorData.details,
+          code: errorData.code,
+        });
+      }
+
       if (!isRefreshing) {
         isRefreshing = true;
 
         try {
-          // Intentar refrescar el token
           const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
             method: "POST",
             credentials: "include",
           });
 
           if (refreshResponse.ok) {
-            const { accessToken } = await refreshResponse.json();
-            localStorage.setItem("accessToken", accessToken);
+            const { accessToken: newAccessToken } = await refreshResponse.json();
+            localStorage.setItem("accessToken", newAccessToken);
 
-            // Actualizar el token en las opciones originales
             if (!options.headers) options.headers = {};
-            (options.headers as any)["Authorization"] = `Bearer ${accessToken}`;
+            (options.headers as any)["Authorization"] = `Bearer ${newAccessToken}`;
 
             isRefreshing = false;
             processQueue();
 
-            // Reintentar la petición original con el nuevo token
-            return apiFetch(endpoint, options);
+            return apiFetch(endpoint, options, false);
           } else {
+            const refreshErrorData = await parseErrorResponse(refreshResponse);
             isRefreshing = false;
-            processQueue(new Error("Failed to refresh token"));
+            processQueue(
+              new Error(refreshErrorData.error || refreshErrorData.message)
+            );
             window.dispatchEvent(new CustomEvent("auth:logout"));
             throw handleApiError({
-              statusCode: 401,
-              message: "Sesión expirada. Por favor, inicie sesión nuevamente.",
-              code: "SESSION_EXPIRED",
+              statusCode: refreshResponse.status,
+              message:
+                refreshErrorData.error ||
+                refreshErrorData.message ||
+                "Sesión expirada. Por favor, inicie sesión nuevamente.",
+              details: refreshErrorData.details,
+              code: refreshErrorData.code || "SESSION_EXPIRED",
             });
           }
         } catch (refreshError) {
@@ -127,108 +220,41 @@ async function apiFetch(endpoint: string, options: RequestInit = {}) {
           });
         }
       } else {
-        // Si ya hay un refresh en proceso, encolar esta petición
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
-          .then(() => {
-            return apiFetch(endpoint, options);
-          })
+          .then(() => apiFetch(endpoint, options, retryOn401))
           .catch((err) => {
             throw err;
           });
       }
     }
 
-    // Manejar otros errores HTTP
     if (!response.ok) {
-      let errorData;
-      try {
-        const contentType = response.headers.get("content-type");
-        if (contentType && contentType.includes("application/json")) {
-          errorData = await response.json();
-        } else {
-          errorData = { error: await response.text() };
-        }
-      } catch (parseError) {
-        console.error(
-          `Error al parsear respuesta de error de ${endpoint}:`,
-          parseError
-        );
-        errorData = { error: "Error al procesar la respuesta del servidor" };
-      }
-
+      const errorData = await parseErrorResponse(response);
       throw handleApiError({
         statusCode: response.status,
-        message: errorData.error || `Error HTTP: ${response.status}`,
+        message:
+          errorData.error ||
+          errorData.message ||
+          `Error HTTP: ${response.status}`,
         details: errorData.details,
         code: errorData.code,
       });
     }
 
-    if (!response.ok) {
-      let errorData;
-      try {
-        const body = await response.text();
-        if (body) {
-          errorData = JSON.parse(body);
-        }
-      } catch (parseError) {
-        console.error(`Error al parsear respuesta de error de ${endpoint}`);
-      }
-
-      // Manejar otros errores HTTP
-      switch (response.status) {
-        case 403:
-          throw handleApiError({
-            statusCode: 403,
-            message: "No tiene permisos para realizar esta acción.",
-            details: errorData?.details,
-          });
-        case 404:
-          throw handleApiError({
-            statusCode: 404,
-            message: "El recurso solicitado no existe.",
-            details: errorData?.details,
-          });
-        case 422:
-          throw handleApiError({
-            statusCode: 422,
-            message: "Datos inválidos.",
-            details: errorData?.details,
-          });
-        case 429:
-          throw handleApiError({
-            statusCode: 429,
-            message: "Demasiadas solicitudes. Por favor, espere un momento.",
-            details: errorData?.details,
-          });
-        case 500:
-          throw handleApiError({
-            statusCode: 500,
-            message: "Error interno del servidor.",
-            details: errorData?.details,
-          });
-        default:
-          throw handleApiError({
-            statusCode: response.status,
-            message: errorData?.error || `Error HTTP: ${response.status}`,
-            details: errorData?.details,
-          });
-      }
+    if (response.status === 204) {
+      return null;
     }
 
     const contentType = response.headers.get("content-type");
-    if (
-      response.status === 204 ||
-      !contentType ||
-      contentType.indexOf("application/json") === -1
-    ) {
-      return {};
+    if (contentType && contentType.includes("application/json")) {
+      return response.json();
     }
 
-    return await response.json();
+    return response.text();
   } catch (error) {
+    console.error(`Error en la petición ${endpoint}:`, error);
     if (error instanceof ApiError) {
       throw error;
     }
@@ -531,6 +557,50 @@ export const logEntriesApi = {
   exportPdf: async (entryId: string) => {
     return apiFetch(`/log-entries/${entryId}/export-pdf`, {
       method: "POST",
+    });
+  },
+};
+
+export const userSignatureApi = {
+  get: async () => {
+    return apiFetch("/users/me/signature");
+  },
+  upload: async (file: File) => {
+    const formData = new FormData();
+    formData.append("signature", file);
+    return apiFetch("/users/me/signature", {
+      method: "POST",
+      body: formData,
+      headers: {},
+    });
+  },
+  remove: async () => {
+    return apiFetch("/users/me/signature", {
+      method: "DELETE",
+    });
+  },
+};
+
+export const attachmentsApi = {
+  sign: async (
+    attachmentId: string,
+    data: {
+      consentStatement?: string;
+      page?: number;
+      x?: number;
+      y?: number;
+      width?: number;
+      height?: number;
+      baseline?: boolean;
+      baselineRatio?: number;
+    } = {}
+  ) => {
+    return apiFetch(`/attachments/${attachmentId}/sign`, {
+      method: "POST",
+      body: JSON.stringify({
+        consent: true,
+        ...data,
+      }),
     });
   },
 };
@@ -889,6 +959,8 @@ export const api = Object.assign(
     auth: authApi,
     users: usersApi,
     logEntries: logEntriesApi,
+    userSignature: userSignatureApi,
+    attachments: attachmentsApi,
     communications: communicationsApi,
     actas: actasApi,
     costActas: costActasApi,

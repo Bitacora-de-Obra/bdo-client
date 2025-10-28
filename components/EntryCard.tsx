@@ -9,6 +9,8 @@ import {
   CalendarIcon,
   UserCircleIcon,
   LockClosedIcon,
+  ClockIcon,
+  CheckCircleIcon,
 } from "./icons/Icon";
 
 interface EntryCardProps {
@@ -25,6 +27,9 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, onSelect }) => {
 
   // A real app would have a more complex logic, e.g. checking user permissions.
   const isLocked = entry.isConfidential;
+  const signatureSummary = entry.signatureSummary;
+  const hasPendingSignatures =
+    signatureSummary && !signatureSummary.completed;
 
   return (
     <Card
@@ -115,6 +120,24 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, onSelect }) => {
               <div className="flex items-center font-medium">
                 <PaperClipIcon className="mr-1.5 text-gray-400" />
                 <span>{entry.attachments.length} adjunto(s)</span>
+              </div>
+            )}
+            {signatureSummary && (
+              <div
+                className={`flex items-center font-medium ${
+                  hasPendingSignatures ? "text-amber-600" : "text-green-600"
+                }`}
+              >
+                {hasPendingSignatures ? (
+                  <ClockIcon className="mr-1.5 h-4 w-4" />
+                ) : (
+                  <CheckCircleIcon className="mr-1.5 h-4 w-4" />
+                )}
+                <span>
+                  {hasPendingSignatures
+                    ? `Firmas ${signatureSummary.signed}/${signatureSummary.total}`
+                    : `Firmas completas ${signatureSummary.signed}/${signatureSummary.total}`}
+                </span>
               </div>
             )}
           </div>

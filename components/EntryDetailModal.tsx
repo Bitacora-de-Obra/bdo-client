@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   LogEntry,
   EntryStatus,
@@ -42,6 +42,7 @@ interface EntryDetailModalProps {
   ) => Promise<{ success: boolean; error?: string }>;
   onDelete: (entryId: string) => Promise<void>;
   currentUser: User;
+  availableUsers: User[];
   onRefresh?: () => void;
 }
 
@@ -73,8 +74,24 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   onSign,
   onDelete,
   currentUser,
+  availableUsers,
   onRefresh = () => {},
 }) => {
+  const extractSignerIds = (entryData: LogEntry): string[] => {
+    const fromTasks = (entryData.signatureTasks || [])
+      .map((task) => task.signer?.id)
+      .filter((id): id is string => Boolean(id));
+    const baseIds =
+      fromTasks.length > 0
+        ? fromTasks
+        : (entryData.requiredSignatories || []).map((user) => user.id);
+    const setOfIds = new Set<string>(baseIds);
+    if (entryData.author?.id) {
+      setOfIds.add(entryData.author.id);
+    }
+    return Array.from(setOfIds);
+  };
+
   const [isEditing, setIsEditing] = useState(false);
   const [editedEntry, setEditedEntry] = useState<LogEntry>(entry);
   const [newFiles, setNewFiles] = useState<File[]>([]);
@@ -84,21 +101,95 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [formEntryDate, setFormEntryDate] = useState<string>("");
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [hasStoredSignature, setHasStoredSignature] = useState(false);
+  const [selectedSignerIds, setSelectedSignerIds] = useState<string[]>(() =>
+    extractSignerIds(entry)
+  );
+  const knownUsers = useMemo(() => {
+    const map = new Map<string, User>();
+    const register = (user?: User | null) => {
+      if (user?.id && !map.has(user.id)) {
+        map.set(user.id, user);
+      }
+    };
+    availableUsers.forEach(register);
+    (entry.requiredSignatories || []).forEach(register);
+    (entry.assignees || []).forEach(register);
+    (entry.signatureTasks || []).forEach((task) => register(task.signer as User | null));
+    (entry.signatures || []).forEach((signature) => register(signature.signer));
+    register(entry.author);
+    (editedEntry.requiredSignatories || []).forEach(register);
+    (editedEntry.assignees || []).forEach(register);
+    (editedEntry.signatureTasks || []).forEach((task) => register(task.signer as User | null));
+    (editedEntry.signatures || []).forEach((signature) => register(signature.signer));
+    return map;
+  }, [availableUsers, entry, editedEntry]);
+
+  const sortedUsers = useMemo(
+    () =>
+      Array.from(knownUsers.values()).sort((a, b) =>
+        a.fullName.localeCompare(b.fullName, "es")
+      ),
+    [knownUsers]
+  );
+
+  const findUserById = (id: string): User | undefined => knownUsers.get(id);
+
+  const handleToggleSigner = (userId: string, checked: boolean) => {
+    setSelectedSignerIds((prev) => {
+      const nextSet = new Set(prev);
+      if (checked) {
+        nextSet.add(userId);
+      } else {
+        nextSet.delete(userId);
+      }
+      if (entry.author?.id) {
+        nextSet.add(entry.author.id);
+      }
+      const nextIds = Array.from(nextSet);
+      const resolved = nextIds
+        .map((id) => findUserById(id))
+        .filter((user): user is User => Boolean(user));
+      setEditedEntry((prevEntry) => ({
+        ...prevEntry,
+        requiredSignatories: resolved,
+      }));
+      return nextIds;
+    });
+  };
+
+  const applyEntryState = (entryData: LogEntry) => {
+    setEditedEntry({
+      ...entryData,
+      assignees: entryData.assignees || [],
+      attachments: entryData.attachments || [],
+      comments: entryData.comments || [],
+      history: entryData.history || [],
+      requiredSignatories: entryData.requiredSignatories || [],
+      signatures: entryData.signatures || [],
+      signatureTasks: entryData.signatureTasks || [],
+      signatureSummary: entryData.signatureSummary,
+    });
+    setSelectedSignerIds(extractSignerIds(entryData));
+    if (entryData.entryDate) {
+      setFormEntryDate(entryData.entryDate.substring(0, 10));
+    }
+  };
   const { showToast } = useToast();
 
   useEffect(() => {
     if (isOpen) {
-      setEditedEntry({
-        ...entry,
-        assignees: entry.assignees || [],
-        attachments: entry.attachments || [],
-        comments: entry.comments || [],
-        history: entry.history || [],
-        requiredSignatories: entry.requiredSignatories || [],
-        signatures: entry.signatures || [],
-      });
-      setFormEntryDate(entry.entryDate.substring(0, 10));
+      applyEntryState(entry);
       setValidationError(null);
+      (async () => {
+        try {
+          const response = await api.userSignature.get();
+          setHasStoredSignature(Boolean(response.signature));
+        } catch (error) {
+          console.warn("No se pudo verificar la firma del usuario.", error);
+          setHasStoredSignature(false);
+        }
+      })();
     } else {
       const timer = setTimeout(() => {
         setIsEditing(false);
@@ -107,6 +198,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
         setCommentFiles([]);
         setValidationError(null);
         setFormEntryDate("");
+        setSelectedSignerIds(extractSignerIds(entry));
       }, 300);
       return () => clearTimeout(timer);
     }
@@ -227,6 +319,15 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       attachments: [...(editedEntry.attachments || []), ...newAttachments],
     } as LogEntry;
 
+    const signerIds = new Set(selectedSignerIds);
+    if (author?.id) {
+      signerIds.add(author.id);
+    }
+    const requiredSignatories = Array.from(signerIds)
+      .map((id) => findUserById(id))
+      .filter((user): user is User => Boolean(user));
+    finalEntry.requiredSignatories = requiredSignatories;
+
     try {
       await onUpdate(finalEntry);
       setIsEditing(false);
@@ -250,48 +351,95 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
 };
 
   const handleCancel = () => {
-    setEditedEntry(entry);
+    applyEntryState(entry);
     setIsEditing(false);
     setNewFiles([]);
     setValidationError(null);
-    setFormEntryDate(entry.entryDate.substring(0, 10));
   };
 
   const handleExportPdf = async () => {
     setValidationError(null);
     setIsGeneratingPdf(true);
     try {
-      const response = await api.logEntries.exportPdf(entry.id);
-      const updatedEntry =
-        response?.entry && (response.entry as LogEntry);
+      const exportResponse = await api.logEntries.exportPdf(entry.id);
+      let latestEntry =
+        exportResponse?.entry && (exportResponse.entry as LogEntry);
+      let generatedAttachment = exportResponse?.attachment as
+        | Attachment
+        | undefined;
+      let finalDownloadUrl =
+        generatedAttachment?.downloadUrl || generatedAttachment?.url || null;
 
-      if (updatedEntry) {
-        setEditedEntry({
-          ...updatedEntry,
-          assignees: updatedEntry.assignees || [],
-          attachments: updatedEntry.attachments || [],
-          comments: updatedEntry.comments || [],
-          history: updatedEntry.history || [],
-          requiredSignatories: updatedEntry.requiredSignatories || [],
-          signatures: updatedEntry.signatures || [],
-        });
-        if (updatedEntry.entryDate) {
-          setFormEntryDate(updatedEntry.entryDate.substring(0, 10));
+      if (generatedAttachment && hasStoredSignature) {
+        try {
+          const signResponse = await api.attachments.sign(
+            generatedAttachment.id,
+            {
+              consentStatement:
+                "Autorizo la inserción de mi firma manuscrita digital en esta bitácora.",
+              x: 140,
+              y: 520,
+              width: 260,
+              baseline: true,
+              baselineRatio: 0.7,
+            }
+          );
+
+          setHasStoredSignature(true);
+
+          if (signResponse?.entry) {
+            latestEntry = signResponse.entry as LogEntry;
+          }
+          if (signResponse?.signedAttachment) {
+            generatedAttachment = signResponse.signedAttachment as Attachment;
+            finalDownloadUrl =
+              generatedAttachment.downloadUrl || generatedAttachment.url || null;
+          }
+        } catch (signError) {
+          console.warn("No se pudo firmar automáticamente el PDF:", signError);
+          const message =
+            signError instanceof Error
+              ? signError.message
+              : "No se pudo firmar el documento.";
+          setValidationError(message);
+          showToast({
+            variant: "warning",
+            title: "Firma pendiente",
+            message:
+              "Descargamos el PDF, pero debes registrar tu firma manuscrita para firmarlo automáticamente.",
+          });
+          if (
+            signError instanceof Error &&
+            signError.message.toLowerCase().includes("firma manuscrita")
+          ) {
+            setHasStoredSignature(false);
+          }
         }
+      } else if (generatedAttachment && !hasStoredSignature) {
+        showToast({
+          variant: "info",
+          title: "Firma no registrada",
+          message:
+            "Puedes descargar el PDF. Registra tu firma manuscrita para firmarlo automáticamente la próxima vez.",
+        });
+      }
+
+      if (latestEntry) {
+        applyEntryState(latestEntry);
       }
 
       await onRefresh();
 
-      const downloadUrl =
-        response?.attachment?.downloadUrl || response?.attachment?.url;
-      if (downloadUrl) {
-        window.open(downloadUrl, "_blank", "noopener,noreferrer");
+      if (finalDownloadUrl) {
+        window.open(finalDownloadUrl, "_blank", "noopener,noreferrer");
       }
 
       showToast({
         variant: "success",
-        title: "PDF generado",
-        message: "La bitácora diaria se exportó correctamente.",
+        title: generatedAttachment ? "Bitácora firmada" : "PDF generado",
+        message: generatedAttachment
+          ? "Se generó un PDF firmado con tu rúbrica."
+          : "La bitácora diaria se exportó correctamente.",
       });
     } catch (error) {
       const message =
@@ -306,6 +454,82 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
       });
     } finally {
       setIsGeneratingPdf(false);
+    }
+  };
+
+  const handleSignAttachment = async (attachment: Attachment) => {
+    if (!hasStoredSignature) {
+      showToast({
+        variant: "warning",
+        title: "Firma requerida",
+        message: "Debes registrar tu firma manuscrita antes de firmar documentos PDF.",
+      });
+      return;
+    }
+
+    if (
+      !window.confirm(
+        "¿Confirmas que autorizas aplicar tu firma manuscrita sobre este documento PDF?"
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const response = await api.attachments.sign(attachment.id, {
+        consentStatement:
+          "Autorizo la inserción de mi firma manuscrita digital en este documento.",
+        x: 140,
+        y: 520,
+        width: 260,
+        baseline: true,
+        baselineRatio: 0.7,
+      });
+
+      setHasStoredSignature(true);
+
+      if (response?.entry) {
+        const updatedEntry = response.entry as LogEntry;
+        applyEntryState(updatedEntry);
+        onUpdate(updatedEntry);
+      } else if (response?.signedAttachment) {
+        setEditedEntry((prev) => ({
+          ...prev,
+          attachments: [
+            ...(prev.attachments || []),
+            response.signedAttachment as Attachment,
+          ],
+        }));
+      }
+
+      await onRefresh();
+
+      const signedAttachmentResponse = response?.signedAttachment as Attachment | undefined;
+      if (signedAttachmentResponse) {
+        const signedUrl =
+          signedAttachmentResponse.downloadUrl || signedAttachmentResponse.url;
+        if (signedUrl) {
+          window.open(signedUrl, "_blank", "noopener,noreferrer");
+        }
+      }
+
+      showToast({
+        variant: "success",
+        title: "Documento firmado",
+        message: "Se generó un PDF firmado con tu rúbrica.",
+      });
+    } catch (error) {
+      console.error("Error al firmar el documento:", error);
+      const message =
+        error instanceof Error
+          ? error.message
+          : "No se pudo firmar el documento.";
+      setValidationError(message);
+      showToast({
+        variant: "error",
+        title: "Error al firmar",
+        message,
+      });
     }
   };
 
@@ -538,6 +762,53 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
               </p>
             )}
           </div>
+          {isEditing && (
+            <div>
+              <h4 className="text-md font-semibold text-gray-800">
+                Firmantes responsables
+              </h4>
+              <p className="mt-1 text-xs text-gray-500">
+                Define quiénes deben firmar esta anotación. El autor está incluido automáticamente.
+              </p>
+              <div className="mt-2 border border-gray-200 rounded-md divide-y max-h-48 overflow-y-auto">
+                {sortedUsers.map((user) => {
+                  const isAuthor = author?.id === user.id;
+                  const isChecked = selectedSignerIds.includes(user.id) || isAuthor;
+                  return (
+                    <label
+                      key={user.id}
+                      className="flex items-start gap-3 px-3 py-2 text-sm text-gray-700"
+                    >
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4 text-brand-primary border-gray-300 rounded focus:ring-brand-primary"
+                        checked={isChecked}
+                        onChange={(event) =>
+                          handleToggleSigner(user.id, event.target.checked)
+                        }
+                        disabled={isAuthor}
+                      />
+                      <span>
+                        <span className="font-semibold text-gray-900">
+                          {user.fullName}
+                        </span>
+                        {user.projectRole && (
+                          <span className="block text-xs text-gray-500">
+                            {user.projectRole}
+                          </span>
+                        )}
+                        {isAuthor && (
+                          <span className="block text-xs text-green-600 font-medium">
+                            Autor de la bitácora
+                          </span>
+                        )}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {/* Confidential Checkbox */}
           {isEditing && (
             <div className="flex items-start">
@@ -678,7 +949,26 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
                         </div>
                       );
                     }
-                    return <AttachmentItem key={att.id} attachment={att} />;
+                    const isPdf =
+                      typeof att.type === "string" &&
+                      att.type.toLowerCase().includes("pdf");
+                    return (
+                      <AttachmentItem
+                        key={att.id}
+                        attachment={att}
+                        actions={
+                          isPdf ? (
+                            <Button
+                              size="sm"
+                              onClick={() => handleSignAttachment(att)}
+                              disabled={isGeneratingPdf}
+                            >
+                              Firmar documento
+                            </Button>
+                          ) : undefined
+                        }
+                      />
+                    );
                   })}
                 </div>
               </div>
@@ -689,6 +979,8 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
             <SignatureBlock
               requiredSignatories={requiredSignatories}
               signatures={signatures}
+              signatureTasks={editedEntry.signatureTasks}
+              signatureSummary={editedEntry.signatureSummary}
               currentUser={currentUser}
               onSignRequest={() => setIsSignatureModalOpen(true)}
               documentType="Anotación"

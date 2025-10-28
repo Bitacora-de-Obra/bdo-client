@@ -9,9 +9,16 @@ interface HeaderProps {
   notifications: Notification[];
   setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
   onNotificationClick: (notification: Notification) => void;
+  onOpenSignatureManager: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ setIsSidebarOpen, notifications, setNotifications, onNotificationClick }) => {
+const Header: React.FC<HeaderProps> = ({
+  setIsSidebarOpen,
+  notifications,
+  setNotifications,
+  onNotificationClick,
+  onOpenSignatureManager,
+}) => {
   const { user, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
@@ -105,6 +112,15 @@ const Header: React.FC<HeaderProps> = ({ setIsSidebarOpen, notifications, setNot
           {isDropdownOpen && (
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-20">
               <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mi Perfil</a>
+              <button
+                onClick={() => {
+                  setIsDropdownOpen(false);
+                  onOpenSignatureManager();
+                }}
+                className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                Mi firma manuscrita
+              </button>
               <button
                 onClick={logout}
                 className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"

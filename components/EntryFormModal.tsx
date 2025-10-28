@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { LogEntry, EntryStatus, EntryType } from "../types";
+import React, { useEffect, useMemo, useState } from "react";
+import { LogEntry, EntryStatus, EntryType, User } from "../types";
 import Modal from "./ui/Modal";
 import Button from "./ui/Button";
 import Input from "./ui/Input";
@@ -23,6 +23,8 @@ interface EntryFormModalProps {
     files: File[]
   ) => void;
   initialDate?: string | null;
+  availableUsers: User[];
+  currentUser: User | null;
 }
 
 const EntryFormModal: React.FC<EntryFormModalProps> = ({
@@ -30,6 +32,8 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   onClose,
   onSave,
   initialDate,
+  availableUsers,
+  currentUser,
 }) => {
   const [entryDate, setEntryDate] = useState<string>("");
   const [title, setTitle] = useState<string>("");
@@ -42,6 +46,9 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     useState<string>("");
   const [files, setFiles] = useState<File[]>([]);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [selectedSignerIds, setSelectedSignerIds] = useState<string[]>(
+    () => (currentUser ? [currentUser.id] : [])
+  );
 
   const resetForm = () => {
     setEntryDate("");
@@ -54,10 +61,17 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     setAdditionalObservations("");
     setFiles([]);
     setValidationError(null);
+    setSelectedSignerIds(currentUser ? [currentUser.id] : []);
   };
 
   useEffect(() => {
     if (isOpen) {
+      setSelectedSignerIds((prev) => {
+        if (prev.length > 0) {
+          return prev;
+        }
+        return currentUser ? [currentUser.id] : [];
+      });
       if (initialDate) {
         setEntryDate(initialDate);
       }
@@ -73,6 +87,35 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     if (e.target.files) {
       setFiles((prev) => [...prev, ...Array.from(e.target.files)]);
     }
+  };
+
+  const sortedUsers = useMemo(() => {
+    const map = new Map<string, User>();
+    const register = (user?: User | null) => {
+      if (user?.id && !map.has(user.id)) {
+        map.set(user.id, user);
+      }
+    };
+    availableUsers.forEach(register);
+    register(currentUser);
+    return Array.from(map.values()).sort((a, b) =>
+      a.fullName.localeCompare(b.fullName, "es")
+    );
+  }, [availableUsers, currentUser]);
+
+  const toggleSigner = (userId: string, checked: boolean) => {
+    setSelectedSignerIds((prev) => {
+      const next = new Set(prev);
+      if (checked) {
+        next.add(userId);
+      } else {
+        next.delete(userId);
+      }
+      if (currentUser) {
+        next.add(currentUser.id);
+      }
+      return Array.from(next);
+    });
   };
 
   const removeFile = (fileToRemove: File) => {
@@ -111,6 +154,17 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     const endOfDay = new Date(normalizedDate);
     endOfDay.setHours(23, 59, 59, 999);
 
+    const signerIds = new Set(selectedSignerIds);
+    if (currentUser) {
+      signerIds.add(currentUser.id);
+    }
+    const requiredSignatories = Array.from(signerIds)
+      .map((id) =>
+        availableUsers.find((user) => user.id === id) ||
+        (currentUser && currentUser.id === id ? currentUser : undefined)
+      )
+      .filter((user): user is User => Boolean(user));
+
     try {
       await onSave(
         {
@@ -130,7 +184,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           status: EntryStatus.SUBMITTED,
           isConfidential: false,
           assignees: [],
-          requiredSignatories: [],
+          requiredSignatories,
           signatures: [],
         },
         files
@@ -250,14 +304,60 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             onChange={(e) => setAdditionalObservations(e.target.value)}
             rows={3}
             className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-            placeholder="Notas relevantes, novedades, riesgos identificados u otros comentarios"
-          />
-        </div>
+          placeholder="Notas relevantes, novedades, riesgos identificados u otros comentarios"
+        />
+      </div>
 
-        <div>
-          <label
-            htmlFor="file-upload-entry"
-            className="block text-sm font-medium text-gray-700 mb-1"
+      <div>
+        <h4 className="text-sm font-medium text-gray-700 mb-1">
+          Firmantes responsables
+        </h4>
+        <p className="text-xs text-gray-500 mb-2">
+          Selecciona a quienes deben firmar la anotación. El autor se incluye automáticamente.
+        </p>
+        <div className="border border-gray-200 rounded-md divide-y max-h-48 overflow-y-auto">
+          {sortedUsers.map((user) => {
+            const isAuthor = currentUser?.id === user.id;
+            const isChecked = selectedSignerIds.includes(user.id);
+            return (
+              <label
+                key={user.id}
+                className="flex items-start gap-3 px-3 py-2 text-sm text-gray-700"
+              >
+                <input
+                  type="checkbox"
+                  className="mt-1 h-4 w-4 text-brand-primary border-gray-300 rounded focus:ring-brand-primary"
+                  checked={isChecked || isAuthor}
+                  onChange={(event) =>
+                    toggleSigner(user.id, event.target.checked)
+                  }
+                  disabled={isAuthor}
+                />
+                <span>
+                  <span className="font-semibold text-gray-900">
+                    {user.fullName}
+                  </span>
+                  {user.projectRole && (
+                    <span className="block text-xs text-gray-500">
+                      {user.projectRole}
+                    </span>
+                  )}
+                  {isAuthor && (
+                    <span className="block text-xs text-green-600 font-medium">
+                      Autor de la bitácora
+                    </span>
+                  )}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <label
+          htmlFor="file-upload-entry"
+          className="block text-sm font-medium text-gray-700 mb-1"
           >
             Adjuntar archivos
           </label>

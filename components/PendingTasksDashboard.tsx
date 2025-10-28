@@ -66,20 +66,37 @@ const PendingTasksDashboard: React.FC<PendingTasksDashboardProps> = ({ onNavigat
         }))
     );
     
-    const logEntryTasks: PendingLogEntry[] = (logEntries || [])
-      .filter(
-        (entry) =>
-          entry.assignees.some((a) => a.id === user.id) &&
-          (entry.status === EntryStatus.NEEDS_REVIEW || entry.status === EntryStatus.SUBMITTED)
-      )
-      .map((entry) => ({
-        type: 'logEntry' as const,
-        id: entry.id,
-        description: entry.title,
-        dueDate: entry.activityEndDate,
-        source: `Anotación: #${entry.folioNumber}`,
-        parentId: entry.id,
-      }));
+    const logEntryTasks: PendingLogEntry[] = [];
+
+    (logEntries || []).forEach((entry) => {
+      if (
+        entry.assignees?.some((assignee) => assignee.id === user.id) &&
+        (entry.status === EntryStatus.NEEDS_REVIEW || entry.status === EntryStatus.SUBMITTED)
+      ) {
+        logEntryTasks.push({
+          type: 'logEntry' as const,
+          id: entry.id,
+          description: entry.title,
+          dueDate: entry.activityEndDate,
+          source: `Anotación: #${entry.folioNumber}`,
+          parentId: entry.id,
+        });
+      }
+
+      (entry.signatureTasks || []).forEach((task) => {
+        if (task.signer?.id !== user.id || task.status !== 'PENDING') {
+          return;
+        }
+        logEntryTasks.push({
+          type: 'logEntry' as const,
+          id: task.id,
+          description: `Firmar: ${entry.title}`,
+          dueDate: entry.activityEndDate,
+          source: `Anotación: #${entry.folioNumber}`,
+          parentId: entry.id,
+        });
+      });
+    });
 
     const communicationTasks: PendingCommunication[] = (communications || [])
       .filter((comm: Communication) => {
