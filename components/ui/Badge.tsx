@@ -13,6 +13,7 @@ const statusColorMap: Record<EntryStatus, string> = {
   [EntryStatus.SUBMITTED]: 'bg-blue-500/10 text-blue-600 border border-blue-500/20',
   [EntryStatus.REJECTED]: 'bg-status-red/10 text-status-red border border-status-red/20',
   [EntryStatus.DRAFT]: 'bg-gray-400/10 text-gray-500 border border-gray-400/20',
+  [EntryStatus.SIGNED]: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20',
 };
 
 

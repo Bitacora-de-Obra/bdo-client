@@ -468,6 +468,11 @@ export const logEntriesApi = {
       formData.append(key, String(value));
     };
 
+    const appendJson = (key: string, value: unknown) => {
+      if (value === undefined || value === null) return;
+      formData.append(key, JSON.stringify(value));
+    };
+
     appendIfDefined("title", data.title);
     appendIfDefined("description", data.description);
     appendIfDefined("type", data.type);
@@ -481,10 +486,27 @@ export const logEntriesApi = {
     appendIfDefined("workforce", (data as any).workforce);
     appendIfDefined("weatherConditions", (data as any).weatherConditions);
     appendIfDefined("additionalObservations", (data as any).additionalObservations);
+    appendIfDefined("scheduleDay", (data as any).scheduleDay);
+    appendIfDefined("locationDetails", (data as any).locationDetails);
     appendIfDefined("isConfidential", data.isConfidential ?? false);
     appendIfDefined("status", data.status);
     appendIfDefined("authorId", data.authorId);
     appendIfDefined("projectId", data.projectId);
+
+    appendJson("weatherReport", (data as any).weatherReport);
+    appendJson("contractorPersonnel", (data as any).contractorPersonnel);
+    appendJson("interventoriaPersonnel", (data as any).interventoriaPersonnel);
+    appendJson("equipmentResources", (data as any).equipmentResources);
+    appendJson("executedActivities", (data as any).executedActivities);
+    appendJson("executedQuantities", (data as any).executedQuantities);
+    appendJson("scheduledActivities", (data as any).scheduledActivities);
+    appendJson("qualityControls", (data as any).qualityControls);
+    appendJson("materialsReceived", (data as any).materialsReceived);
+    appendJson("safetyNotes", (data as any).safetyNotes);
+    appendJson("projectIssues", (data as any).projectIssues);
+    appendJson("siteVisits", (data as any).siteVisits);
+    appendIfDefined("contractorObservations", (data as any).contractorObservations);
+    appendIfDefined("interventoriaObservations", (data as any).interventoriaObservations);
 
     const serializeUsers = (users?: Array<Partial<User> | string>) => {
       if (!users || users.length === 0) {

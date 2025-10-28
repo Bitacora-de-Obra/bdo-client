@@ -44,6 +44,36 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   const [weatherConditions, setWeatherConditions] = useState<string>("");
   const [additionalObservations, setAdditionalObservations] =
     useState<string>("");
+  const [scheduleDay, setScheduleDay] = useState<string>("");
+  const [locationDetails, setLocationDetails] = useState<string>("");
+  const [weatherSummary, setWeatherSummary] = useState<string>("");
+  const [weatherRainStart, setWeatherRainStart] = useState<string>("");
+  const [weatherRainEnd, setWeatherRainEnd] = useState<string>("");
+  const [weatherTemperature, setWeatherTemperature] = useState<string>("");
+  const [weatherNotes, setWeatherNotes] = useState<string>("");
+  const [contractorPersonnelText, setContractorPersonnelText] =
+    useState<string>("");
+  const [interventoriaPersonnelText, setInterventoriaPersonnelText] =
+    useState<string>("");
+  const [equipmentResourcesText, setEquipmentResourcesText] =
+    useState<string>("");
+  const [executedActivitiesText, setExecutedActivitiesText] =
+    useState<string>("");
+  const [executedQuantitiesText, setExecutedQuantitiesText] =
+    useState<string>("");
+  const [scheduledActivitiesText, setScheduledActivitiesText] =
+    useState<string>("");
+  const [qualityControlsText, setQualityControlsText] =
+    useState<string>("");
+  const [materialsReceivedText, setMaterialsReceivedText] =
+    useState<string>("");
+  const [safetyNotesText, setSafetyNotesText] = useState<string>("");
+  const [projectIssuesText, setProjectIssuesText] = useState<string>("");
+  const [siteVisitsText, setSiteVisitsText] = useState<string>("");
+  const [contractorObservations, setContractorObservations] =
+    useState<string>("");
+  const [interventoriaObservations, setInterventoriaObservations] =
+    useState<string>("");
   const [files, setFiles] = useState<File[]>([]);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [selectedSignerIds, setSelectedSignerIds] = useState<string[]>(
@@ -59,6 +89,26 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     setWorkforce("");
     setWeatherConditions("");
     setAdditionalObservations("");
+    setScheduleDay("");
+    setLocationDetails("");
+    setWeatherSummary("");
+    setWeatherRainStart("");
+    setWeatherRainEnd("");
+    setWeatherTemperature("");
+    setWeatherNotes("");
+    setContractorPersonnelText("");
+    setInterventoriaPersonnelText("");
+    setEquipmentResourcesText("");
+    setExecutedActivitiesText("");
+    setExecutedQuantitiesText("");
+    setScheduledActivitiesText("");
+    setQualityControlsText("");
+    setMaterialsReceivedText("");
+    setSafetyNotesText("");
+    setProjectIssuesText("");
+    setSiteVisitsText("");
+    setContractorObservations("");
+    setInterventoriaObservations("");
     setFiles([]);
     setValidationError(null);
     setSelectedSignerIds(currentUser ? [currentUser.id] : []);
@@ -122,6 +172,32 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     setFiles((prev) => prev.filter((file) => file !== fileToRemove));
   };
 
+  const linesToItems = (value: string) =>
+    value
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((text) => ({ text }));
+
+  const buildWeatherReport = () => {
+    if (
+      !weatherSummary.trim() &&
+      !weatherRainStart.trim() &&
+      !weatherRainEnd.trim() &&
+      !weatherTemperature.trim() &&
+      !weatherNotes.trim()
+    ) {
+      return null;
+    }
+    return {
+      summary: weatherSummary.trim() || undefined,
+      rainStart: weatherRainStart.trim() || undefined,
+      rainEnd: weatherRainEnd.trim() || undefined,
+      temperature: weatherTemperature.trim() || undefined,
+      notes: weatherNotes.trim() || undefined,
+    };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setValidationError(null);
@@ -176,6 +252,22 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           workforce: workforce.trim(),
           weatherConditions: weatherConditions.trim(),
           additionalObservations: additionalObservations.trim(),
+          scheduleDay: scheduleDay.trim(),
+          locationDetails: locationDetails.trim(),
+          weatherReport: buildWeatherReport(),
+          contractorPersonnel: linesToItems(contractorPersonnelText),
+          interventoriaPersonnel: linesToItems(interventoriaPersonnelText),
+          equipmentResources: linesToItems(equipmentResourcesText),
+          executedActivities: linesToItems(executedActivitiesText),
+          executedQuantities: linesToItems(executedQuantitiesText),
+          scheduledActivities: linesToItems(scheduledActivitiesText),
+          qualityControls: linesToItems(qualityControlsText),
+          materialsReceived: linesToItems(materialsReceivedText),
+          safetyNotes: linesToItems(safetyNotesText),
+          projectIssues: linesToItems(projectIssuesText),
+          siteVisits: linesToItems(siteVisitsText),
+          contractorObservations: contractorObservations.trim(),
+          interventoriaObservations: interventoriaObservations.trim(),
           activityStartDate: normalizedDate.toISOString(),
           activityEndDate: endOfDay.toISOString(),
           subject: "",
@@ -221,6 +313,66 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Input
+            label="Día del plazo"
+            id="scheduleDay"
+            placeholder="Ej. Día 45 de 120"
+            value={scheduleDay}
+            onChange={(e) => setScheduleDay(e.target.value)}
+          />
+          <Input
+            label="Localización / Tramo"
+            id="locationDetails"
+            placeholder="Ej. Tramo K2+100 al K2+300"
+            value={locationDetails}
+            onChange={(e) => setLocationDetails(e.target.value)}
+          />
+        </div>
+
+        <div>
+          <h4 className="text-sm font-semibold text-gray-800 mb-2">
+            Condiciones climáticas
+          </h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Resumen"
+              id="weatherSummary"
+              placeholder="Ej. Cielo parcialmente nublado"
+              value={weatherSummary}
+              onChange={(e) => setWeatherSummary(e.target.value)}
+            />
+            <Input
+              label="Temperatura"
+              id="weatherTemperature"
+              placeholder="Ej. 22°C"
+              value={weatherTemperature}
+              onChange={(e) => setWeatherTemperature(e.target.value)}
+            />
+            <Input
+              label="Inicio de lluvia"
+              id="weatherRainStart"
+              placeholder="HH:MM"
+              value={weatherRainStart}
+              onChange={(e) => setWeatherRainStart(e.target.value)}
+            />
+            <Input
+              label="Fin de lluvia"
+              id="weatherRainEnd"
+              placeholder="HH:MM"
+              value={weatherRainEnd}
+              onChange={(e) => setWeatherRainEnd(e.target.value)}
+            />
+          </div>
+          <textarea
+            className="mt-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+            rows={2}
+            placeholder="Notas adicionales sobre el clima"
+            value={weatherNotes}
+            onChange={(e) => setWeatherNotes(e.target.value)}
           />
         </div>
 
@@ -291,6 +443,131 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
               rows={3}
               className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
               placeholder="Estado del clima, incidencia en las actividades, riesgos, etc."
+            />
+          </div>
+        </div>
+
+        <div>
+          <h4 className="text-sm font-semibold text-gray-800 mb-1">
+            Recursos del día
+          </h4>
+          <p className="text-xs text-gray-500 mb-2">
+            Registra cada elemento en una línea. Puedes incluir cargo, cantidad o notas.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <textarea
+              value={contractorPersonnelText}
+              onChange={(e) => setContractorPersonnelText(e.target.value)}
+              rows={3}
+              className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+              placeholder="Personal del contratista"
+            />
+            <textarea
+              value={interventoriaPersonnelText}
+              onChange={(e) => setInterventoriaPersonnelText(e.target.value)}
+              rows={3}
+              className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+              placeholder="Personal de la interventoría"
+            />
+          </div>
+          <textarea
+            value={equipmentResourcesText}
+            onChange={(e) => setEquipmentResourcesText(e.target.value)}
+            rows={3}
+            className="mt-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+            placeholder="Maquinaria y equipos (estado, horas, novedades)"
+          />
+        </div>
+
+        <div>
+          <h4 className="text-sm font-semibold text-gray-800 mb-1">
+            Ejecución y avance
+          </h4>
+          <textarea
+            value={executedActivitiesText}
+            onChange={(e) => setExecutedActivitiesText(e.target.value)}
+            rows={3}
+            className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+            placeholder="Actividades ejecutadas (frente, abscisa, tareas específicas)"
+          />
+          <textarea
+            value={executedQuantitiesText}
+            onChange={(e) => setExecutedQuantitiesText(e.target.value)}
+            rows={3}
+            className="mt-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+            placeholder="Cantidades de obra ejecutadas"
+          />
+          <textarea
+            value={scheduledActivitiesText}
+            onChange={(e) => setScheduledActivitiesText(e.target.value)}
+            rows={3}
+            className="mt-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+            placeholder="Actividades programadas y no ejecutadas (incluye motivo)"
+          />
+        </div>
+
+        <div>
+          <h4 className="text-sm font-semibold text-gray-800 mb-1">
+            Controles y novedades
+          </h4>
+          <textarea
+            value={qualityControlsText}
+            onChange={(e) => setQualityControlsText(e.target.value)}
+            rows={3}
+            className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+            placeholder="Ensayos y controles de calidad"
+          />
+          <textarea
+            value={materialsReceivedText}
+            onChange={(e) => setMaterialsReceivedText(e.target.value)}
+            rows={3}
+            className="mt-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+            placeholder="Materiales recibidos"
+          />
+          <textarea
+            value={safetyNotesText}
+            onChange={(e) => setSafetyNotesText(e.target.value)}
+            rows={3}
+            className="mt-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+            placeholder="Gestión HSEQ / SST"
+          />
+          <textarea
+            value={projectIssuesText}
+            onChange={(e) => setProjectIssuesText(e.target.value)}
+            rows={3}
+            className="mt-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+            placeholder="Novedades y contratiempos"
+          />
+          <textarea
+            value={siteVisitsText}
+            onChange={(e) => setSiteVisitsText(e.target.value)}
+            rows={3}
+            className="mt-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+            placeholder="Visitas registradas"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Observaciones del contratista
+            </label>
+            <textarea
+              value={contractorObservations}
+              onChange={(e) => setContractorObservations(e.target.value)}
+              rows={3}
+              className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Observaciones de la interventoría
+            </label>
+            <textarea
+              value={interventoriaObservations}
+              onChange={(e) => setInterventoriaObservations(e.target.value)}
+              rows={3}
+              className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
             />
           </div>
         </div>

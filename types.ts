@@ -151,6 +151,18 @@ export interface SignatureSummary {
   completed: boolean;
 }
 
+export interface WeatherReport {
+  summary?: string;
+  rainStart?: string;
+  rainEnd?: string;
+  temperature?: string;
+  notes?: string;
+}
+
+export interface LogEntryListItem {
+  text: string;
+}
+
 
 // LOGBOOK ENTRIES (ANOTACIONES)
 export enum EntryStatus {
@@ -180,6 +192,22 @@ export interface LogEntry {
   workforce: string;
   weatherConditions: string;
   additionalObservations: string;
+  scheduleDay: string;
+  locationDetails: string;
+  weatherReport: WeatherReport | null;
+  contractorPersonnel: LogEntryListItem[];
+  interventoriaPersonnel: LogEntryListItem[];
+  equipmentResources: LogEntryListItem[];
+  executedActivities: LogEntryListItem[];
+  executedQuantities: LogEntryListItem[];
+  scheduledActivities: LogEntryListItem[];
+  qualityControls: LogEntryListItem[];
+  materialsReceived: LogEntryListItem[];
+  safetyNotes: LogEntryListItem[];
+  projectIssues: LogEntryListItem[];
+  siteVisits: LogEntryListItem[];
+  contractorObservations: string;
+  interventoriaObservations: string;
   author: User;
   createdAt: string; // ISO date string
   updatedAt?: string; // ISO date string

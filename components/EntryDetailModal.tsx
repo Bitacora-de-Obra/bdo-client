@@ -5,6 +5,8 @@ import {
   User,
   UserRole,
   Attachment,
+  LogEntryListItem,
+  WeatherReport,
 } from "../types";
 import Modal from "./ui/Modal";
 import Badge from "./ui/Badge";
@@ -169,6 +171,22 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       signatures: entryData.signatures || [],
       signatureTasks: entryData.signatureTasks || [],
       signatureSummary: entryData.signatureSummary,
+      contractorPersonnel: entryData.contractorPersonnel || [],
+      interventoriaPersonnel: entryData.interventoriaPersonnel || [],
+      equipmentResources: entryData.equipmentResources || [],
+      executedActivities: entryData.executedActivities || [],
+      executedQuantities: entryData.executedQuantities || [],
+      scheduledActivities: entryData.scheduledActivities || [],
+      qualityControls: entryData.qualityControls || [],
+      materialsReceived: entryData.materialsReceived || [],
+      safetyNotes: entryData.safetyNotes || [],
+      projectIssues: entryData.projectIssues || [],
+      siteVisits: entryData.siteVisits || [],
+      contractorObservations: entryData.contractorObservations || "",
+      interventoriaObservations: entryData.interventoriaObservations || "",
+      scheduleDay: entryData.scheduleDay || "",
+      locationDetails: entryData.locationDetails || "",
+      weatherReport: entryData.weatherReport || null,
     });
     setSelectedSignerIds(extractSignerIds(entryData));
     if (entryData.entryDate) {
@@ -256,6 +274,38 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
 
   const handleRemoveCommentFile = (fileToRemove: File) => {
     setCommentFiles((prev) => prev.filter((file) => file !== fileToRemove));
+  };
+
+  const listToText = (items?: LogEntryListItem[]) =>
+    (items || []).map((item) => item.text).join("\n");
+
+  const textToList = (value: string): LogEntryListItem[] =>
+    value
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((text) => ({ text }));
+
+  const handleListChange = (field: keyof LogEntry, value: string) => {
+    setEditedEntry((prev) => ({
+      ...prev,
+      [field]: textToList(value),
+    }));
+  };
+
+  const handleWeatherReportChange = (key: keyof WeatherReport, value: string) => {
+    setEditedEntry((prev) => {
+      const current = prev.weatherReport || {};
+      const next = {
+        ...current,
+        [key]: value.trim() || undefined,
+      };
+      const hasContent = Object.values(next).some((entry) => entry && entry !== "");
+      return {
+        ...prev,
+        weatherReport: hasContent ? next : null,
+      };
+    });
   };
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
@@ -543,6 +593,22 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
     workforce = "",
     weatherConditions = "",
     additionalObservations = "",
+    scheduleDay = "",
+    locationDetails = "",
+    weatherReport,
+    contractorPersonnel = [],
+    interventoriaPersonnel = [],
+    equipmentResources = [],
+    executedActivities = [],
+    executedQuantities = [],
+    scheduledActivities = [],
+    qualityControls = [],
+    materialsReceived = [],
+    safetyNotes = [],
+    projectIssues = [],
+    siteVisits = [],
+    contractorObservations = "",
+    interventoriaObservations = "",
     type,
     status,
     isConfidential,
@@ -552,6 +618,8 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
     requiredSignatories = [],
     signatures = [],
   } = editedEntry;
+
+  const weatherReportData = (weatherReport || {}) as WeatherReport;
 
   const toDatetimeLocal = (isoString: string) => {
     if (!isoString) return "";
@@ -636,15 +704,41 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
               label="Fecha de creación"
               value={new Date(createdAt).toLocaleString("es-CO")}
             />
-            <DetailRow
-              label="Última actualización"
-              value={
-                entry.updatedAt
-                  ? new Date(entry.updatedAt).toLocaleString("es-CO")
-                  : "N/A"
-              }
+          <DetailRow
+            label="Última actualización"
+            value={
+              entry.updatedAt
+                ? new Date(entry.updatedAt).toLocaleString("es-CO")
+                : "N/A"
+            }
+          />
+          {isEditing ? (
+            <Input
+              label="Día del plazo"
+              name="scheduleDay"
+              value={scheduleDay}
+              onChange={handleInputChange}
             />
-          </dl>
+          ) : (
+            <DetailRow
+              label="Día del plazo"
+              value={scheduleDay || "No registrado"}
+            />
+          )}
+          {isEditing ? (
+            <Input
+              label="Localización / Tramo"
+              name="locationDetails"
+              value={locationDetails}
+              onChange={handleInputChange}
+            />
+          ) : (
+            <DetailRow
+              label="Localización / Tramo"
+              value={locationDetails || "No registrado"}
+            />
+          )}
+        </dl>
 
           {/* Summary */}
           <div>
@@ -663,6 +757,66 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
               <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
                 {description || "Sin resumen registrado."}
               </p>
+            )}
+          </div>
+
+          <div>
+            <h4 className="text-md font-semibold text-gray-800">
+              Condiciones climáticas
+            </h4>
+            {isEditing ? (
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="Resumen"
+                  value={weatherReportData.summary || ""}
+                  onChange={(e) => handleWeatherReportChange("summary", e.target.value)}
+                />
+                <Input
+                  label="Temperatura"
+                  value={weatherReportData.temperature || ""}
+                  onChange={(e) => handleWeatherReportChange("temperature", e.target.value)}
+                />
+                <Input
+                  label="Inicio de lluvia"
+                  value={weatherReportData.rainStart || ""}
+                  onChange={(e) => handleWeatherReportChange("rainStart", e.target.value)}
+                />
+                <Input
+                  label="Fin de lluvia"
+                  value={weatherReportData.rainEnd || ""}
+                  onChange={(e) => handleWeatherReportChange("rainEnd", e.target.value)}
+                />
+                <textarea
+                  value={weatherReportData.notes || ""}
+                  onChange={(e) => handleWeatherReportChange("notes", e.target.value)}
+                  rows={2}
+                  className="sm:col-span-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Notas adicionales"
+                />
+              </div>
+            ) : (
+              <div className="mt-2 text-sm text-gray-700 space-y-1">
+                <p>
+                  <span className="font-medium">Resumen: </span>
+                  {weatherReportData.summary || "No registrado"}
+                </p>
+                <p>
+                  <span className="font-medium">Temperatura: </span>
+                  {weatherReportData.temperature || "No registrada"}
+                </p>
+                <p>
+                  <span className="font-medium">Lluvia: </span>
+                  {weatherReportData.rainStart || weatherReportData.rainEnd
+                    ? `${weatherReportData.rainStart || "-"} a ${weatherReportData.rainEnd || "-"}`
+                    : "No registrada"}
+                </p>
+                {weatherReportData.notes && (
+                  <p>
+                    <span className="font-medium">Notas: </span>
+                    {weatherReportData.notes}
+                  </p>
+                )}
+              </div>
             )}
           </div>
 
@@ -746,7 +900,302 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
 
           <div>
             <h4 className="text-md font-semibold text-gray-800">
-              Observaciones adicionales
+              Recursos del día
+            </h4>
+            {isEditing ? (
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <textarea
+                  value={listToText(contractorPersonnel)}
+                  onChange={(e) => handleListChange("contractorPersonnel", e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Personal del contratista"
+                />
+                <textarea
+                  value={listToText(interventoriaPersonnel)}
+                  onChange={(e) => handleListChange("interventoriaPersonnel", e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Personal de la interventoría"
+                />
+                <textarea
+                  value={listToText(equipmentResources)}
+                  onChange={(e) => handleListChange("equipmentResources", e.target.value)}
+                  rows={3}
+                  className="sm:col-span-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Maquinaria y equipos"
+                />
+              </div>
+            ) : (
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-700">
+                <div>
+                  <p className="font-medium">Contratista</p>
+                  {contractorPersonnel.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {contractorPersonnel.map((item, index) => (
+                        <li key={`cp-${index}`}>{item.text}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-gray-500">Sin registro.</p>
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium">Interventoría</p>
+                  {interventoriaPersonnel.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {interventoriaPersonnel.map((item, index) => (
+                        <li key={`ip-${index}`}>{item.text}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-gray-500">Sin registro.</p>
+                  )}
+                </div>
+                <div className="sm:col-span-2">
+                  <p className="font-medium">Maquinaria y equipos</p>
+                  {equipmentResources.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {equipmentResources.map((item, index) => (
+                        <li key={`eq-${index}`}>{item.text}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-gray-500">Sin registro.</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <h4 className="text-md font-semibold text-gray-800">
+              Ejecución de actividades
+            </h4>
+            {isEditing ? (
+              <div className="mt-2 space-y-3">
+                <textarea
+                  value={listToText(executedActivities)}
+                  onChange={(e) => handleListChange("executedActivities", e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Actividades ejecutadas"
+                />
+                <textarea
+                  value={listToText(executedQuantities)}
+                  onChange={(e) => handleListChange("executedQuantities", e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Cantidades de obra"
+                />
+                <textarea
+                  value={listToText(scheduledActivities)}
+                  onChange={(e) => handleListChange("scheduledActivities", e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Programadas y no ejecutadas"
+                />
+              </div>
+            ) : (
+              <div className="mt-2 space-y-3 text-sm text-gray-700">
+                <div>
+                  <p className="font-medium">Actividades ejecutadas</p>
+                  {executedActivities.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {executedActivities.map((item, index) => (
+                        <li key={`ea-${index}`}>{item.text}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-gray-500">Sin registro.</p>
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium">Cantidades ejecutadas</p>
+                  {executedQuantities.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {executedQuantities.map((item, index) => (
+                        <li key={`eqty-${index}`}>{item.text}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-gray-500">Sin registro.</p>
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium">Programadas y no ejecutadas</p>
+                  {scheduledActivities.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {scheduledActivities.map((item, index) => (
+                        <li key={`sa-${index}`}>{item.text}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-gray-500">Sin registro.</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <h4 className="text-md font-semibold text-gray-800">
+              Control, novedades e incidencias
+            </h4>
+            {isEditing ? (
+              <div className="mt-2 space-y-3">
+                <textarea
+                  value={listToText(qualityControls)}
+                  onChange={(e) => handleListChange("qualityControls", e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Control de calidad"
+                />
+                <textarea
+                  value={listToText(materialsReceived)}
+                  onChange={(e) => handleListChange("materialsReceived", e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Materiales recibidos"
+                />
+                <textarea
+                  value={listToText(safetyNotes)}
+                  onChange={(e) => handleListChange("safetyNotes", e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Gestión HSEQ / SST"
+                />
+                <textarea
+                  value={listToText(projectIssues)}
+                  onChange={(e) => handleListChange("projectIssues", e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Novedades y contratiempos"
+                />
+                <textarea
+                  value={listToText(siteVisits)}
+                  onChange={(e) => handleListChange("siteVisits", e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Visitas registradas"
+                />
+              </div>
+            ) : (
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-700">
+                <div>
+                  <p className="font-medium">Control de calidad</p>
+                  {qualityControls.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {qualityControls.map((item, index) => (
+                        <li key={`qc-${index}`}>{item.text}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-gray-500">Sin registro.</p>
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium">Materiales recibidos</p>
+                  {materialsReceived.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {materialsReceived.map((item, index) => (
+                        <li key={`mr-${index}`}>{item.text}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-gray-500">Sin registro.</p>
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium">Gestión HSEQ / SST</p>
+                  {safetyNotes.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {safetyNotes.map((item, index) => (
+                        <li key={`sn-${index}`}>{item.text}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-gray-500">Sin registro.</p>
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium">Novedades / Contratiempos</p>
+                  {projectIssues.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {projectIssues.map((item, index) => (
+                        <li key={`pi-${index}`}>{item.text}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-gray-500">Sin registro.</p>
+                  )}
+                </div>
+                <div className="sm:col-span-2">
+                  <p className="font-medium">Visitas</p>
+                  {siteVisits.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {siteVisits.map((item, index) => (
+                        <li key={`sv-${index}`}>{item.text}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-gray-500">Sin registro.</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <h4 className="text-md font-semibold text-gray-800">
+                Observaciones del contratista
+              </h4>
+              {isEditing ? (
+                <textarea
+                  value={contractorObservations}
+                  onChange={(e) =>
+                    setEditedEntry((prev) => ({
+                      ...prev,
+                      contractorObservations: e.target.value,
+                    }))
+                  }
+                  rows={3}
+                  className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                />
+              ) : (
+                <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                  {contractorObservations || "Sin observaciones."}
+                </p>
+              )}
+            </div>
+            <div>
+              <h4 className="text-md font-semibold text-gray-800">
+                Observaciones de la interventoría
+              </h4>
+              {isEditing ? (
+                <textarea
+                  value={interventoriaObservations}
+                  onChange={(e) =>
+                    setEditedEntry((prev) => ({
+                      ...prev,
+                      interventoriaObservations: e.target.value,
+                    }))
+                  }
+                  rows={3}
+                  className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                />
+              ) : (
+                <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                  {interventoriaObservations || "Sin observaciones."}
+                </p>
+              )}
+            </div>
+          </div>
+
+        <div>
+          <h4 className="text-md font-semibold text-gray-800">
+            Observaciones adicionales
             </h4>
             {isEditing ? (
               <textarea

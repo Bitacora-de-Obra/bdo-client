@@ -17,6 +17,7 @@ const statusColorMap: Record<EntryStatus, string> = {
   [EntryStatus.SUBMITTED]: '#1976D2', // brand-secondary
   [EntryStatus.REJECTED]: '#C62828', // status-red
   [EntryStatus.DRAFT]: '#6B7280', // gray-500
+  [EntryStatus.SIGNED]: '#047857', // emerald-600
 };
 
 const CalendarView: React.FC<CalendarViewProps> = ({ entries, onEventClick, onDateClick }) => {
