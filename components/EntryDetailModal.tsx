@@ -7,6 +7,7 @@ import {
   Attachment,
   LogEntryListItem,
   WeatherReport,
+  PersonnelEntry,
 } from "../types";
 import Modal from "./ui/Modal";
 import Badge from "./ui/Badge";
@@ -107,6 +108,22 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const [selectedSignerIds, setSelectedSignerIds] = useState<string[]>(() =>
     extractSignerIds(entry)
   );
+  const [weatherSummaryDraft, setWeatherSummaryDraft] = useState<string>("");
+  const [weatherTemperatureDraft, setWeatherTemperatureDraft] =
+    useState<string>("");
+  const [weatherNotesDraft, setWeatherNotesDraft] = useState<string>("");
+  const [rainEventsDraft, setRainEventsDraft] = useState<
+    Array<{ start: string; end: string }>
+  >([{ start: "", end: "" }]);
+  const [contractorPersonnelDraft, setContractorPersonnelDraft] = useState<
+    Array<{ role: string; quantity: string; notes: string }>
+  >([{ role: "", quantity: "", notes: "" }]);
+  const [interventoriaPersonnelDraft, setInterventoriaPersonnelDraft] = useState<
+    Array<{ role: string; quantity: string; notes: string }>
+  >([{ role: "", quantity: "", notes: "" }]);
+  const [equipmentResourcesDraft, setEquipmentResourcesDraft] = useState<
+    Array<{ name: string; status: string; notes: string }>
+  >([{ name: "", status: "", notes: "" }]);
   const knownUsers = useMemo(() => {
     const map = new Map<string, User>();
     const register = (user?: User | null) => {
@@ -188,6 +205,123 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       locationDetails: entryData.locationDetails || "",
       weatherReport: entryData.weatherReport || null,
     });
+
+    const weather = entryData.weatherReport || null;
+    setWeatherSummaryDraft(weather?.summary || "");
+    setWeatherTemperatureDraft(weather?.temperature || "");
+    setWeatherNotesDraft(weather?.notes || "");
+    const normalizedRainEvents =
+      Array.isArray(weather?.rainEvents) && weather?.rainEvents.length
+        ? weather!.rainEvents.map((event) => ({
+            start:
+              typeof event?.start === "string"
+                ? event.start
+                : typeof (event as any)?.start === "number"
+                ? String((event as any).start)
+                : "",
+            end:
+              typeof event?.end === "string"
+                ? event.end
+                : typeof (event as any)?.end === "number"
+                ? String((event as any).end)
+                : "",
+          }))
+        : [];
+    setRainEventsDraft(
+      normalizedRainEvents.length
+        ? normalizedRainEvents
+        : [{ start: "", end: "" }]
+    );
+
+    const toPersonnelDraft = (
+      entries: Array<Partial<PersonnelEntry & { text?: string }>> | undefined
+    ) => {
+      if (!Array.isArray(entries) || !entries.length) {
+        return [{ role: "", quantity: "", notes: "" }];
+      }
+      const mapped = entries
+        .map((item) => {
+          if (!item) return null;
+          const role =
+            typeof item.role === "string" && item.role.trim()
+              ? item.role.trim()
+              : typeof item.text === "string" && item.text.trim()
+              ? item.text.trim()
+              : "";
+          if (!role) return null;
+          const quantityValue =
+            typeof item.quantity === "number"
+              ? item.quantity.toString()
+              : typeof (item as any)?.quantity === "string"
+              ? (item as any).quantity
+              : "";
+          const notesValue =
+            typeof item.notes === "string"
+              ? item.notes
+              : typeof (item as any)?.notes === "string"
+              ? (item as any).notes
+              : "";
+          return {
+            role,
+            quantity: quantityValue,
+            notes: notesValue,
+          };
+        })
+        .filter((item): item is { role: string; quantity: string; notes: string } =>
+          Boolean(item)
+        );
+      return mapped.length ? mapped : [{ role: "", quantity: "", notes: "" }];
+    };
+
+    const toEquipmentDraft = (
+      items:
+        | Array<Partial<{ name?: string; status?: string; notes?: string; text?: string }>>
+        | undefined
+    ) => {
+      if (!Array.isArray(items) || !items.length) {
+        return [{ name: "", status: "", notes: "" }];
+      }
+      const mapped = items
+        .map((item) => {
+          if (!item) return null;
+          const name =
+            typeof item.name === "string" && item.name.trim()
+              ? item.name.trim()
+              : typeof item.text === "string" && item.text.trim()
+              ? item.text.trim()
+              : "";
+          if (!name) return null;
+          const status =
+            typeof item.status === "string"
+              ? item.status
+              : typeof (item as any)?.status === "string"
+              ? (item as any).status
+              : "";
+          const notes =
+            typeof item.notes === "string"
+              ? item.notes
+              : typeof (item as any)?.notes === "string"
+              ? (item as any).notes
+              : "";
+          return { name, status, notes };
+        })
+        .filter(
+          (item): item is { name: string; status: string; notes: string } =>
+            Boolean(item)
+        );
+      return mapped.length ? mapped : [{ name: "", status: "", notes: "" }];
+    };
+
+    setContractorPersonnelDraft(
+      toPersonnelDraft(entryData.contractorPersonnel as any)
+    );
+    setInterventoriaPersonnelDraft(
+      toPersonnelDraft(entryData.interventoriaPersonnel as any)
+    );
+    setEquipmentResourcesDraft(
+      toEquipmentDraft(entryData.equipmentResources as any)
+    );
+
     setSelectedSignerIds(extractSignerIds(entryData));
     if (entryData.entryDate) {
       setFormEntryDate(entryData.entryDate.substring(0, 10));
@@ -276,36 +410,159 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     setCommentFiles((prev) => prev.filter((file) => file !== fileToRemove));
   };
 
-  const listToText = (items?: LogEntryListItem[]) =>
+  type TextListField =
+    | "executedActivities"
+    | "executedQuantities"
+    | "scheduledActivities"
+    | "qualityControls"
+    | "materialsReceived"
+    | "safetyNotes"
+    | "projectIssues"
+    | "siteVisits";
+
+  const listToPlainText = (items?: LogEntryListItem[]) =>
     (items || []).map((item) => item.text).join("\n");
 
-  const textToList = (value: string): LogEntryListItem[] =>
+  const plainTextToList = (value: string): LogEntryListItem[] =>
     value
       .split("\n")
       .map((line) => line.trim())
       .filter(Boolean)
       .map((text) => ({ text }));
 
-  const handleListChange = (field: keyof LogEntry, value: string) => {
+  const handleListChange = (field: TextListField, value: string) => {
     setEditedEntry((prev) => ({
       ...prev,
-      [field]: textToList(value),
+      [field]: plainTextToList(value),
     }));
   };
 
-  const handleWeatherReportChange = (key: keyof WeatherReport, value: string) => {
-    setEditedEntry((prev) => {
-      const current = prev.weatherReport || {};
-      const next = {
-        ...current,
-        [key]: value.trim() || undefined,
-      };
-      const hasContent = Object.values(next).some((entry) => entry && entry !== "");
-      return {
-        ...prev,
-        weatherReport: hasContent ? next : null,
-      };
-    });
+  const addRainEventDraftRow = () =>
+    setRainEventsDraft((prev) => [...prev, { start: "", end: "" }]);
+
+  const updateRainEventDraftRow = (
+    index: number,
+    field: "start" | "end",
+    value: string
+  ) => {
+    setRainEventsDraft((prev) =>
+      prev.map((event, i) =>
+        i === index ? { ...event, [field]: value } : event
+      )
+    );
+  };
+
+  const removeRainEventDraftRow = (index: number) => {
+    setRainEventsDraft((prev) =>
+      prev.length === 1 ? prev : prev.filter((_, i) => i !== index)
+    );
+  };
+
+  const updatePersonnelDraft = (
+    setter: React.Dispatch<
+      React.SetStateAction<Array<{ role: string; quantity: string; notes: string }>>
+    >,
+    index: number,
+    field: "role" | "quantity" | "notes",
+    value: string
+  ) => {
+    setter((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+    );
+  };
+
+  const addPersonnelDraft = (
+    setter: React.Dispatch<
+      React.SetStateAction<Array<{ role: string; quantity: string; notes: string }>>
+    >
+  ) => {
+    setter((prev) => [...prev, { role: "", quantity: "", notes: "" }]);
+  };
+
+  const removePersonnelDraft = (
+    setter: React.Dispatch<
+      React.SetStateAction<Array<{ role: string; quantity: string; notes: string }>>
+    >,
+    index: number
+  ) => {
+    setter((prev) => (prev.length === 1 ? prev : prev.filter((_, i) => i !== index)));
+  };
+
+  const updateEquipmentDraftRow = (
+    index: number,
+    field: "name" | "status" | "notes",
+    value: string
+  ) => {
+    setEquipmentResourcesDraft((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+    );
+  };
+
+  const addEquipmentDraftRow = () => {
+    setEquipmentResourcesDraft((prev) => [
+      ...prev,
+      { name: "", status: "", notes: "" },
+    ]);
+  };
+
+  const removeEquipmentDraftRow = (index: number) => {
+    setEquipmentResourcesDraft((prev) =>
+      prev.length === 1 ? prev : prev.filter((_, i) => i !== index)
+    );
+  };
+
+  const formatPersonnelLine = (item: Partial<PersonnelEntry> & { text?: string }) => {
+    const role =
+      typeof item.role === "string" && item.role.trim()
+        ? item.role.trim()
+        : typeof item.text === "string" && item.text.trim()
+        ? item.text.trim()
+        : "";
+    if (!role) return null;
+    const quantityValue =
+      typeof item.quantity === "number"
+        ? item.quantity
+        : typeof (item as any)?.quantity === "string"
+        ? Number((item as any).quantity)
+        : undefined;
+    const hasQuantity =
+      typeof quantityValue === "number" && !Number.isNaN(quantityValue);
+    const quantityLabel =
+      hasQuantity && quantityValue !== 0 ? `${quantityValue}` : undefined;
+    const base = quantityLabel ? `${quantityLabel} · ${role}` : role;
+    const notesLabel =
+      typeof item.notes === "string" && item.notes.trim()
+        ? item.notes.trim()
+        : undefined;
+    return notesLabel ? `${base} — ${notesLabel}` : base;
+  };
+
+  const formatEquipmentLine = (
+    item: Partial<{ name?: string; status?: string; notes?: string; text?: string }>
+  ) => {
+    const name =
+      typeof item.name === "string" && item.name.trim()
+        ? item.name.trim()
+        : typeof item.text === "string" && item.text.trim()
+        ? item.text.trim()
+        : "";
+    if (!name) return null;
+    const status =
+      typeof item.status === "string" && item.status.trim()
+        ? item.status.trim()
+        : undefined;
+    const notes =
+      typeof item.notes === "string" && item.notes.trim()
+        ? item.notes.trim()
+        : undefined;
+    let label = name;
+    if (status) {
+      label += ` — ${status}`;
+    }
+    if (notes) {
+      label += status ? ` (${notes})` : ` — ${notes}`;
+    }
+    return label;
   };
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
@@ -368,6 +625,82 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       activityEndDate: endOfDay.toISOString(),
       attachments: [...(editedEntry.attachments || []), ...newAttachments],
     } as LogEntry;
+
+    const normalizePersonnelDraftEntries = (
+      entries: Array<{ role: string; quantity: string; notes: string }>
+    ) =>
+      entries
+        .map((entry) => ({
+          role: entry.role.trim(),
+          quantity: entry.quantity.trim(),
+          notes: entry.notes.trim(),
+        }))
+        .filter((entry) => entry.role)
+        .map((entry) => {
+          const parsedQuantity = entry.quantity;
+          const quantity =
+            parsedQuantity && !Number.isNaN(Number(parsedQuantity))
+              ? Number(parsedQuantity)
+              : undefined;
+          return {
+            role: entry.role,
+            quantity,
+            notes: entry.notes || undefined,
+          };
+        });
+
+    const normalizedContractorPersonnel = normalizePersonnelDraftEntries(
+      contractorPersonnelDraft
+    );
+    const normalizedInterventoriaPersonnel = normalizePersonnelDraftEntries(
+      interventoriaPersonnelDraft
+    );
+
+    const normalizedEquipmentResources = equipmentResourcesDraft
+      .map((entry) => ({
+        name: entry.name.trim(),
+        status: entry.status.trim(),
+        notes: entry.notes.trim(),
+      }))
+      .filter((entry) => entry.name)
+      .map((entry) => ({
+        name: entry.name,
+        status: entry.status || undefined,
+        notes: entry.notes || undefined,
+      }));
+
+    const normalizedRainEvents = rainEventsDraft
+      .map((event) => ({
+        start: event.start.trim(),
+        end: event.end.trim(),
+      }))
+      .filter((event) => event.start || event.end);
+
+    const summaryValue = weatherSummaryDraft.trim();
+    const temperatureValue = weatherTemperatureDraft.trim();
+    const notesValue = weatherNotesDraft.trim();
+
+    const normalizedWeatherReport =
+      summaryValue ||
+      temperatureValue ||
+      notesValue ||
+      normalizedRainEvents.length
+        ? {
+            summary: summaryValue || undefined,
+            temperature: temperatureValue || undefined,
+            notes: notesValue || undefined,
+            rainEvents: normalizedRainEvents,
+          }
+        : null;
+
+    finalEntry.contractorPersonnel = normalizedContractorPersonnel;
+    finalEntry.interventoriaPersonnel = normalizedInterventoriaPersonnel;
+    finalEntry.equipmentResources = normalizedEquipmentResources;
+    finalEntry.weatherReport = normalizedWeatherReport;
+    finalEntry.contractorObservations =
+      (editedEntry.contractorObservations || "").trim();
+    finalEntry.interventoriaObservations =
+      (editedEntry.interventoriaObservations || "").trim();
 
     const signerIds = new Set(selectedSignerIds);
     if (author?.id) {
@@ -619,7 +952,21 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
     signatures = [],
   } = editedEntry;
 
-  const weatherReportData = (weatherReport || {}) as WeatherReport;
+  const weatherReportData: WeatherReport = weatherReport
+    ? { ...weatherReport, rainEvents: weatherReport.rainEvents || [] }
+    : { rainEvents: [] };
+
+  const contractorPersonnelLines = (contractorPersonnel || [])
+    .map((item) => formatPersonnelLine(item))
+    .filter((line): line is string => Boolean(line));
+
+  const interventoriaPersonnelLines = (interventoriaPersonnel || [])
+    .map((item) => formatPersonnelLine(item))
+    .filter((line): line is string => Boolean(line));
+
+  const equipmentResourceLines = (equipmentResources || [])
+    .map((item) => formatEquipmentLine(item))
+    .filter((line): line is string => Boolean(line));
 
   const toDatetimeLocal = (isoString: string) => {
     if (!isoString) return "";
@@ -765,34 +1112,77 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
               Condiciones climáticas
             </h4>
             {isEditing ? (
-              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Input
-                  label="Resumen"
-                  value={weatherReportData.summary || ""}
-                  onChange={(e) => handleWeatherReportChange("summary", e.target.value)}
-                />
-                <Input
-                  label="Temperatura"
-                  value={weatherReportData.temperature || ""}
-                  onChange={(e) => handleWeatherReportChange("temperature", e.target.value)}
-                />
-                <Input
-                  label="Inicio de lluvia"
-                  value={weatherReportData.rainStart || ""}
-                  onChange={(e) => handleWeatherReportChange("rainStart", e.target.value)}
-                />
-                <Input
-                  label="Fin de lluvia"
-                  value={weatherReportData.rainEnd || ""}
-                  onChange={(e) => handleWeatherReportChange("rainEnd", e.target.value)}
-                />
+              <div className="mt-2 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Input
+                    label="Resumen"
+                    value={weatherSummaryDraft}
+                    onChange={(e) => setWeatherSummaryDraft(e.target.value)}
+                    placeholder="Ej. Cielo parcialmente nublado"
+                  />
+                  <Input
+                    label="Temperatura"
+                    value={weatherTemperatureDraft}
+                    onChange={(e) => setWeatherTemperatureDraft(e.target.value)}
+                    placeholder="Ej. 22°C"
+                  />
+                </div>
                 <textarea
-                  value={weatherReportData.notes || ""}
-                  onChange={(e) => handleWeatherReportChange("notes", e.target.value)}
+                  value={weatherNotesDraft}
+                  onChange={(e) => setWeatherNotesDraft(e.target.value)}
                   rows={2}
-                  className="sm:col-span-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                  placeholder="Notas adicionales"
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Observaciones adicionales sobre el clima"
                 />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-gray-700">
+                      Lluvias registradas
+                    </p>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={addRainEventDraftRow}
+                    >
+                      Añadir intervalo
+                    </Button>
+                  </div>
+                  {rainEventsDraft.map((event, index) => (
+                    <div
+                      key={`rain-edit-${index}`}
+                      className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end"
+                    >
+                      <Input
+                        label={index === 0 ? "Inicio" : undefined}
+                        type="time"
+                        value={event.start}
+                        onChange={(e) =>
+                          updateRainEventDraftRow(index, "start", e.target.value)
+                        }
+                      />
+                      <Input
+                        label={index === 0 ? "Fin" : undefined}
+                        type="time"
+                        value={event.end}
+                        onChange={(e) =>
+                          updateRainEventDraftRow(index, "end", e.target.value)
+                        }
+                      />
+                      {rainEventsDraft.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeRainEventDraftRow(index)}
+                          className="text-red-500 hover:text-red-700 text-xs font-semibold sm:justify-self-start sm:self-center"
+                        >
+                          <span className="inline-flex items-center gap-1">
+                            <XMarkIcon className="h-4 w-4" /> Quitar
+                          </span>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="mt-2 text-sm text-gray-700 space-y-1">
@@ -804,12 +1194,18 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
                   <span className="font-medium">Temperatura: </span>
                   {weatherReportData.temperature || "No registrada"}
                 </p>
-                <p>
-                  <span className="font-medium">Lluvia: </span>
-                  {weatherReportData.rainStart || weatherReportData.rainEnd
-                    ? `${weatherReportData.rainStart || "-"} a ${weatherReportData.rainEnd || "-"}`
-                    : "No registrada"}
-                </p>
+                <div>
+                  <span className="font-medium">Lluvias registradas: </span>
+                  {weatherReportData.rainEvents?.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {weatherReportData.rainEvents.map((event, idx) => (
+                        <li key={`rain-${idx}`}>{event.start || "-"} a {event.end || "-"}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span>No registradas.</span>
+                  )}
+                </div>
                 {weatherReportData.notes && (
                   <p>
                     <span className="font-medium">Notas: </span>
@@ -903,37 +1299,226 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
               Recursos del día
             </h4>
             {isEditing ? (
-              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <textarea
-                  value={listToText(contractorPersonnel)}
-                  onChange={(e) => handleListChange("contractorPersonnel", e.target.value)}
-                  rows={3}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                  placeholder="Personal del contratista"
-                />
-                <textarea
-                  value={listToText(interventoriaPersonnel)}
-                  onChange={(e) => handleListChange("interventoriaPersonnel", e.target.value)}
-                  rows={3}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                  placeholder="Personal de la interventoría"
-                />
-                <textarea
-                  value={listToText(equipmentResources)}
-                  onChange={(e) => handleListChange("equipmentResources", e.target.value)}
-                  rows={3}
-                  className="sm:col-span-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                  placeholder="Maquinaria y equipos"
-                />
+              <div className="mt-2 space-y-5 text-sm text-gray-700">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-gray-800">
+                      Personal del contratista
+                    </p>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => addPersonnelDraft(setContractorPersonnelDraft)}
+                    >
+                      Añadir persona
+                    </Button>
+                  </div>
+                  <div className="mt-2 space-y-3">
+                    {contractorPersonnelDraft.map((person, index) => (
+                      <div
+                        key={`contractor-edit-${index}`}
+                        className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end"
+                      >
+                        <Input
+                          label={index === 0 ? "Cargo" : undefined}
+                          value={person.role}
+                          onChange={(e) =>
+                            updatePersonnelDraft(
+                              setContractorPersonnelDraft,
+                              index,
+                              "role",
+                              e.target.value
+                            )
+                          }
+                        />
+                        <Input
+                          label={index === 0 ? "Cantidad" : undefined}
+                          type="number"
+                          min="0"
+                          value={person.quantity}
+                          onChange={(e) =>
+                            updatePersonnelDraft(
+                              setContractorPersonnelDraft,
+                              index,
+                              "quantity",
+                              e.target.value
+                            )
+                          }
+                        />
+                        <Input
+                          label={index === 0 ? "Notas" : undefined}
+                          value={person.notes}
+                          onChange={(e) =>
+                            updatePersonnelDraft(
+                              setContractorPersonnelDraft,
+                              index,
+                              "notes",
+                              e.target.value
+                            )
+                          }
+                        />
+                        {contractorPersonnelDraft.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              removePersonnelDraft(setContractorPersonnelDraft, index)
+                            }
+                            className="text-red-500 hover:text-red-700 text-xs font-semibold sm:col-span-3 text-left"
+                          >
+                            <span className="inline-flex items-center gap-1">
+                              <XMarkIcon className="h-4 w-4" /> Quitar
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-gray-800">
+                      Personal de la interventoría
+                    </p>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => addPersonnelDraft(setInterventoriaPersonnelDraft)}
+                    >
+                      Añadir persona
+                    </Button>
+                  </div>
+                  <div className="mt-2 space-y-3">
+                    {interventoriaPersonnelDraft.map((person, index) => (
+                      <div
+                        key={`interventoria-edit-${index}`}
+                        className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end"
+                      >
+                        <Input
+                          label={index === 0 ? "Cargo" : undefined}
+                          value={person.role}
+                          onChange={(e) =>
+                            updatePersonnelDraft(
+                              setInterventoriaPersonnelDraft,
+                              index,
+                              "role",
+                              e.target.value
+                            )
+                          }
+                        />
+                        <Input
+                          label={index === 0 ? "Cantidad" : undefined}
+                          type="number"
+                          min="0"
+                          value={person.quantity}
+                          onChange={(e) =>
+                            updatePersonnelDraft(
+                              setInterventoriaPersonnelDraft,
+                              index,
+                              "quantity",
+                              e.target.value
+                            )
+                          }
+                        />
+                        <Input
+                          label={index === 0 ? "Notas" : undefined}
+                          value={person.notes}
+                          onChange={(e) =>
+                            updatePersonnelDraft(
+                              setInterventoriaPersonnelDraft,
+                              index,
+                              "notes",
+                              e.target.value
+                            )
+                          }
+                        />
+                        {interventoriaPersonnelDraft.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              removePersonnelDraft(
+                                setInterventoriaPersonnelDraft,
+                                index
+                              )
+                            }
+                            className="text-red-500 hover:text-red-700 text-xs font-semibold sm:col-span-3 text-left"
+                          >
+                            <span className="inline-flex items-center gap-1">
+                              <XMarkIcon className="h-4 w-4" /> Quitar
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-gray-800">
+                      Maquinaria y equipos
+                    </p>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={addEquipmentDraftRow}
+                    >
+                      Añadir equipo
+                    </Button>
+                  </div>
+                  <div className="mt-2 space-y-3">
+                    {equipmentResourcesDraft.map((item, index) => (
+                      <div
+                        key={`equipment-edit-${index}`}
+                        className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end"
+                      >
+                        <Input
+                          label={index === 0 ? "Equipo" : undefined}
+                          value={item.name}
+                          onChange={(e) =>
+                            updateEquipmentDraftRow(index, "name", e.target.value)
+                          }
+                        />
+                        <Input
+                          label={index === 0 ? "Estado" : undefined}
+                          value={item.status}
+                          onChange={(e) =>
+                            updateEquipmentDraftRow(index, "status", e.target.value)
+                          }
+                          placeholder="Operativa, standby, etc."
+                        />
+                        <Input
+                          label={index === 0 ? "Notas" : undefined}
+                          value={item.notes}
+                          onChange={(e) =>
+                            updateEquipmentDraftRow(index, "notes", e.target.value)
+                          }
+                        />
+                        {equipmentResourcesDraft.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeEquipmentDraftRow(index)}
+                            className="text-red-500 hover:text-red-700 text-xs font-semibold sm:col-span-3 text-left"
+                          >
+                            <span className="inline-flex items-center gap-1">
+                              <XMarkIcon className="h-4 w-4" /> Quitar
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             ) : (
-              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-700">
+              <div className="mt-2 space-y-3 text-sm text-gray-700">
                 <div>
-                  <p className="font-medium">Contratista</p>
-                  {contractorPersonnel.length ? (
+                  <p className="font-medium">Personal del contratista</p>
+                  {contractorPersonnelLines.length ? (
                     <ul className="mt-1 list-disc list-inside space-y-1">
-                      {contractorPersonnel.map((item, index) => (
-                        <li key={`cp-${index}`}>{item.text}</li>
+                      {contractorPersonnelLines.map((line, index) => (
+                        <li key={`cp-${index}`}>{line}</li>
                       ))}
                     </ul>
                   ) : (
@@ -941,23 +1526,23 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
                   )}
                 </div>
                 <div>
-                  <p className="font-medium">Interventoría</p>
-                  {interventoriaPersonnel.length ? (
+                  <p className="font-medium">Personal de la interventoría</p>
+                  {interventoriaPersonnelLines.length ? (
                     <ul className="mt-1 list-disc list-inside space-y-1">
-                      {interventoriaPersonnel.map((item, index) => (
-                        <li key={`ip-${index}`}>{item.text}</li>
+                      {interventoriaPersonnelLines.map((line, index) => (
+                        <li key={`ip-${index}`}>{line}</li>
                       ))}
                     </ul>
                   ) : (
                     <p className="mt-1 text-gray-500">Sin registro.</p>
                   )}
                 </div>
-                <div className="sm:col-span-2">
+                <div>
                   <p className="font-medium">Maquinaria y equipos</p>
-                  {equipmentResources.length ? (
+                  {equipmentResourceLines.length ? (
                     <ul className="mt-1 list-disc list-inside space-y-1">
-                      {equipmentResources.map((item, index) => (
-                        <li key={`eq-${index}`}>{item.text}</li>
+                      {equipmentResourceLines.map((line, index) => (
+                        <li key={`eq-${index}`}>{line}</li>
                       ))}
                     </ul>
                   ) : (
@@ -975,21 +1560,21 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
             {isEditing ? (
               <div className="mt-2 space-y-3">
                 <textarea
-                  value={listToText(executedActivities)}
+                  value={listToPlainText(executedActivities)}
                   onChange={(e) => handleListChange("executedActivities", e.target.value)}
                   rows={3}
                   className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
                   placeholder="Actividades ejecutadas"
                 />
                 <textarea
-                  value={listToText(executedQuantities)}
+                  value={listToPlainText(executedQuantities)}
                   onChange={(e) => handleListChange("executedQuantities", e.target.value)}
                   rows={3}
                   className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
                   placeholder="Cantidades de obra"
                 />
                 <textarea
-                  value={listToText(scheduledActivities)}
+                  value={listToPlainText(scheduledActivities)}
                   onChange={(e) => handleListChange("scheduledActivities", e.target.value)}
                   rows={3}
                   className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
@@ -1045,35 +1630,35 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
             {isEditing ? (
               <div className="mt-2 space-y-3">
                 <textarea
-                  value={listToText(qualityControls)}
+                  value={listToPlainText(qualityControls)}
                   onChange={(e) => handleListChange("qualityControls", e.target.value)}
                   rows={3}
                   className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
                   placeholder="Control de calidad"
                 />
                 <textarea
-                  value={listToText(materialsReceived)}
+                  value={listToPlainText(materialsReceived)}
                   onChange={(e) => handleListChange("materialsReceived", e.target.value)}
                   rows={3}
                   className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
                   placeholder="Materiales recibidos"
                 />
                 <textarea
-                  value={listToText(safetyNotes)}
+                  value={listToPlainText(safetyNotes)}
                   onChange={(e) => handleListChange("safetyNotes", e.target.value)}
                   rows={3}
                   className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
                   placeholder="Gestión HSEQ / SST"
                 />
                 <textarea
-                  value={listToText(projectIssues)}
+                  value={listToPlainText(projectIssues)}
                   onChange={(e) => handleListChange("projectIssues", e.target.value)}
                   rows={3}
                   className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
                   placeholder="Novedades y contratiempos"
                 />
                 <textarea
-                  value={listToText(siteVisits)}
+                  value={listToPlainText(siteVisits)}
                   onChange={(e) => handleListChange("siteVisits", e.target.value)}
                   rows={3}
                   className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"

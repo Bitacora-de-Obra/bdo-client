@@ -151,16 +151,32 @@ export interface SignatureSummary {
   completed: boolean;
 }
 
+export interface WeatherRainEvent {
+  start: string;
+  end: string;
+}
+
 export interface WeatherReport {
   summary?: string;
-  rainStart?: string;
-  rainEnd?: string;
   temperature?: string;
   notes?: string;
+  rainEvents: WeatherRainEvent[];
 }
 
 export interface LogEntryListItem {
   text: string;
+}
+
+export interface PersonnelEntry {
+  role: string;
+  quantity?: number;
+  notes?: string;
+}
+
+export interface EquipmentResourceEntry {
+  name: string;
+  status?: string;
+  notes?: string;
 }
 
 
@@ -195,9 +211,9 @@ export interface LogEntry {
   scheduleDay: string;
   locationDetails: string;
   weatherReport: WeatherReport | null;
-  contractorPersonnel: LogEntryListItem[];
-  interventoriaPersonnel: LogEntryListItem[];
-  equipmentResources: LogEntryListItem[];
+  contractorPersonnel: PersonnelEntry[];
+  interventoriaPersonnel: PersonnelEntry[];
+  equipmentResources: EquipmentResourceEntry[];
   executedActivities: LogEntryListItem[];
   executedQuantities: LogEntryListItem[];
   scheduledActivities: LogEntryListItem[];

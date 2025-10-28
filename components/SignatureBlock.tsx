@@ -37,6 +37,13 @@ const statusIcon = (status: SignatureTask['status']) => {
   return <ExclamationTriangleIcon className="h-5 w-5" />;
 };
 
+const statusPriority: Record<SignatureTask['status'], number> = {
+  CANCELLED: 0,
+  PENDING: 1,
+  DECLINED: 2,
+  SIGNED: 3,
+};
+
 const SignatureBlock: React.FC<SignatureBlockProps> = ({
   requiredSignatories = [],
   signatures = [],
@@ -65,26 +72,52 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
     };
 
     const participants = new Map<string, Participant>();
+    const orderMap = new Map<string, number>();
 
-    const registerParticipant = (participant: Participant) => {
+    signatureTasks
+      .filter((task): task is SignatureTask & { signer: User } => Boolean(task?.signer))
+      .forEach((task, index) => {
+        if (task.signer?.id && !orderMap.has(task.signer.id)) {
+          orderMap.set(task.signer.id, index);
+        }
+      });
+
+    if (orderMap.size === 0) {
+      requiredSignatories.forEach((user, index) => {
+        if (user.id && !orderMap.has(user.id)) {
+          orderMap.set(user.id, index);
+        }
+      });
+    }
+
+    const upsertParticipant = (participant: Participant) => {
       if (!participant.id) {
         return;
       }
       const existing = participants.get(participant.id);
-      if (existing) {
-        if (participant.status === 'SIGNED' && existing.status !== 'SIGNED') {
-          participants.set(participant.id, { ...existing, ...participant });
-        }
+      if (!existing) {
+        participants.set(participant.id, participant);
         return;
       }
-      participants.set(participant.id, participant);
+
+      const shouldReplaceStatus =
+        statusPriority[participant.status] > statusPriority[existing.status];
+
+      participants.set(participant.id, {
+        ...existing,
+        ...participant,
+        status: shouldReplaceStatus ? participant.status : existing.status,
+        signedAt: participant.signedAt ?? existing.signedAt,
+        avatarUrl: participant.avatarUrl ?? existing.avatarUrl,
+        projectRole: participant.projectRole ?? existing.projectRole,
+      });
     };
 
     signatureTasks
       .filter((task): task is SignatureTask & { signer: User } => Boolean(task?.signer))
       .forEach((task) => {
         const signatureRecord = task.signer ? signaturesById.get(task.signer.id) : undefined;
-        registerParticipant({
+        upsertParticipant({
           id: task.signer.id,
           fullName: task.signer.fullName,
           projectRole: task.signer.projectRole,
@@ -94,22 +127,8 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
         });
       });
 
-    if (participants.size === 0) {
-      requiredSignatories.forEach((user) => {
-        const signatureRecord = signaturesById.get(user.id);
-        registerParticipant({
-          id: user.id,
-          fullName: user.fullName,
-          projectRole: user.projectRole,
-          avatarUrl: user.avatarUrl,
-          status: signatureRecord ? 'SIGNED' : 'PENDING',
-          signedAt: signatureRecord?.signedAt,
-        });
-      });
-    }
-
     signatures.forEach((signature) => {
-      registerParticipant({
+      upsertParticipant({
         id: signature.signer.id,
         fullName: signature.signer.fullName,
         projectRole: signature.signer.projectRole,
@@ -117,9 +136,34 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
         status: 'SIGNED',
         signedAt: signature.signedAt,
       });
+      if (!orderMap.has(signature.signer.id)) {
+        orderMap.set(signature.signer.id, orderMap.size + participants.size);
+      }
     });
 
-    return Array.from(participants.values());
+    requiredSignatories.forEach((user) => {
+      const signatureRecord = signaturesById.get(user.id);
+      upsertParticipant({
+        id: user.id,
+        fullName: user.fullName,
+        projectRole: user.projectRole,
+        avatarUrl: user.avatarUrl,
+        status: signatureRecord ? 'SIGNED' : 'PENDING',
+        signedAt: signatureRecord?.signedAt,
+      });
+      if (!orderMap.has(user.id)) {
+        orderMap.set(user.id, orderMap.size + participants.size);
+      }
+    });
+
+    return Array.from(participants.values()).sort((a, b) => {
+      const orderA = orderMap.has(a.id) ? orderMap.get(a.id)! : Number.MAX_SAFE_INTEGER;
+      const orderB = orderMap.has(b.id) ? orderMap.get(b.id)! : Number.MAX_SAFE_INTEGER;
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
+      return a.fullName.localeCompare(b.fullName, 'es');
+    });
   }, [requiredSignatories, signatureTasks, signatures, signaturesById]);
 
   const canCurrentUserSign = useMemo(() => {

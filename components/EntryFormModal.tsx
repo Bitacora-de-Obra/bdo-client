@@ -47,16 +47,20 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   const [scheduleDay, setScheduleDay] = useState<string>("");
   const [locationDetails, setLocationDetails] = useState<string>("");
   const [weatherSummary, setWeatherSummary] = useState<string>("");
-  const [weatherRainStart, setWeatherRainStart] = useState<string>("");
-  const [weatherRainEnd, setWeatherRainEnd] = useState<string>("");
   const [weatherTemperature, setWeatherTemperature] = useState<string>("");
   const [weatherNotes, setWeatherNotes] = useState<string>("");
-  const [contractorPersonnelText, setContractorPersonnelText] =
-    useState<string>("");
-  const [interventoriaPersonnelText, setInterventoriaPersonnelText] =
-    useState<string>("");
-  const [equipmentResourcesText, setEquipmentResourcesText] =
-    useState<string>("");
+  const [rainEvents, setRainEvents] = useState<Array<{ start: string; end: string }>>([
+    { start: "", end: "" },
+  ]);
+  const [contractorPersonnel, setContractorPersonnel] = useState<
+    Array<{ role: string; quantity: string; notes: string }>
+  >([{ role: "", quantity: "", notes: "" }]);
+  const [interventoriaPersonnel, setInterventoriaPersonnel] = useState<
+    Array<{ role: string; quantity: string; notes: string }>
+  >([{ role: "", quantity: "", notes: "" }]);
+  const [equipmentResources, setEquipmentResources] = useState<
+    Array<{ name: string; status: string; notes: string }>
+  >([{ name: "", status: "", notes: "" }]);
   const [executedActivitiesText, setExecutedActivitiesText] =
     useState<string>("");
   const [executedQuantitiesText, setExecutedQuantitiesText] =
@@ -92,13 +96,12 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     setScheduleDay("");
     setLocationDetails("");
     setWeatherSummary("");
-    setWeatherRainStart("");
-    setWeatherRainEnd("");
     setWeatherTemperature("");
     setWeatherNotes("");
-    setContractorPersonnelText("");
-    setInterventoriaPersonnelText("");
-    setEquipmentResourcesText("");
+    setRainEvents([{ start: "", end: "" }]);
+    setContractorPersonnel([{ role: "", quantity: "", notes: "" }]);
+    setInterventoriaPersonnel([{ role: "", quantity: "", notes: "" }]);
+    setEquipmentResources([{ name: "", status: "", notes: "" }]);
     setExecutedActivitiesText("");
     setExecutedQuantitiesText("");
     setScheduledActivitiesText("");
@@ -172,6 +175,73 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     setFiles((prev) => prev.filter((file) => file !== fileToRemove));
   };
 
+  const addRainEventRow = () =>
+    setRainEvents((prev) => [...prev, { start: "", end: "" }]);
+
+  const updateRainEventRow = (
+    index: number,
+    field: "start" | "end",
+    value: string
+  ) => {
+    setRainEvents((prev) =>
+      prev.map((event, i) => (i === index ? { ...event, [field]: value } : event))
+    );
+  };
+
+  const removeRainEventRow = (index: number) => {
+    setRainEvents((prev) => (prev.length === 1 ? prev : prev.filter((_, i) => i !== index)));
+  };
+
+  const updatePersonnelRow = (
+    setter: React.Dispatch<
+      React.SetStateAction<Array<{ role: string; quantity: string; notes: string }>>
+    >,
+    index: number,
+    field: "role" | "quantity" | "notes",
+    value: string
+  ) => {
+    setter((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+    );
+  };
+
+  const addPersonnelRow = (
+    setter: React.Dispatch<
+      React.SetStateAction<Array<{ role: string; quantity: string; notes: string }>>
+    >
+  ) => {
+    setter((prev) => [...prev, { role: "", quantity: "", notes: "" }]);
+  };
+
+  const removePersonnelRow = (
+    setter: React.Dispatch<
+      React.SetStateAction<Array<{ role: string; quantity: string; notes: string }>>
+    >,
+    index: number
+  ) => {
+    setter((prev) => (prev.length === 1 ? prev : prev.filter((_, i) => i !== index)));
+  };
+
+  const updateEquipmentRow = (
+    index: number,
+    field: "name" | "status" | "notes",
+    value: string
+  ) => {
+    setEquipmentResources((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+    );
+  };
+
+  const addEquipmentRow = () => {
+    setEquipmentResources((prev) => [...prev, { name: "", status: "", notes: "" }]);
+  };
+
+  const removeEquipmentRow = (index: number) => {
+    setEquipmentResources((prev) =>
+      prev.length === 1 ? prev : prev.filter((_, i) => i !== index)
+    );
+  };
+
   const linesToItems = (value: string) =>
     value
       .split("\n")
@@ -180,21 +250,23 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
       .map((text) => ({ text }));
 
   const buildWeatherReport = () => {
-    if (
-      !weatherSummary.trim() &&
-      !weatherRainStart.trim() &&
-      !weatherRainEnd.trim() &&
-      !weatherTemperature.trim() &&
-      !weatherNotes.trim()
-    ) {
+    const normalizedEvents = rainEvents
+      .map(({ start, end }) => ({ start: start.trim(), end: end.trim() }))
+      .filter((event) => event.start || event.end);
+
+    const summary = weatherSummary.trim();
+    const temperature = weatherTemperature.trim();
+    const notes = weatherNotes.trim();
+
+    if (!summary && !temperature && !notes && normalizedEvents.length === 0) {
       return null;
     }
+
     return {
-      summary: weatherSummary.trim() || undefined,
-      rainStart: weatherRainStart.trim() || undefined,
-      rainEnd: weatherRainEnd.trim() || undefined,
-      temperature: weatherTemperature.trim() || undefined,
-      notes: weatherNotes.trim() || undefined,
+      summary: summary || undefined,
+      temperature: temperature || undefined,
+      notes: notes || undefined,
+      rainEvents: normalizedEvents,
     };
   };
 
@@ -241,6 +313,43 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
       )
       .filter((user): user is User => Boolean(user));
 
+    const weatherReport = buildWeatherReport();
+
+    const normalizePersonnelDraft = (
+      entries: Array<{ role: string; quantity: string; notes: string }>
+    ) =>
+      entries
+        .map((entry) => ({
+          role: entry.role.trim(),
+          quantity: entry.quantity.trim(),
+          notes: entry.notes.trim(),
+        }))
+        .filter((entry) => entry.role)
+        .map((entry) => ({
+          role: entry.role,
+          quantity:
+            entry.quantity && !Number.isNaN(Number(entry.quantity))
+              ? Number(entry.quantity)
+              : undefined,
+          notes: entry.notes || undefined,
+        }));
+
+    const normalizedContractorPersonnel = normalizePersonnelDraft(contractorPersonnel);
+    const normalizedInterventoriaPersonnel = normalizePersonnelDraft(interventoriaPersonnel);
+
+    const normalizedEquipmentResources = equipmentResources
+      .map((entry) => ({
+        name: entry.name.trim(),
+        status: entry.status.trim(),
+        notes: entry.notes.trim(),
+      }))
+      .filter((entry) => entry.name)
+      .map((entry) => ({
+        name: entry.name,
+        status: entry.status || undefined,
+        notes: entry.notes || undefined,
+      }));
+
     try {
       await onSave(
         {
@@ -254,10 +363,10 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           additionalObservations: additionalObservations.trim(),
           scheduleDay: scheduleDay.trim(),
           locationDetails: locationDetails.trim(),
-          weatherReport: buildWeatherReport(),
-          contractorPersonnel: linesToItems(contractorPersonnelText),
-          interventoriaPersonnel: linesToItems(interventoriaPersonnelText),
-          equipmentResources: linesToItems(equipmentResourcesText),
+          weatherReport,
+          contractorPersonnel: normalizedContractorPersonnel,
+          interventoriaPersonnel: normalizedInterventoriaPersonnel,
+          equipmentResources: normalizedEquipmentResources,
           executedActivities: linesToItems(executedActivitiesText),
           executedQuantities: linesToItems(executedQuantitiesText),
           scheduledActivities: linesToItems(scheduledActivitiesText),
@@ -352,28 +461,59 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
               value={weatherTemperature}
               onChange={(e) => setWeatherTemperature(e.target.value)}
             />
-            <Input
-              label="Inicio de lluvia"
-              id="weatherRainStart"
-              placeholder="HH:MM"
-              value={weatherRainStart}
-              onChange={(e) => setWeatherRainStart(e.target.value)}
-            />
-            <Input
-              label="Fin de lluvia"
-              id="weatherRainEnd"
-              placeholder="HH:MM"
-              value={weatherRainEnd}
-              onChange={(e) => setWeatherRainEnd(e.target.value)}
-            />
           </div>
           <textarea
             className="mt-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
             rows={2}
-            placeholder="Notas adicionales sobre el clima"
+            placeholder="Observaciones adicionales sobre el clima"
             value={weatherNotes}
             onChange={(e) => setWeatherNotes(e.target.value)}
           />
+          <div className="mt-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-700">Lluvias registradas</p>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={addRainEventRow}
+              >
+                Añadir intervalo
+              </Button>
+            </div>
+            {rainEvents.map((event, index) => (
+              <div
+                key={`rain-${index}`}
+                className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end"
+              >
+                <Input
+                  label={index === 0 ? "Inicio" : undefined}
+                  id={`rain-start-${index}`}
+                  type="time"
+                  value={event.start}
+                  onChange={(e) => updateRainEventRow(index, "start", e.target.value)}
+                />
+                <Input
+                  label={index === 0 ? "Fin" : undefined}
+                  id={`rain-end-${index}`}
+                  type="time"
+                  value={event.end}
+                  onChange={(e) => updateRainEventRow(index, "end", e.target.value)}
+                />
+                {rainEvents.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeRainEventRow(index)}
+                    className="text-red-500 hover:text-red-700 text-xs font-semibold sm:justify-self-start sm:self-center"
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      <XMarkIcon className="h-4 w-4" /> Quitar
+                    </span>
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
 
         <div>
@@ -393,6 +533,32 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           />
         </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Actividades realizadas
+            </label>
+            <textarea
+              value={activitiesPerformed}
+              onChange={(e) => setActivitiesPerformed(e.target.value)}
+              rows={4}
+              className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+              placeholder="Describe las tareas ejecutadas en la jornada"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Materiales utilizados
+            </label>
+            <textarea
+              value={materialsUsed}
+              onChange={(e) => setMaterialsUsed(e.target.value)}
+              rows={4}
+              className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+              placeholder="Registra cantidades, tipos de material, proveedores, etc."
+            />
+          </div>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -447,36 +613,149 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           </div>
         </div>
 
-        <div>
-          <h4 className="text-sm font-semibold text-gray-800 mb-1">
-            Recursos del día
-          </h4>
-          <p className="text-xs text-gray-500 mb-2">
-            Registra cada elemento en una línea. Puedes incluir cargo, cantidad o notas.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <textarea
-              value={contractorPersonnelText}
-              onChange={(e) => setContractorPersonnelText(e.target.value)}
-              rows={3}
-              className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-              placeholder="Personal del contratista"
-            />
-            <textarea
-              value={interventoriaPersonnelText}
-              onChange={(e) => setInterventoriaPersonnelText(e.target.value)}
-              rows={3}
-              className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-              placeholder="Personal de la interventoría"
-            />
+        <div className="space-y-4">
+          <div>
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold text-gray-800">Personal del contratista</h4>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => addPersonnelRow(setContractorPersonnel)}
+              >
+                Añadir personal
+              </Button>
+            </div>
+            <div className="mt-2 space-y-3">
+              {contractorPersonnel.map((person, index) => (
+                <div key={`contractor-${index}`} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                  <Input
+                    label={index === 0 ? "Cargo" : undefined}
+                    value={person.role}
+                    onChange={(e) => updatePersonnelRow(setContractorPersonnel, index, 'role', e.target.value)}
+                  />
+                  <Input
+                    label={index === 0 ? "Cantidad" : undefined}
+                    type="number"
+                    min="0"
+                    value={person.quantity}
+                    onChange={(e) => updatePersonnelRow(setContractorPersonnel, index, 'quantity', e.target.value)}
+                  />
+                  <Input
+                    label={index === 0 ? "Notas" : undefined}
+                    value={person.notes}
+                    onChange={(e) => updatePersonnelRow(setContractorPersonnel, index, 'notes', e.target.value)}
+                  />
+                  {contractorPersonnel.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removePersonnelRow(setContractorPersonnel, index)}
+                      className="text-red-500 hover:text-red-700 text-xs font-semibold sm:col-span-3 text-left"
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        <XMarkIcon className="h-4 w-4" /> Quitar
+                      </span>
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
-          <textarea
-            value={equipmentResourcesText}
-            onChange={(e) => setEquipmentResourcesText(e.target.value)}
-            rows={3}
-            className="mt-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-            placeholder="Maquinaria y equipos (estado, horas, novedades)"
-          />
+
+          <div>
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold text-gray-800">Personal de la interventoría</h4>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => addPersonnelRow(setInterventoriaPersonnel)}
+              >
+                Añadir personal
+              </Button>
+            </div>
+            <div className="mt-2 space-y-3">
+              {interventoriaPersonnel.map((person, index) => (
+                <div key={`interventoria-${index}`} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                  <Input
+                    label={index === 0 ? "Cargo" : undefined}
+                    value={person.role}
+                    onChange={(e) => updatePersonnelRow(setInterventoriaPersonnel, index, 'role', e.target.value)}
+                  />
+                  <Input
+                    label={index === 0 ? "Cantidad" : undefined}
+                    type="number"
+                    min="0"
+                    value={person.quantity}
+                    onChange={(e) => updatePersonnelRow(setInterventoriaPersonnel, index, 'quantity', e.target.value)}
+                  />
+                  <Input
+                    label={index === 0 ? "Notas" : undefined}
+                    value={person.notes}
+                    onChange={(e) => updatePersonnelRow(setInterventoriaPersonnel, index, 'notes', e.target.value)}
+                  />
+                  {interventoriaPersonnel.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removePersonnelRow(setInterventoriaPersonnel, index)}
+                      className="text-red-500 hover:text-red-700 text-xs font-semibold sm:col-span-3 text-left"
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        <XMarkIcon className="h-4 w-4" /> Quitar
+                      </span>
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-semibold text-gray-800">Maquinaria y equipos</h4>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={addEquipmentRow}
+              >
+                Añadir equipo
+              </Button>
+            </div>
+            <div className="mt-2 space-y-3">
+              {equipmentResources.map((item, index) => (
+                <div key={`equipment-${index}`} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                  <Input
+                    label={index === 0 ? "Equipo" : undefined}
+                    value={item.name}
+                    onChange={(e) => updateEquipmentRow(index, 'name', e.target.value)}
+                  />
+                  <Input
+                    label={index === 0 ? "Estado" : undefined}
+                    value={item.status}
+                    onChange={(e) => updateEquipmentRow(index, 'status', e.target.value)}
+                    placeholder="Operativa, standby, etc."
+                  />
+                  <Input
+                    label={index === 0 ? "Notas" : undefined}
+                    value={item.notes}
+                    onChange={(e) => updateEquipmentRow(index, 'notes', e.target.value)}
+                  />
+                  {equipmentResources.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeEquipmentRow(index)}
+                      className="text-red-500 hover:text-red-700 text-xs font-semibold sm:col-span-3 text-left"
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        <XMarkIcon className="h-4 w-4" /> Quitar
+                      </span>
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div>
