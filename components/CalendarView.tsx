@@ -21,25 +21,25 @@ const statusColorMap: Record<EntryStatus, string> = {
 
 const CalendarView: React.FC<CalendarViewProps> = ({ entries, onEventClick, onDateClick }) => {
   const calendarEvents = useMemo(() => {
-    return entries.filter(e => !e.isConfidential).map(entry => {
-      // FullCalendar's end date is exclusive. If an event ends on the 25th,
-      // you provide the 26th. For single-day events, start and end are the same,
-      // so we need to adjust the end date.
-      const endDate = new Date(entry.activityEndDate);
-      endDate.setDate(endDate.getDate() + 1);
+    return entries
+      .filter((e) => !e.isConfidential)
+      .map((entry) => {
+        const entryDate = new Date(entry.entryDate);
+        const isoDate = entryDate.toISOString().split("T")[0];
 
-      return {
-        id: entry.id,
-        title: `#${entry.folioNumber}: ${entry.title}`,
-        start: entry.activityStartDate,
-        end: endDate.toISOString().split('T')[0], // Use YYYY-MM-DD format
-        backgroundColor: statusColorMap[entry.status] || '#6B7280',
-        borderColor: statusColorMap[entry.status] || '#6B7280',
-        extendedProps: {
-          logEntry: entry,
-        },
-      };
-    });
+        return {
+          id: entry.id,
+          title: `#${entry.folioNumber}: ${entry.title}`,
+          start: isoDate,
+          end: isoDate,
+          allDay: true,
+          backgroundColor: statusColorMap[entry.status] || "#6B7280",
+          borderColor: statusColorMap[entry.status] || "#6B7280",
+          extendedProps: {
+            logEntry: entry,
+          },
+        };
+      });
   }, [entries]);
 
   const handleEventClick = (clickInfo: any) => {

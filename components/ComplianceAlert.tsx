@@ -9,7 +9,11 @@ interface ComplianceAlertProps {
   communication: Communication;
 }
 
-const getAlertInfo = (dueDateStr?: string, status?: CommunicationStatus) => {
+const getAlertInfo = (dueDateStr?: string | null, status?: CommunicationStatus, requiresResponse?: boolean) => {
+  if (!requiresResponse) {
+    return null;
+  }
+
   if (!dueDateStr || status === CommunicationStatus.RESUELTO) {
     return null;
   }
@@ -52,7 +56,7 @@ const getAlertInfo = (dueDateStr?: string, status?: CommunicationStatus) => {
 
 
 const ComplianceAlert: React.FC<ComplianceAlertProps> = ({ communication }) => {
-  const alertInfo = getAlertInfo(communication.dueDate, communication.status);
+  const alertInfo = getAlertInfo(communication.responseDueDate, communication.status, communication.requiresResponse);
 
   if (!alertInfo) {
     return null;

@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { Project, Communication, CommunicationStatus } from '../types';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Project, Communication, CommunicationStatus, CommunicationDirection, User } from '../types';
 import CommunicationFilterBar from './CommunicationFilterBar';
 import CommunicationCard from './CommunicationCard';
 import CommunicationFormModal from './CommunicationFormModal';
@@ -15,19 +15,32 @@ import api from '../src/services/api';
 // Se elimina la interfaz de props, ya no recibe 'api'
 interface CommunicationsDashboardProps {
   project: Project;
+  initialCommunicationId?: string | null;
+  onClearInitialCommunication?: () => void;
 }
 
-const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({ project }) => {
+const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({
+  project,
+  initialCommunicationId = null,
+  onClearInitialCommunication,
+}) => {
   const { user } = useAuth();
 
   const { data: communications, isLoading, error, retry: refetchCommunications } = useApi.communications();
+  const { data: users } = useApi.users();
 
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedComm, setSelectedComm] = useState<Communication | null>(null);
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
 
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<{
+    searchTerm: string;
+    sender: string;
+    recipient: string;
+    status: 'all' | CommunicationStatus;
+    direction: 'all' | 'sent' | 'received';
+  }>({
     searchTerm: '',
     sender: '',
     recipient: '',
@@ -46,29 +59,11 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({ proje
         const recipientMatch = filters.recipient === '' || comm.recipientDetails.entity.toLowerCase().includes(filters.recipient.toLowerCase());
         const statusMatch = filters.status === 'all' || comm.status === filters.status;
 
-        // Determine if the communication is sent or received based on user's role
-        let isUserSender = false;
-        let isUserRecipient = false;
-
-        switch (user.projectRole) {
-          case 'Residente de Obra':
-          case 'Representante Contratista':
-            isUserSender = comm.senderDetails.entity.toLowerCase().includes('contratista');
-            isUserRecipient = comm.recipientDetails.entity.toLowerCase().includes('contratista');
-            break;
-          case 'Supervisor':
-            isUserSender = comm.senderDetails.entity.toLowerCase().includes('interventoría');
-            isUserRecipient = comm.recipientDetails.entity.toLowerCase().includes('interventoría');
-            break;
-          case 'Administrador IDU':
-            isUserSender = comm.senderDetails.entity.toLowerCase().includes('idu');
-            isUserRecipient = comm.recipientDetails.entity.toLowerCase().includes('idu');
-            break;
-        }
-
-        const directionMatch = filters.direction === 'all' ||
-                             (filters.direction === 'sent' && isUserSender) ||
-                             (filters.direction === 'received' && isUserRecipient);
+        const directionValue = comm.direction || CommunicationDirection.RECEIVED;
+        const directionMatch =
+          filters.direction === 'all' ||
+          (filters.direction === 'sent' && directionValue === CommunicationDirection.SENT) ||
+          (filters.direction === 'received' && directionValue === CommunicationDirection.RECEIVED);
 
         return searchTermMatch && senderMatch && recipientMatch && statusMatch && directionMatch;
     });
@@ -87,9 +82,19 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({ proje
     setSelectedComm(null);
   };
 
+  useEffect(() => {
+    if (!initialCommunicationId || !communications) return;
+    const commToOpen = communications.find((comm) => comm.id === initialCommunicationId);
+    if (commToOpen) {
+      handleOpenDetail(commToOpen);
+    }
+    onClearInitialCommunication?.();
+  }, [initialCommunicationId, communications, onClearInitialCommunication]);
+
   const handleSaveCommunication = async (
-    newCommData: Omit<Communication, 'id' | 'uploader' | 'attachments' | 'status' | 'statusHistory'>,
-    files: File[]
+    newCommData: Omit<Communication, 'id' | 'uploader' | 'attachments' | 'status' | 'statusHistory' | 'assignee' | 'assignedAt'>,
+    files: File[],
+    options?: { assigneeId?: string | null }
   ) => {
     if (!user) {
       throw new Error('No estás autenticado.');
@@ -104,6 +109,7 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({ proje
         ...newCommData,
         uploaderId: user.id,
         attachments: uploadedAttachments,
+        assigneeId: options?.assigneeId ?? undefined,
       });
       refetchCommunications();
       handleCloseForm();
@@ -122,6 +128,18 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({ proje
       }
     } catch (err) {
       throw err instanceof Error ? err : new Error('Error al actualizar el estado de la comunicación.');
+    }
+  };
+
+  const handleAssignmentChange = async (commId: string, assigneeId: string | null) => {
+    try {
+      const updatedComm = await api.communications.assign(commId, assigneeId);
+      refetchCommunications();
+      if (selectedComm?.id === commId) {
+        setSelectedComm(updatedComm);
+      }
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Error al actualizar el responsable de la comunicación.');
     }
   };
 
@@ -200,6 +218,7 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({ proje
         onClose={handleCloseForm}
         onSave={handleSaveCommunication}
         communications={communications || []}
+        users={users || []}
       />
 
       {selectedComm && (
@@ -209,6 +228,8 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({ proje
             communication={selectedComm}
             onStatusChange={handleStatusChange}
             allCommunications={communications}
+            users={users || []}
+            onAssign={handleAssignmentChange}
         />
       )}
     </div>

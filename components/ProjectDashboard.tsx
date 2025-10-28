@@ -74,6 +74,21 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
         entry.description
           .toLowerCase()
           .includes(filters.searchTerm.toLowerCase()) ||
+        entry.activitiesPerformed
+          .toLowerCase()
+          .includes(filters.searchTerm.toLowerCase()) ||
+        entry.materialsUsed
+          .toLowerCase()
+          .includes(filters.searchTerm.toLowerCase()) ||
+        entry.workforce
+          .toLowerCase()
+          .includes(filters.searchTerm.toLowerCase()) ||
+        entry.weatherConditions
+          .toLowerCase()
+          .includes(filters.searchTerm.toLowerCase()) ||
+        entry.additionalObservations
+          .toLowerCase()
+          .includes(filters.searchTerm.toLowerCase()) ||
         String(entry.folioNumber).includes(filters.searchTerm);
       const statusMatch =
         filters.status === "all" || entry.status === filters.status;
@@ -82,11 +97,11 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
         filters.user === "all" ||
         (entry.author && entry.author.id === filters.user);
 
-      const createdAtDateOnly = entry.createdAt.substring(0, 10);
+      const entryDateOnly = entry.entryDate.substring(0, 10);
       const startDateMatch =
-        !filters.startDate || createdAtDateOnly >= filters.startDate;
+        !filters.startDate || entryDateOnly >= filters.startDate;
       const endDateMatch =
-        !filters.endDate || createdAtDateOnly <= filters.endDate;
+        !filters.endDate || entryDateOnly <= filters.endDate;
 
       return (
         searchTermMatch &&
@@ -269,16 +284,27 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     Estado: ${entry.status}
     Tipo: ${entry.type}
     Autor: ${entry.author.fullName}
-    Fecha de Creación: ${new Date(entry.createdAt).toLocaleString("es-CO")}
-    Fecha de Actividad: ${new Date(entry.activityStartDate).toLocaleDateString(
-      "es-CO"
-    )} a ${new Date(entry.activityEndDate).toLocaleDateString("es-CO")}
-    Asunto: ${entry.subject}
-    Localización: ${entry.location}
+    Fecha del Diario: ${new Date(entry.entryDate).toLocaleDateString("es-CO")}
+    Fecha de Registro: ${new Date(entry.createdAt).toLocaleString("es-CO")}
     Confidencial: ${entry.isConfidential ? "Sí" : "No"}
     
-    Descripción:
+    Resumen general:
     ${entry.description}
+
+    Actividades realizadas:
+    ${entry.activitiesPerformed || "Sin registro."}
+
+    Materiales utilizados:
+    ${entry.materialsUsed || "Sin registro."}
+
+    Personal en obra:
+    ${entry.workforce || "Sin registro."}
+
+    Condiciones climáticas:
+    ${entry.weatherConditions || "Sin registro."}
+
+    Observaciones adicionales:
+    ${entry.additionalObservations || "Sin observaciones."}
     
     Comentarios (${(entry.comments || []).length}):
     ${comments || "\t(Sin comentarios)"}
@@ -431,7 +457,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
           }
           onDelete={handleDeleteEntry}
           currentUser={user}
-          allUsers={users || []}
+          onRefresh={refetchLogEntries}
         />
       )}
       {logEntries && (
@@ -440,7 +466,6 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
           onClose={handleCloseForm}
           onSave={handleSaveEntry}
           initialDate={newEntryDefaultDate}
-          allUsers={users || []}
         />
       )}
       <ExportModal

@@ -449,6 +449,12 @@ export const logEntriesApi = {
     appendIfDefined("location", data.location);
     appendIfDefined("activityStartDate", data.activityStartDate);
     appendIfDefined("activityEndDate", data.activityEndDate);
+    appendIfDefined("entryDate", data.entryDate);
+    appendIfDefined("activitiesPerformed", (data as any).activitiesPerformed);
+    appendIfDefined("materialsUsed", (data as any).materialsUsed);
+    appendIfDefined("workforce", (data as any).workforce);
+    appendIfDefined("weatherConditions", (data as any).weatherConditions);
+    appendIfDefined("additionalObservations", (data as any).additionalObservations);
     appendIfDefined("isConfidential", data.isConfidential ?? false);
     appendIfDefined("status", data.status);
     appendIfDefined("authorId", data.authorId);
@@ -522,6 +528,11 @@ export const logEntriesApi = {
       body: JSON.stringify(data),
     });
   },
+  exportPdf: async (entryId: string) => {
+    return apiFetch(`/log-entries/${entryId}/export-pdf`, {
+      method: "POST",
+    });
+  },
 };
 
 // API Functions for Communications
@@ -535,10 +546,11 @@ export const communicationsApi = {
   create: async (
     data: Omit<
       Communication,
-      "id" | "uploader" | "attachments" | "status" | "statusHistory"
+      "id" | "uploader" | "attachments" | "status" | "statusHistory" | "assignee" | "assignedAt"
     > & {
       uploaderId: string;
       attachments?: Attachment[];
+      assigneeId?: string | null;
     }
   ) => {
     return apiFetch("/communications", {
@@ -550,6 +562,12 @@ export const communicationsApi = {
     return apiFetch(`/communications/${id}/status`, {
       method: "PUT",
       body: JSON.stringify({ status }),
+    });
+  },
+  assign: async (id: string, assigneeId: string | null) => {
+    return apiFetch(`/communications/${id}/assignment`, {
+      method: "PUT",
+      body: JSON.stringify({ assigneeId }),
     });
   },
 };

@@ -9,6 +9,7 @@ import {
   Attachment,
   Communication,
   CommunicationStatus,
+  CommunicationDirection,
   StatusChange,
   Acta,
   ActaStatus,
@@ -368,12 +369,20 @@ export const MOCK_LOG_ENTRIES: LogEntry[] = [
     author: MOCK_USERS[0],
     createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    entryDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
     activityStartDate: new Date(
       Date.now() - 5 * 24 * 60 * 60 * 1000
     ).toISOString(),
     activityEndDate: new Date(
       Date.now() - 5 * 24 * 60 * 60 * 1000
     ).toISOString(),
+    activitiesPerformed:
+      "Inspección visual del acero de refuerzo y verificación de recubrimiento con plantilla de referencia.",
+    materialsUsed: "Varillas #6 y #8, separadores plásticos de 2'', anillos de amarre.",
+    workforce: "Equipo de interventoría (2), cuadrilla de pilotes (6 operarios).",
+    weatherConditions: "Cielo parcialmente nublado, sin precipitaciones; temperatura promedio 19°C.",
+    additionalObservations:
+      "Se recomendó reforzar señalización nocturna en área de excavaciones para ingreso de mixer.",
     location: "Eje 3, Abscisa K1+200",
     subject: "Estructuras",
     type: EntryType.QUALITY,
@@ -404,12 +413,20 @@ export const MOCK_LOG_ENTRIES: LogEntry[] = [
     author: MOCK_USERS[2],
     createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
     updatedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    entryDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
     activityStartDate: new Date(
       Date.now() - 3 * 24 * 60 * 60 * 1000
     ).toISOString(),
     activityEndDate: new Date(
       Date.now() - 3 * 24 * 60 * 60 * 1000
     ).toISOString(),
+    activitiesPerformed:
+      "Revisión documental del plano P-102-RevB y comparación con memorias de cálculo suministradas.",
+    materialsUsed: "N/A",
+    workforce: "Coordinador de diseño (1), especialista de pavimentos (1).",
+    weatherConditions: "Jornada en oficina, condiciones meteorológicas sin incidencia.",
+    additionalObservations:
+      "Se solicitó respuesta antes de 48 horas para no afectar cronograma de vaciado base granular.",
     location: "General",
     subject: "Diseño",
     type: EntryType.ADMINISTRATIVE,
@@ -444,12 +461,20 @@ export const MOCK_LOG_ENTRIES: LogEntry[] = [
     author: MOCK_USERS[0],
     createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
     updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    entryDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
     activityStartDate: new Date(
       Date.now() - 1 * 24 * 60 * 60 * 1000
     ).toISOString(),
     activityEndDate: new Date(
       Date.now() - 1 * 24 * 60 * 60 * 1000
     ).toISOString(),
+    activitiesPerformed:
+      "Detención controlada de maniobra, aseguramiento del perímetro y elaboración de informe preliminar.",
+    materialsUsed: "Barreras plásticas, cinta de demarcación, fichas de reporte de incidentes.",
+    workforce: "Supervisor HSE (1), operador de retroexcavadora (1), ayudantes (3).",
+    weatherConditions: "Lluvia ligera intermitente durante la mañana; suelo húmedo.",
+    additionalObservations:
+      "Se programó charla de refuerzo sobre ingreso seguro a zanjas para el turno siguiente.",
     location: "Zona de Excavación Norte",
     subject: "HSE",
     type: EntryType.SAFETY,
@@ -498,7 +523,12 @@ export const MOCK_COMMUNICATIONS: Communication[] = [
     sentDate: new Date("2024-02-05").toISOString(),
     dueDate: new Date("2024-02-12").toISOString(),
     deliveryMethod: DeliveryMethod.SYSTEM,
+    direction: CommunicationDirection.SENT,
+    requiresResponse: false,
+    responseDueDate: null,
     uploader: MOCK_USERS[2],
+    assignee: null,
+    assignedAt: null,
     attachments: [
       {
         id: "att-comm-1",
@@ -538,7 +568,12 @@ export const MOCK_COMMUNICATIONS: Communication[] = [
     sentDate: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
     dueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
     deliveryMethod: DeliveryMethod.SYSTEM,
+    direction: CommunicationDirection.RECEIVED,
+    requiresResponse: true,
+    responseDueDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
     uploader: MOCK_USERS[1],
+    assignee: MOCK_USERS[0],
+    assignedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
     attachments: [
       {
         id: "att-comm-2",
@@ -573,7 +608,12 @@ export const MOCK_COMMUNICATIONS: Communication[] = [
     dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
     deliveryMethod: DeliveryMethod.MAIL,
     notes: "Enviado con copia al Director de Interventoría.",
+    direction: CommunicationDirection.RECEIVED,
+    requiresResponse: true,
+    responseDueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
     uploader: MOCK_USERS[0],
+    assignee: MOCK_USERS[1],
+    assignedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     attachments: [],
     status: CommunicationStatus.PENDIENTE,
     statusHistory: [

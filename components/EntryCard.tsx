@@ -6,7 +6,6 @@ import Badge from "./ui/Badge";
 // Fix: Corrected import path for icons
 import {
   PaperClipIcon,
-  ClockIcon,
   CalendarIcon,
   UserCircleIcon,
   LockClosedIcon,
@@ -18,7 +17,7 @@ interface EntryCardProps {
 }
 
 const EntryCard: React.FC<EntryCardProps> = ({ entry, onSelect }) => {
-  const creationDate = new Date(entry.createdAt).toLocaleDateString("es-CO", {
+  const entryDate = new Date(entry.entryDate).toLocaleDateString("es-CO", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -69,65 +68,56 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, onSelect }) => {
             <span>El contenido de esta anotación es confidencial.</span>
           </div>
         ) : (
-          <p className="mt-3 text-sm text-gray-600 line-clamp-2">
-            {entry.description}
-          </p>
+          <>
+            <p className="mt-3 text-sm text-gray-700 whitespace-pre-wrap line-clamp-3">
+              {entry.description || "Sin resumen registrado."}
+            </p>
+            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-gray-600">
+              <div>
+                <p className="font-semibold">Actividades</p>
+                <p className="mt-1 whitespace-pre-wrap line-clamp-3">
+                  {entry.activitiesPerformed || "Sin registro."}
+                </p>
+              </div>
+              <div>
+                <p className="font-semibold">Materiales</p>
+                <p className="mt-1 whitespace-pre-wrap line-clamp-3">
+                  {entry.materialsUsed || "Sin registro."}
+                </p>
+              </div>
+              <div>
+                <p className="font-semibold">Personal</p>
+                <p className="mt-1 whitespace-pre-wrap line-clamp-3">
+                  {entry.workforce || "Sin registro."}
+                </p>
+              </div>
+              <div>
+                <p className="font-semibold">Clima</p>
+                <p className="mt-1 whitespace-pre-wrap line-clamp-3">
+                  {entry.weatherConditions || "Sin registro."}
+                </p>
+              </div>
+            </div>
+          </>
         )}
 
-        <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-500">
+        <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-gray-500 justify-between">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <div className="flex items-center">
               <UserCircleIcon className="mr-1.5 text-gray-400" />
               <span>{entry.author.fullName}</span>
             </div>
             <div className="flex items-center">
               <CalendarIcon className="mr-1.5 text-gray-400" />
-              <span>Creado: {creationDate}</span>
+              <span>Bitácora: {entryDate}</span>
             </div>
-            {!isLocked && (
-              <>
-                <div className="flex items-center">
-                  <ClockIcon className="mr-1.5 text-gray-400" />
-                  <span>
-                    Actividad:{" "}
-                    {new Date(entry.activityStartDate).toLocaleDateString(
-                      "es-CO"
-                    )}
-                  </span>
-                </div>
-                {(entry.attachments || []).length > 0 && (
-                  <div className="flex items-center font-medium">
-                    <PaperClipIcon className="mr-1.5 text-gray-400" />
-                    <span>{entry.attachments.length} Adjunto(s)</span>
-                  </div>
-                )}
-              </>
+            {(entry.attachments || []).length > 0 && (
+              <div className="flex items-center font-medium">
+                <PaperClipIcon className="mr-1.5 text-gray-400" />
+                <span>{entry.attachments.length} adjunto(s)</span>
+              </div>
             )}
           </div>
-          {(entry.assignees || []).length > 0 && (
-            <div
-              className="flex-shrink-0"
-              title={`Asignado a: ${entry.assignees
-                .map((a) => a.fullName)
-                .join(", ")}`}
-            >
-              <div className="flex -space-x-2 overflow-hidden">
-                {entry.assignees.slice(0, 3).map((assignee) => (
-                  <img
-                    key={assignee.id}
-                    className="inline-block h-7 w-7 rounded-full ring-2 ring-white"
-                    src={assignee.avatarUrl}
-                    alt={assignee.fullName}
-                  />
-                ))}
-              </div>
-              {entry.assignees.length > 3 && (
-                <span className="text-xs font-semibold z-10 bg-gray-200 rounded-full px-1.5 py-0.5 -ml-2">
-                  +{entry.assignees.length - 3}
-                </span>
-              )}
-            </div>
-          )}
         </div>
       </div>
     </Card>

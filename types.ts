@@ -145,18 +145,24 @@ export interface LogEntry {
   folioNumber: number;
   title: string;
   description: string;
+  entryDate: string;
+  activitiesPerformed: string;
+  materialsUsed: string;
+  workforce: string;
+  weatherConditions: string;
+  additionalObservations: string;
   author: User;
   createdAt: string; // ISO date string
   updatedAt?: string; // ISO date string
   activityStartDate: string; // ISO date string
   activityEndDate: string; // ISO date string
-  location: string;
-  subject: string;
+  location?: string;
+  subject?: string;
   type: EntryType;
   status: EntryStatus;
   attachments: Attachment[];
   comments: Comment[];
-  assignees: User[];
+  assignees?: User[];
   isConfidential: boolean;
   history?: Change[];
   requiredSignatories: User[];
@@ -208,6 +214,11 @@ export enum CommunicationStatus {
   RESUELTO = 'Resuelto',
 }
 
+export enum CommunicationDirection {
+  SENT = 'Enviada',
+  RECEIVED = 'Recibida',
+}
+
 export enum DeliveryMethod {
   MAIL = 'Correo Electrónico',
   PRINTED = 'Impreso',
@@ -241,10 +252,15 @@ export interface Communication {
   deliveryMethod: DeliveryMethod;
   notes?: string; // Observaciones
   uploader: User;
+  assignee?: User | null;
+  assignedAt?: string | null;
   attachments: Attachment[];
   status: CommunicationStatus;
   statusHistory: StatusChange[];
   parentId?: string; // opcional
+  direction: CommunicationDirection;
+  requiresResponse: boolean;
+  responseDueDate?: string | null;
 }
 
 
@@ -454,12 +470,12 @@ export interface Report {
 // NOTIFICATIONS
 export interface Notification {
   id: string;
-  type: 'commitment_due' | 'log_entry_assigned';
+  type: 'commitment_due' | 'log_entry_assigned' | 'communication_assigned';
   urgency: 'overdue' | 'due_soon' | 'info';
   message: string;
   sourceDescription: string;
-  relatedView: 'minutes' | 'logbook';
-  relatedItemType: 'acta' | 'logEntry';
+  relatedView: 'minutes' | 'logbook' | 'communications';
+  relatedItemType: 'acta' | 'logEntry' | 'communication';
   relatedItemId: string;
   createdAt: string;
   isRead: boolean;

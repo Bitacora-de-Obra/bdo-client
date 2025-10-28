@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Project, User, CommitmentStatus, EntryStatus, Acta, LogEntry } from '../types';
+import { CommitmentStatus, EntryStatus, Acta, LogEntry, Communication, CommunicationStatus, CommunicationDirection } from '../types';
 import { useApi } from '../src/hooks/useApi';
 import EmptyState from './ui/EmptyState';
 import { BellIcon, CalendarIcon, ListBulletIcon } from './icons/Icon';
@@ -8,70 +8,112 @@ import { useAuth } from '../contexts/AuthContext';
 import PendingTasksCalendarView from './PendingTasksCalendarView';
 
 export type PendingCommitment = {
-    type: 'commitment';
-    id: string;
-    description: string;
-    dueDate: string;
-    source: string; // e.g., "Acta No. 123"
-    parentId: string; // The ID of the parent Acta
+  type: 'commitment';
+  id: string;
+  description: string;
+  dueDate: string;
+  source: string;
+  parentId: string;
 };
 
 export type PendingLogEntry = {
-    type: 'logEntry';
-    id: string;
-    description: string;
-    dueDate: string; // Using activityEndDate as due date
-    source: string; // e.g., "Anotación #1025"
-    parentId: string; // The ID of the LogEntry itself
+  type: 'logEntry';
+  id: string;
+  description: string;
+  dueDate: string;
+  source: string;
+  parentId: string;
 };
 
-export type PendingTask = PendingCommitment | PendingLogEntry;
+export type PendingCommunication = {
+  type: 'communication';
+  id: string;
+  description: string;
+  dueDate: string;
+  source: string;
+  parentId: string;
+};
+
+export type PendingTask = PendingCommitment | PendingLogEntry | PendingCommunication;
 
 interface PendingTasksDashboardProps {
-  onNavigate: (view: string, item: { type: 'acta' | 'logEntry'; id: string }) => void;
+  onNavigate: (view: string, item: { type: 'acta' | 'logEntry' | 'communication'; id: string }) => void;
 }
 
 const PendingTasksDashboard: React.FC<PendingTasksDashboardProps> = ({ onNavigate }) => {
   const { user } = useAuth();
   const { data: actas, isLoading: actasLoading, error: actasError } = useApi.actas();
   const { data: logEntries, isLoading: logEntriesLoading, error: logEntriesError } = useApi.logEntries();
+  const { data: communications, isLoading: communicationsLoading, error: communicationsError } = useApi.communications();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
-  const isLoading = actasLoading || logEntriesLoading;
-  const error = actasError || logEntriesError;
+  const isLoading = actasLoading || logEntriesLoading || communicationsLoading;
+  const error = actasError || logEntriesError || communicationsError;
 
   const pendingTasks = useMemo((): PendingTask[] => {
-    if (!user || !actas || !logEntries) return [];
+    if (!user) return [];
 
-    const commitmentTasks: PendingCommitment[] = actas.flatMap((acta: Acta) =>
-        acta.commitments
-            .filter(c => c.responsible.id === user.id && c.status === CommitmentStatus.PENDING)
-            .map(c => ({
-                type: 'commitment',
-                id: c.id,
-                description: c.description,
-                dueDate: c.dueDate,
-                source: `Acta: ${acta.number}`,
-                parentId: acta.id,
-            }))
+    const commitmentTasks: PendingCommitment[] = (actas || []).flatMap((acta: Acta) =>
+      acta.commitments
+        .filter((c) => c.responsible.id === user.id && c.status === CommitmentStatus.PENDING)
+        .map((c) => ({
+          type: 'commitment' as const,
+          id: c.id,
+          description: c.description,
+          dueDate: c.dueDate,
+          source: `Acta: ${acta.number}`,
+          parentId: acta.id,
+        }))
     );
     
-    const logEntryTasks: PendingLogEntry[] = logEntries
-        .filter(entry => 
-            entry.assignees.some(a => a.id === user.id) &&
-            (entry.status === EntryStatus.NEEDS_REVIEW || entry.status === EntryStatus.SUBMITTED)
-        )
-        .map(entry => ({
-            type: 'logEntry',
-            id: entry.id,
-            description: entry.title,
-            dueDate: entry.activityEndDate, // Using activity end date as a proxy for due date
-            source: `Anotación: #${entry.folioNumber}`,
-            parentId: entry.id,
-        }));
+    const logEntryTasks: PendingLogEntry[] = (logEntries || [])
+      .filter(
+        (entry) =>
+          entry.assignees.some((a) => a.id === user.id) &&
+          (entry.status === EntryStatus.NEEDS_REVIEW || entry.status === EntryStatus.SUBMITTED)
+      )
+      .map((entry) => ({
+        type: 'logEntry' as const,
+        id: entry.id,
+        description: entry.title,
+        dueDate: entry.activityEndDate,
+        source: `Anotación: #${entry.folioNumber}`,
+        parentId: entry.id,
+      }));
 
-    return [...commitmentTasks, ...logEntryTasks].sort((a,b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-  }, [actas, logEntries, user]);
+    const communicationTasks: PendingCommunication[] = (communications || [])
+      .filter((comm: Communication) => {
+        if (comm.status !== CommunicationStatus.PENDIENTE) {
+          return false;
+        }
+        if (comm.direction !== CommunicationDirection.RECEIVED) {
+          return false;
+        }
+        if (!comm.requiresResponse) {
+          return false;
+        }
+        return comm.assignee?.id === user.id;
+      })
+      .map((comm) => {
+        const dueDate = comm.responseDueDate || comm.dueDate || comm.sentDate;
+        return {
+          type: 'communication' as const,
+          id: comm.id,
+          description: comm.subject,
+          dueDate,
+          source: `Comunicación: ${comm.radicado}`,
+          parentId: comm.id,
+        };
+      });
+
+    return [...commitmentTasks, ...logEntryTasks, ...communicationTasks].sort((a, b) => {
+      const dateA = new Date(a.dueDate).getTime();
+      const dateB = new Date(b.dueDate).getTime();
+      const safeDateA = Number.isNaN(dateA) ? Number.MAX_SAFE_INTEGER : dateA;
+      const safeDateB = Number.isNaN(dateB) ? Number.MAX_SAFE_INTEGER : dateB;
+      return safeDateA - safeDateB;
+    });
+  }, [actas, communications, logEntries, user]);
 
   const { overdue, dueSoon, upcoming } = useMemo(() => {
     const today = new Date();
@@ -87,6 +129,10 @@ const PendingTasksDashboard: React.FC<PendingTasksDashboardProps> = ({ onNavigat
 
     pendingTasks.forEach(task => {
         const dueDate = new Date(task.dueDate);
+        if (Number.isNaN(dueDate.getTime())) {
+            categorized.upcoming.push(task);
+            return;
+        }
         if (dueDate < today) {
             categorized.overdue.push(task);
         } else if (dueDate <= sevenDaysFromNow) {
@@ -100,9 +146,11 @@ const PendingTasksDashboard: React.FC<PendingTasksDashboardProps> = ({ onNavigat
   
   const handleViewDetail = (task: PendingTask) => {
     if (task.type === 'commitment') {
-        onNavigate('minutes', { type: 'acta', id: task.parentId });
+      onNavigate('minutes', { type: 'acta', id: task.parentId });
     } else if (task.type === 'logEntry') {
-        onNavigate('logbook', { type: 'logEntry', id: task.parentId });
+      onNavigate('logbook', { type: 'logEntry', id: task.parentId });
+    } else if (task.type === 'communication') {
+      onNavigate('communications', { type: 'communication', id: task.parentId });
     }
   };
 

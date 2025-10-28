@@ -39,16 +39,39 @@ Título: ${entry.title}
 Estado: ${entry.status}
 Tipo: ${entry.type}
 Autor: ${entry.author.fullName}
-Fecha de Creación: ${new Date(entry.createdAt).toLocaleString('es-CO')}
-Fecha de Actividad: ${new Date(entry.activityStartDate).toLocaleDateString('es-CO')} a ${new Date(entry.activityEndDate).toLocaleDateString('es-CO')}
-Asunto: ${entry.subject}
-Localización: ${entry.location}
+Fecha del Diario: ${new Date(entry.entryDate).toLocaleDateString('es-CO', { dateStyle: 'long' })}
+Fecha de Registro: ${new Date(entry.createdAt).toLocaleString('es-CO')}
 Confidencial: ${entry.isConfidential ? 'Sí' : 'No'}
 
 --------------------------------------------------
-DESCRIPCIÓN
+RESUMEN GENERAL
 --------------------------------------------------
 ${entry.description}
+
+--------------------------------------------------
+ACTIVIDADES REALIZADAS
+--------------------------------------------------
+${entry.activitiesPerformed || 'Sin registro.'}
+
+--------------------------------------------------
+MATERIALES UTILIZADOS
+--------------------------------------------------
+${entry.materialsUsed || 'Sin registro.'}
+
+--------------------------------------------------
+PERSONAL EN OBRA
+--------------------------------------------------
+${entry.workforce || 'Sin registro.'}
+
+--------------------------------------------------
+CONDICIONES CLIMÁTICAS
+--------------------------------------------------
+${entry.weatherConditions || 'Sin registro.'}
+
+--------------------------------------------------
+OBSERVACIONES ADICIONALES
+--------------------------------------------------
+${entry.additionalObservations || 'Sin observaciones.'}
 
 --------------------------------------------------
 COMENTARIOS (${entry.comments.length})
@@ -178,7 +201,9 @@ Estado: ${comm.status}
 Remitente: ${comm.senderDetails.entity} - ${comm.senderDetails.personName}
 Destinatario: ${comm.recipientDetails.entity} - ${comm.recipientDetails.personName}
 Fecha de envío: ${new Date(comm.sentDate).toLocaleDateString('es-CO')}
-Fecha límite: ${comm.dueDate ? new Date(comm.dueDate).toLocaleDateString('es-CO') : 'N/A'}
+Dirección: ${comm.direction}
+Requiere respuesta: ${comm.requiresResponse ? 'Sí' : 'No'}
+Fecha límite de respuesta: ${comm.requiresResponse && comm.responseDueDate ? new Date(comm.responseDueDate).toLocaleDateString('es-CO') : 'N/A'}
 
 Descripción:
 ${comm.description}

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   LogEntry,
   EntryStatus,
-  EntryType,
   User,
   UserRole,
   Attachment,
@@ -22,6 +21,8 @@ import {
 } from "./icons/Icon";
 import SignatureBlock from "./SignatureBlock";
 import SignatureModal from "./SignatureModal";
+import { useToast } from "./ui/ToastProvider";
+import api from "../src/services/api";
 
 interface EntryDetailModalProps {
   isOpen: boolean;
@@ -41,7 +42,7 @@ interface EntryDetailModalProps {
   ) => Promise<{ success: boolean; error?: string }>;
   onDelete: (entryId: string) => Promise<void>;
   currentUser: User;
-  allUsers: User[];
+  onRefresh?: () => void;
 }
 
 const DetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({
@@ -72,7 +73,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   onSign,
   onDelete,
   currentUser,
-  allUsers,
+  onRefresh = () => {},
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedEntry, setEditedEntry] = useState<LogEntry>(entry);
@@ -81,6 +82,9 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const [commentFiles, setCommentFiles] = useState<File[]>([]);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+  const [formEntryDate, setFormEntryDate] = useState<string>("");
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (isOpen) {
@@ -93,6 +97,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
         requiredSignatories: entry.requiredSignatories || [],
         signatures: entry.signatures || [],
       });
+      setFormEntryDate(entry.entryDate.substring(0, 10));
       setValidationError(null);
     } else {
       const timer = setTimeout(() => {
@@ -101,6 +106,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
         setNewComment("");
         setCommentFiles([]);
         setValidationError(null);
+        setFormEntryDate("");
       }, 300);
       return () => clearTimeout(timer);
     }
@@ -160,23 +166,6 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     setCommentFiles((prev) => prev.filter((file) => file !== fileToRemove));
   };
 
-  const handleAssigneeChange = (user: User, isChecked: boolean) => {
-    setEditedEntry((prev) => {
-      const currentAssignees = prev.assignees || [];
-      if (isChecked) {
-        if (!currentAssignees.some((a) => a.id === user.id)) {
-          return { ...prev, assignees: [...currentAssignees, user] };
-        }
-      } else {
-        return {
-          ...prev,
-          assignees: currentAssignees.filter((a) => a.id !== user.id),
-        };
-      }
-      return prev;
-    });
-  };
-
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newComment.trim() || commentFiles.length > 0) {
@@ -186,19 +175,34 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setValidationError(null);
 
-    if (editedEntry.activityStartDate && editedEntry.activityEndDate) {
-      const start = new Date(editedEntry.activityStartDate);
-      const end = new Date(editedEntry.activityEndDate);
-      if (end < start) {
-        setValidationError(
-          "La fecha de fin de actividad no puede ser anterior a la fecha de inicio."
-        );
-        return;
-      }
+    if (!formEntryDate) {
+      setValidationError("Debes indicar la fecha de la bitácora.");
+      return;
     }
+
+    if (!editedEntry.title.trim()) {
+      setValidationError("El título no puede estar vacío.");
+      return;
+    }
+
+    if (!editedEntry.description.trim()) {
+      setValidationError("El resumen general es obligatorio.");
+      return;
+    }
+
+    const parsedDate = new Date(`${formEntryDate}T00:00:00`);
+    if (isNaN(parsedDate.getTime())) {
+      setValidationError("La fecha del diario no es válida.");
+      return;
+    }
+
+    const normalizedDate = new Date(parsedDate);
+    normalizedDate.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(normalizedDate);
+    endOfDay.setHours(23, 59, 59, 999);
 
     const newAttachments = newFiles.map((file) => ({
       id: `att-${Date.now()}-${file.name}`,
@@ -210,12 +214,30 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
 
     const finalEntry = {
       ...editedEntry,
+      title: editedEntry.title.trim(),
+      description: editedEntry.description.trim(),
+      activitiesPerformed: (editedEntry.activitiesPerformed || "").trim(),
+      materialsUsed: (editedEntry.materialsUsed || "").trim(),
+      workforce: (editedEntry.workforce || "").trim(),
+      weatherConditions: (editedEntry.weatherConditions || "").trim(),
+      additionalObservations: (editedEntry.additionalObservations || "").trim(),
+      entryDate: normalizedDate.toISOString(),
+      activityStartDate: normalizedDate.toISOString(),
+      activityEndDate: endOfDay.toISOString(),
       attachments: [...(editedEntry.attachments || []), ...newAttachments],
-    };
+    } as LogEntry;
 
-    onUpdate(finalEntry);
-    setIsEditing(false);
-    setNewFiles([]);
+    try {
+      await onUpdate(finalEntry);
+      setIsEditing(false);
+      setNewFiles([]);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "No se pudo actualizar la bitácora.";
+      setValidationError(message);
+    }
   };
 
 const handleConfirmSignature = async (password: string): Promise<{ success: boolean, error?: string }> => {
@@ -232,23 +254,77 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
     setIsEditing(false);
     setNewFiles([]);
     setValidationError(null);
+    setFormEntryDate(entry.entryDate.substring(0, 10));
+  };
+
+  const handleExportPdf = async () => {
+    setValidationError(null);
+    setIsGeneratingPdf(true);
+    try {
+      const response = await api.logEntries.exportPdf(entry.id);
+      const updatedEntry =
+        response?.entry && (response.entry as LogEntry);
+
+      if (updatedEntry) {
+        setEditedEntry({
+          ...updatedEntry,
+          assignees: updatedEntry.assignees || [],
+          attachments: updatedEntry.attachments || [],
+          comments: updatedEntry.comments || [],
+          history: updatedEntry.history || [],
+          requiredSignatories: updatedEntry.requiredSignatories || [],
+          signatures: updatedEntry.signatures || [],
+        });
+        if (updatedEntry.entryDate) {
+          setFormEntryDate(updatedEntry.entryDate.substring(0, 10));
+        }
+      }
+
+      await onRefresh();
+
+      const downloadUrl =
+        response?.attachment?.downloadUrl || response?.attachment?.url;
+      if (downloadUrl) {
+        window.open(downloadUrl, "_blank", "noopener,noreferrer");
+      }
+
+      showToast({
+        variant: "success",
+        title: "PDF generado",
+        message: "La bitácora diaria se exportó correctamente.",
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "No se pudo generar el PDF.";
+      setValidationError(message);
+      showToast({
+        variant: "error",
+        title: "Error al exportar",
+        message,
+      });
+    } finally {
+      setIsGeneratingPdf(false);
+    }
   };
 
   const { folioNumber, author, comments = [] } = entry;
   const {
     title,
     description,
-    activityStartDate,
-    activityEndDate,
-    location,
-    subject,
+    entryDate: entryDateIso,
+    activitiesPerformed = "",
+    materialsUsed = "",
+    workforce = "",
+    weatherConditions = "",
+    additionalObservations = "",
     type,
     status,
     isConfidential,
     history = [],
     createdAt,
     attachments = [],
-    assignees = [],
     requiredSignatories = [],
     signatures = [],
   } = editedEntry;
@@ -266,6 +342,10 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
 
   const canEdit =
     currentUser.id === author?.id || currentUser.projectRole === UserRole.ADMIN;
+
+  const entryDateDisplay = entryDateIso
+    ? new Date(entryDateIso).toLocaleDateString("es-CO", { dateStyle: "long" })
+    : "N/A";
 
   return (
     <>
@@ -296,17 +376,7 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
               )}
             </div>
             <div className="mt-2 flex justify-between items-center">
-              {isEditing ? (
-                <Select name="type" value={type} onChange={handleInputChange}>
-                  {Object.values(EntryType).map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </Select>
-              ) : (
-                <p className="text-sm text-gray-500 mt-1">{type}</p>
-              )}
+              <p className="text-sm text-gray-500 mt-1">{type}</p>
               {isEditing ? (
                 <Select
                   name="status"
@@ -329,163 +399,143 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
             <DetailRow label="Autor" value={author?.fullName || "N/A"} />
             {isEditing ? (
               <Input
-                label="Fecha de Creación"
-                name="createdAt"
-                type="datetime-local"
-                value={toDatetimeLocal(createdAt)}
-                onChange={handleInputChange}
+                label="Fecha del diario"
+                name="entryDate"
+                type="date"
+                value={formEntryDate}
+                onChange={(e) => setFormEntryDate(e.target.value)}
               />
             ) : (
-              <DetailRow
-                label="Fecha de Creación"
-                value={new Date(createdAt).toLocaleString("es-CO")}
-              />
+              <DetailRow label="Fecha del diario" value={entryDateDisplay} />
             )}
             <DetailRow
-              label="Última Modificación"
+              label="Fecha de creación"
+              value={new Date(createdAt).toLocaleString("es-CO")}
+            />
+            <DetailRow
+              label="Última actualización"
               value={
                 entry.updatedAt
                   ? new Date(entry.updatedAt).toLocaleString("es-CO")
                   : "N/A"
               }
             />
-
-            {isEditing ? (
-              <>
-                <Input
-                  label="Asunto"
-                  name="subject"
-                  value={subject}
-                  onChange={handleInputChange}
-                />
-                <Input
-                  label="Localización"
-                  name="location"
-                  value={location}
-                  onChange={handleInputChange}
-                />
-                <div></div>
-                <Input
-                  label="Inicio de Actividad"
-                  name="activityStartDate"
-                  type="datetime-local"
-                  value={toDatetimeLocal(activityStartDate)}
-                  onChange={handleInputChange}
-                />
-                <Input
-                  label="Fin de Actividad"
-                  name="activityEndDate"
-                  type="datetime-local"
-                  value={toDatetimeLocal(activityEndDate)}
-                  onChange={handleInputChange}
-                />
-              </>
-            ) : (
-              <>
-                <DetailRow label="Asunto" value={subject} />
-                <DetailRow label="Localización" value={location} />
-                <div></div>
-                <DetailRow
-                  label="Inicio de Actividad"
-                  value={
-                    activityStartDate
-                      ? new Date(activityStartDate).toLocaleString("es-CO")
-                      : ""
-                  }
-                />
-                <DetailRow
-                  label="Fin de Actividad"
-                  value={
-                    activityEndDate
-                      ? new Date(activityEndDate).toLocaleString("es-CO")
-                      : ""
-                  }
-                />
-              </>
-            )}
           </dl>
-          {/* Description */}
+
+          {/* Summary */}
           <div>
-            <h4 className="text-md font-semibold text-gray-800">Descripción</h4>
+            <h4 className="text-md font-semibold text-gray-800">
+              Resumen general del día
+            </h4>
             {isEditing ? (
               <textarea
                 name="description"
                 value={description}
                 onChange={handleInputChange}
-                rows={5}
+                rows={4}
                 className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-              ></textarea>
+              />
             ) : (
               <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
-                {description}
+                {description || "Sin resumen registrado."}
               </p>
             )}
           </div>
-          {/* Assignees */}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <h4 className="text-md font-semibold text-gray-800">
+                Actividades realizadas
+              </h4>
+              {isEditing ? (
+                <textarea
+                  name="activitiesPerformed"
+                  value={activitiesPerformed}
+                  onChange={handleInputChange}
+                  rows={4}
+                  className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                />
+              ) : (
+                <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                  {activitiesPerformed || "Sin registro."}
+                </p>
+              )}
+            </div>
+            <div>
+              <h4 className="text-md font-semibold text-gray-800">
+                Materiales utilizados
+              </h4>
+              {isEditing ? (
+                <textarea
+                  name="materialsUsed"
+                  value={materialsUsed}
+                  onChange={handleInputChange}
+                  rows={4}
+                  className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                />
+              ) : (
+                <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                  {materialsUsed || "Sin registro."}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <h4 className="text-md font-semibold text-gray-800">
+                Personal en obra
+              </h4>
+              {isEditing ? (
+                <textarea
+                  name="workforce"
+                  value={workforce}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                />
+              ) : (
+                <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                  {workforce || "Sin registro."}
+                </p>
+              )}
+            </div>
+            <div>
+              <h4 className="text-md font-semibold text-gray-800">
+                Condiciones climáticas
+              </h4>
+              {isEditing ? (
+                <textarea
+                  name="weatherConditions"
+                  value={weatherConditions}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                />
+              ) : (
+                <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                  {weatherConditions || "Sin registro."}
+                </p>
+              )}
+            </div>
+          </div>
+
           <div>
-            <h4 className="text-md font-semibold text-gray-800">Asignado a</h4>
+            <h4 className="text-md font-semibold text-gray-800">
+              Observaciones adicionales
+            </h4>
             {isEditing ? (
-              <div className="mt-2 p-3 border rounded-lg bg-gray-50/70 max-h-48 overflow-y-auto">
-                <fieldset>
-                  <legend className="sr-only">Usuarios</legend>
-                  <div className="space-y-3">
-                    {allUsers.map((user) => (
-                      <div key={user.id} className="relative flex items-start">
-                        <div className="flex items-center h-5">
-                          <input
-                            id={`user-${user.id}`}
-                            name="assignees"
-                            type="checkbox"
-                            className="focus:ring-brand-primary h-4 w-4 text-brand-primary border-gray-300 rounded"
-                            checked={assignees.some((a) => a.id === user.id)}
-                            onChange={(e) =>
-                              handleAssigneeChange(user, e.target.checked)
-                            }
-                          />
-                        </div>
-                        <div className="ml-3 text-sm flex items-center">
-                          <label
-                            htmlFor={`user-${user.id}`}
-                            className="font-medium text-gray-700 flex items-center cursor-pointer"
-                          >
-                            <img
-                              src={user.avatarUrl}
-                              alt={user.fullName}
-                              className="h-6 w-6 rounded-full mr-2"
-                            />
-                            {user.fullName}
-                          </label>
-                          <span className="ml-2 text-gray-500">
-                            ({user.projectRole})
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </fieldset>
-              </div>
+              <textarea
+                name="additionalObservations"
+                value={additionalObservations}
+                onChange={handleInputChange}
+                rows={3}
+                className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+              />
             ) : (
-              <div className="mt-2 flex flex-wrap gap-3">
-                {assignees.length > 0 ? (
-                  assignees.map((assignee) => (
-                    <div
-                      key={assignee.id}
-                      className="flex items-center space-x-2 bg-gray-100 rounded-full pr-3 py-1 text-sm"
-                    >
-                      <img
-                        src={assignee.avatarUrl}
-                        alt={assignee.fullName}
-                        className="h-7 w-7 rounded-full object-cover"
-                      />
-                      <span className="font-semibold text-gray-900">
-                        {assignee.fullName}
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-gray-500">Nadie asignado aún.</p>
-                )}
-              </div>
+              <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                {additionalObservations || "Sin observaciones."}
+              </p>
             )}
           </div>
           {/* Confidential Checkbox */}
@@ -818,6 +868,14 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
               <>
                 <Button variant="secondary" onClick={onClose}>
                   Cerrar
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleExportPdf}
+                  leftIcon={<DocumentArrowDownIcon className="h-4 w-4" />}
+                  disabled={isGeneratingPdf}
+                >
+                  {isGeneratingPdf ? "Generando..." : "Exportar PDF"}
                 </Button>
                 {canEdit && (
                   <Button variant="primary" onClick={() => setIsEditing(true)}>

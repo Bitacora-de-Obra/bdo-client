@@ -85,7 +85,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     appRole: string;
   }) => {
     const response = await api.auth.register(userData);
-    setUser(response.user);
+    const { verificationEmailSent: _verificationFlag, ...registeredUser } = response;
+    setUser(registeredUser);
   }, []);
 
   const verifyEmail = useCallback(async (token: string) => {
