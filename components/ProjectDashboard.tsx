@@ -469,6 +469,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
           initialDate={newEntryDefaultDate}
           availableUsers={users || []}
           currentUser={user}
+          projectStartDate={project?.startDate}
         />
       )}
       <ExportModal

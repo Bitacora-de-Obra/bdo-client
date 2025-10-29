@@ -25,6 +25,7 @@ interface EntryFormModalProps {
   initialDate?: string | null;
   availableUsers: User[];
   currentUser: User | null;
+  projectStartDate?: string; // Fecha de inicio del proyecto
 }
 
 const EntryFormModal: React.FC<EntryFormModalProps> = ({
@@ -34,6 +35,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   initialDate,
   availableUsers,
   currentUser,
+  projectStartDate
 }) => {
   const [entryDate, setEntryDate] = useState<string>("");
   const [title, setTitle] = useState<string>("");
@@ -79,6 +81,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   const [interventoriaObservations, setInterventoriaObservations] =
     useState<string>("");
   const [files, setFiles] = useState<File[]>([]);
+  const [photos, setPhotos] = useState<File[]>([]);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [selectedSignerIds, setSelectedSignerIds] = useState<string[]>(
     () => (currentUser ? [currentUser.id] : [])
@@ -113,8 +116,29 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     setContractorObservations("");
     setInterventoriaObservations("");
     setFiles([]);
+    setPhotos([]);
     setValidationError(null);
     setSelectedSignerIds(currentUser ? [currentUser.id] : []);
+  };
+
+  // Calcular día del plazo automáticamente basado en la fecha de inicio del proyecto
+  const calculateScheduleDay = (entryDate: string) => {
+    if (!entryDate || !projectStartDate) return "";
+    
+    const entryDateObj = new Date(entryDate);
+    const projectStartDateObj = new Date(projectStartDate);
+    
+    // Calcular la diferencia en días desde el inicio del proyecto
+    const diffTime = entryDateObj.getTime() - projectStartDateObj.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) {
+      return `Día ${Math.abs(diffDays)} antes del inicio del proyecto`;
+    } else if (diffDays === 0) {
+      return "Día 1 del proyecto";
+    } else {
+      return `Día ${diffDays + 1} del proyecto`;
+    }
   };
 
   useEffect(() => {
@@ -136,10 +160,30 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     }
   }, [isOpen, initialDate]);
 
+  // Actualizar día del plazo cuando cambie la fecha
+  useEffect(() => {
+    if (entryDate) {
+      setScheduleDay(calculateScheduleDay(entryDate));
+    }
+  }, [entryDate]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setFiles((prev) => [...prev, ...Array.from(e.target.files)]);
     }
+  };
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newPhotos = Array.from(e.target.files).filter(file => 
+        file.type.startsWith('image/')
+      );
+      setPhotos((prev) => [...prev, ...newPhotos]);
+    }
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
   const sortedUsers = useMemo(() => {
@@ -388,7 +432,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           requiredSignatories,
           signatures: [],
         },
-        files
+        [...files, ...photos]
       );
     } catch (err) {
       setValidationError(
@@ -429,9 +473,11 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           <Input
             label="Día del plazo"
             id="scheduleDay"
-            placeholder="Ej. Día 45 de 120"
+            placeholder="Se calcula automáticamente"
             value={scheduleDay}
             onChange={(e) => setScheduleDay(e.target.value)}
+            disabled
+            className="bg-gray-100"
           />
           <Input
             label="Localización / Tramo"
@@ -533,32 +579,6 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Actividades realizadas
-            </label>
-            <textarea
-              value={activitiesPerformed}
-              onChange={(e) => setActivitiesPerformed(e.target.value)}
-              rows={4}
-              className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-              placeholder="Describe las tareas ejecutadas en la jornada"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Materiales utilizados
-            </label>
-            <textarea
-              value={materialsUsed}
-              onChange={(e) => setMaterialsUsed(e.target.value)}
-              rows={4}
-              className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-              placeholder="Registra cantidades, tipos de material, proveedores, etc."
-            />
-          </div>
-        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -970,6 +990,59 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                   >
                     <XMarkIcon className="h-4 w-4" />
                   </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Sección de fotos */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Fotos del día
+          </label>
+          <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+            <div className="space-y-1 text-center">
+              <div className="flex text-sm text-gray-600">
+                <label
+                  htmlFor="photo-upload-entry"
+                  className="relative cursor-pointer bg-white rounded-md font-medium text-brand-primary hover:text-brand-secondary focus-within:outline-none"
+                >
+                  <span>Selecciona fotos</span>
+                  <input
+                    id="photo-upload-entry"
+                    name="photo-upload-entry"
+                    type="file"
+                    className="sr-only"
+                    onChange={handlePhotoChange}
+                    multiple
+                    accept="image/*"
+                  />
+                </label>
+                <p className="pl-1">o arrastra y suelta</p>
+              </div>
+              <p className="text-xs text-gray-500">
+                Solo imágenes — máximo 5MB cada una
+              </p>
+            </div>
+          </div>
+          {photos.length > 0 && (
+            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {photos.map((photo, index) => (
+                <div key={`${photo.name}-${index}`} className="relative group">
+                  <img
+                    src={URL.createObjectURL(photo)}
+                    alt={`Foto ${index + 1}`}
+                    className="w-full h-32 object-cover rounded-lg border"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(index)}
+                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <XMarkIcon className="h-4 w-4" />
+                  </button>
+                  <p className="text-xs text-gray-500 mt-1 truncate">{photo.name}</p>
                 </div>
               ))}
             </div>
