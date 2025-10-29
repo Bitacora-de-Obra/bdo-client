@@ -753,52 +753,7 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
       let finalDownloadUrl =
         generatedAttachment?.downloadUrl || generatedAttachment?.url || null;
 
-      if (generatedAttachment && hasStoredSignature) {
-        try {
-          const signResponse = await api.attachments.sign(
-            generatedAttachment.id,
-            {
-              consentStatement:
-                "Autorizo la inserción de mi firma manuscrita digital en esta bitácora.",
-              x: 140,
-              y: 520,
-              width: 260,
-              baseline: true,
-              baselineRatio: 0.7,
-            }
-          );
-
-          setHasStoredSignature(true);
-
-          if (signResponse?.entry) {
-            latestEntry = signResponse.entry as LogEntry;
-          }
-          if (signResponse?.signedAttachment) {
-            generatedAttachment = signResponse.signedAttachment as Attachment;
-            finalDownloadUrl =
-              generatedAttachment.downloadUrl || generatedAttachment.url || null;
-          }
-        } catch (signError) {
-          console.warn("No se pudo firmar automáticamente el PDF:", signError);
-          const message =
-            signError instanceof Error
-              ? signError.message
-              : "No se pudo firmar el documento.";
-          setValidationError(message);
-          showToast({
-            variant: "warning",
-            title: "Firma pendiente",
-            message:
-              "Descargamos el PDF, pero debes registrar tu firma manuscrita para firmarlo automáticamente.",
-          });
-          if (
-            signError instanceof Error &&
-            signError.message.toLowerCase().includes("firma manuscrita")
-          ) {
-            setHasStoredSignature(false);
-          }
-        }
-      } else if (generatedAttachment && !hasStoredSignature) {
+      if (generatedAttachment && !hasStoredSignature) {
         showToast({
           variant: "info",
           title: "Firma no registrada",
@@ -819,10 +774,8 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
 
       showToast({
         variant: "success",
-        title: generatedAttachment ? "Bitácora firmada" : "PDF generado",
-        message: generatedAttachment
-          ? "Se generó un PDF firmado con tu rúbrica."
-          : "La bitácora diaria se exportó correctamente.",
+        title: "PDF generado",
+        message: "La bitácora diaria se exportó correctamente.",
       });
     } catch (error) {
       const message =
@@ -840,81 +793,8 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
     }
   };
 
-  const handleSignAttachment = async (attachment: Attachment) => {
-    if (!hasStoredSignature) {
-      showToast({
-        variant: "warning",
-        title: "Firma requerida",
-        message: "Debes registrar tu firma manuscrita antes de firmar documentos PDF.",
-      });
-      return;
-    }
-
-    if (
-      !window.confirm(
-        "¿Confirmas que autorizas aplicar tu firma manuscrita sobre este documento PDF?"
-      )
-    ) {
-      return;
-    }
-
-    try {
-      const response = await api.attachments.sign(attachment.id, {
-        consentStatement:
-          "Autorizo la inserción de mi firma manuscrita digital en este documento.",
-        x: 140,
-        y: 520,
-        width: 260,
-        baseline: true,
-        baselineRatio: 0.7,
-      });
-
-      setHasStoredSignature(true);
-
-      if (response?.entry) {
-        const updatedEntry = response.entry as LogEntry;
-        applyEntryState(updatedEntry);
-        onUpdate(updatedEntry);
-      } else if (response?.signedAttachment) {
-        setEditedEntry((prev) => ({
-          ...prev,
-          attachments: [
-            ...(prev.attachments || []),
-            response.signedAttachment as Attachment,
-          ],
-        }));
-      }
-
-      await onRefresh();
-
-      const signedAttachmentResponse = response?.signedAttachment as Attachment | undefined;
-      if (signedAttachmentResponse) {
-        const signedUrl =
-          signedAttachmentResponse.downloadUrl || signedAttachmentResponse.url;
-        if (signedUrl) {
-          window.open(signedUrl, "_blank", "noopener,noreferrer");
-        }
-      }
-
-      showToast({
-        variant: "success",
-        title: "Documento firmado",
-        message: "Se generó un PDF firmado con tu rúbrica.",
-      });
-    } catch (error) {
-      console.error("Error al firmar el documento:", error);
-      const message =
-        error instanceof Error
-          ? error.message
-          : "No se pudo firmar el documento.";
-      setValidationError(message);
-      showToast({
-        variant: "error",
-        title: "Error al firmar",
-        message,
-      });
-    }
-  };
+  // Eliminado: handleSignAttachment ya no se usa
+  // El flujo de firma ahora es solo a través de "Firmar anotación" con contraseña
 
   const { folioNumber, author, comments = [] } = entry;
   const {
@@ -1990,17 +1870,6 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
                       <AttachmentItem
                         key={att.id}
                         attachment={att}
-                        actions={
-                          isPdf ? (
-                            <Button
-                              size="sm"
-                              onClick={() => handleSignAttachment(att)}
-                              disabled={isGeneratingPdf}
-                            >
-                              Firmar documento
-                            </Button>
-                          ) : undefined
-                        }
                       />
                     );
                   })}
@@ -2012,7 +1881,7 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
           {!isEditing && (
             <SignatureBlock
               requiredSignatories={requiredSignatories}
-              signatures={signatures}
+              signatures={editedEntry.signatures}
               signatureTasks={editedEntry.signatureTasks}
               signatureSummary={editedEntry.signatureSummary}
               currentUser={currentUser}
