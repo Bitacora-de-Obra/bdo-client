@@ -8,6 +8,10 @@ import React, {
 } from "react";
 import { User } from "../types";
 import { api } from "../src/services/api";
+import {
+  loginCometChat,
+  logoutCometChat,
+} from "../src/chat/cometChatService";
 
 const MIN_PASSWORD_LENGTH = 8;
 const UPPERCASE_REGEX = /[A-ZÁÉÍÓÚÑ]/u;
@@ -44,6 +48,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isChatReady: boolean;
   error: string | null;
   verificationEmailSent: boolean;
   login: (email: string, password: string) => Promise<void>;
@@ -67,6 +72,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isChatReady, setIsChatReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [verificationEmailSent, setVerificationEmailSent] = useState(false);
   const isAuthenticated = !!user;
@@ -86,6 +92,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       setUser(null);
       setError(null);
       setVerificationEmailSent(false);
+      setIsChatReady(false);
+      try {
+        await logoutCometChat();
+      } catch (chatLogoutError) {
+        console.warn(
+          "AuthProvider: No fue posible cerrar sesión en CometChat:",
+          chatLogoutError
+        );
+      }
     }
   }, []);
 
@@ -134,6 +149,38 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       localStorage.removeItem("appRole");
     }
   }, [user?.appRole]);
+
+  useEffect(() => {
+    let isSubscribed = true;
+
+    if (!user) {
+      setIsChatReady(false);
+      return () => {
+        isSubscribed = false;
+      };
+    }
+
+    setIsChatReady(false);
+    loginCometChat(user)
+      .then((loggedUser) => {
+        if (isSubscribed) {
+          setIsChatReady(Boolean(loggedUser));
+        }
+      })
+      .catch((error) => {
+        if (isSubscribed) {
+          setIsChatReady(false);
+        }
+        console.warn(
+          "AuthProvider: No fue posible iniciar sesión en CometChat:",
+          error
+        );
+      });
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [user]);
 
   const login = useCallback(async (email: string, password: string) => {
     setError(null);
@@ -283,6 +330,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     refreshProfile: loadProfile,
     clearError,
     acknowledgeVerificationEmail,
+    isChatReady,
   };
 
   return (

@@ -30,6 +30,7 @@ const navItems = [
     { id: 'logbook', label: 'Bitácora de Obra', icon: <ClipboardDocumentListIcon />, section: 'Registros' },
     { id: 'drawings', label: 'Planos de Obra', icon: <MapIcon />, section: 'Registros' },
     { id: 'communications', label: 'Comunicaciones', icon: <ChatBubbleLeftRightIcon />, section: 'Registros' },
+    { id: 'chat', label: 'Chat del Proyecto', icon: <ChatBubbleLeftRightIcon />, section: 'Herramientas' },
     { id: 'minutes', label: 'Actas de Comité', icon: <ClipboardDocumentListIcon />, section: 'Registros' },
     { id: 'work_progress', label: 'Avance de Obra', icon: <ChartPieIcon />, section: 'Seguimiento' },
     { id: 'photographic_progress', label: 'Avance Fotográfico', icon: <CameraIcon />, section: 'Seguimiento' },

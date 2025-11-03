@@ -15,6 +15,8 @@
     "@fullcalendar/react": "6.1.11",
     "@google/generative-ai": "^0.24.1",
     "axios": "^1.6.2",
+    "@cometchat/chat-sdk-javascript": "^4.1.1",
+    "@cometchat/chat-uikit-react": "^4.3.37",
     "file-saver": "2.0.5",
     "html2canvas": "1.4.1",
     "jest": "^30.2.0",

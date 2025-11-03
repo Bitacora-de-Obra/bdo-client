@@ -22,6 +22,7 @@ import AdminDashboard from "./components/admin/AdminDashboard";
 import DrawingsDashboard from "./components/DrawingsDashboard";
 import { ChatbotWidget } from "./components/chatbot/ChatbotWidget"; // <-- Añade esta línea
 import SignatureManagerModal from "./components/account/SignatureManagerModal";
+import ProjectChat from "./components/chat/ProjectChat";
 
 type InitialItemToOpen = { type: "acta" | "logEntry" | "communication"; id: string };
 
@@ -220,6 +221,8 @@ const MainApp = () => {
         );
       case "photographic_progress":
         return <PhotographicProgressDashboard project={projectDetails} />;
+      case "chat":
+        return <ProjectChat />;
       case "planning":
         return <PlanningDashboard project={projectDetails} />;
       case "communications":
