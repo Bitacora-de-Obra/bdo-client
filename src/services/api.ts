@@ -974,11 +974,34 @@ export const uploadApi = {
 };
 
 // API Functions for Chatbot
+type ChatbotHistoryMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
 export const chatbotApi = {
-  query: async (query: string): Promise<{ response: string }> => {
+  query: async (
+    query: string,
+    history: ChatbotHistoryMessage[] = []
+  ): Promise<{
+    response: string;
+    interactionId: string | null;
+    contextSections?: Array<{ id: string; heading: string }>;
+  }> => {
     return apiFetch("/chatbot/query", {
       method: "POST",
-      body: JSON.stringify({ query }),
+      body: JSON.stringify({ query, history }),
+    });
+  },
+  feedback: async (payload: {
+    interactionId: string;
+    rating: "POSITIVE" | "NEGATIVE";
+    comment?: string;
+    tags?: string[];
+  }): Promise<{ success: boolean }> => {
+    return apiFetch("/chatbot/feedback", {
+      method: "POST",
+      body: JSON.stringify(payload),
     });
   },
 };

@@ -7,13 +7,19 @@ type Message = {
   id: string;
   text: string;
   sender: "user" | "bot";
+  interactionId?: string | null;
+  contextSections?: Array<{ id: string; heading: string }>;
+  feedback?: "POSITIVE" | "NEGATIVE";
 };
+
+const HISTORY_LIMIT = 8;
 
 export const ChatbotWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState<string | null>(null);
 
   const quickActions = [
     "¿Cuál es el estado actual del proyecto?",
@@ -25,6 +31,15 @@ export const ChatbotWidget: React.FC = () => {
     "¿Hay modificaciones contractuales recientes?",
     "¿Qué informes se han presentado?",
   ];
+
+  const buildHistoryPayload = (historyMessages: Message[]) =>
+    historyMessages
+      .filter((msg) => msg.sender === "user" || msg.sender === "bot")
+      .slice(-HISTORY_LIMIT)
+      .map((msg) => ({
+        role: msg.sender === "bot" ? "assistant" : "user",
+        content: msg.text,
+      }));
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -51,11 +66,14 @@ export const ChatbotWidget: React.FC = () => {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
 
+    const sanitizedInput = inputValue.trim();
     const userMessage: Message = {
       id: `msg-${Date.now()}`,
-      text: inputValue,
+      text: sanitizedInput,
       sender: "user",
     };
+
+    const historyPayload = buildHistoryPayload(messages);
 
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
@@ -63,12 +81,18 @@ export const ChatbotWidget: React.FC = () => {
 
     try {
       // Llamamos al backend
-      const { response } = await api.chatbot.query(userMessage.text);
+      const {
+        response,
+        interactionId,
+        contextSections,
+      } = await api.chatbot.query(userMessage.text, historyPayload);
 
       const botMessage: Message = {
         id: `msg-${Date.now() + 1}`,
         text: response,
         sender: "bot",
+        interactionId,
+        contextSections,
       };
       setMessages((prev) => [...prev, botMessage]);
     } catch (error: any) {
@@ -87,6 +111,7 @@ export const ChatbotWidget: React.FC = () => {
   };
 
   const handleQuickAction = (action: string) => {
+    if (isLoading) return;
     setInputValue(action);
     // Auto-submit the quick action
     const userMessage: Message = {
@@ -95,15 +120,20 @@ export const ChatbotWidget: React.FC = () => {
       sender: "user",
     };
 
+    const historyPayload = buildHistoryPayload(messages);
+
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
-    api.chatbot.query(action)
-      .then(({ response }) => {
+    api.chatbot
+      .query(action, historyPayload)
+      .then(({ response, interactionId, contextSections }) => {
         const botMessage: Message = {
           id: `msg-${Date.now() + 1}`,
           text: response,
           sender: "bot",
+          interactionId,
+          contextSections,
         };
         setMessages((prev) => [...prev, botMessage]);
       })
@@ -117,10 +147,42 @@ export const ChatbotWidget: React.FC = () => {
           sender: "bot",
         };
         setMessages((prev) => [...prev, errorMessage]);
-      })
+    })
       .finally(() => {
         setIsLoading(false);
       });
+  };
+
+  const handleFeedback = async (message: Message, rating: "POSITIVE" | "NEGATIVE") => {
+    if (feedbackSubmitting === message.id) {
+      return;
+    }
+
+    if (!message.interactionId) {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === message.id ? { ...msg, feedback: rating } : msg
+        )
+      );
+      return;
+    }
+
+    setFeedbackSubmitting(message.id);
+    try {
+      await api.chatbot.feedback({
+        interactionId: message.interactionId,
+        rating,
+      });
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === message.id ? { ...msg, feedback: rating } : msg
+        )
+      );
+    } catch (error) {
+      console.error("No se pudo registrar el feedback del chatbot:", error);
+    } finally {
+      setFeedbackSubmitting(null);
+    }
   };
 
   // --- Estilos CSS (embebidos para simplicidad) ---
@@ -192,6 +254,40 @@ export const ChatbotWidget: React.FC = () => {
       alignSelf: "flex-start",
       borderBottomLeftRadius: "4px",
     },
+    feedbackRow: {
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      marginTop: "6px",
+      fontSize: "12px",
+      color: "#555",
+    },
+    feedbackButton: {
+      border: "none",
+      background: "transparent",
+      cursor: "pointer",
+      fontSize: "16px",
+      padding: "0 4px",
+      lineHeight: 1,
+      color: "#6b7280",
+    },
+    feedbackThanks: {
+      fontSize: "11px",
+      color: "#2563eb",
+    },
+    contextTagsContainer: {
+      display: "flex",
+      flexWrap: "wrap",
+      gap: "6px",
+      marginTop: "6px",
+    },
+    contextTag: {
+      fontSize: "10px",
+      backgroundColor: "#eef2ff",
+      color: "#1f2937",
+      padding: "2px 6px",
+      borderRadius: "999px",
+    },
     inputForm: {
       display: "flex",
       borderTop: "1px solid #e0e0e0",
@@ -251,19 +347,68 @@ export const ChatbotWidget: React.FC = () => {
           <div style={styles.chatHeader}>Asistente de Bitácora</div>
 
           <div style={styles.messageList}>
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                style={{
-                  ...styles.message,
-                  ...(msg.sender === "user"
-                    ? styles.userMessage
-                    : styles.botMessage),
-                }}
-              >
-                {msg.text}
-              </div>
-            ))}
+            {messages.map((msg) => {
+              const isBot = msg.sender === "bot";
+              const isSubmittingFeedback = feedbackSubmitting === msg.id;
+              return (
+                <div
+                  key={msg.id}
+                  style={{
+                    ...styles.message,
+                    ...(isBot ? styles.botMessage : styles.userMessage),
+                  }}
+                >
+                  <div>{msg.text}</div>
+                  {isBot && msg.contextSections && msg.contextSections.length > 0 && (
+                    <div style={styles.contextTagsContainer}>
+                      {msg.contextSections.map((section) => (
+                        <span key={section.id} style={styles.contextTag}>
+                          {section.heading}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {isBot && msg.interactionId && (
+                    <div style={styles.feedbackRow}>
+                      <span>¿Te fue útil?</span>
+                      <button
+                        type="button"
+                        style={{
+                          ...styles.feedbackButton,
+                          color: msg.feedback === "POSITIVE" ? "#2563eb" : "#6b7280",
+                          opacity: isSubmittingFeedback ? 0.5 : 1,
+                        }}
+                        onClick={() => handleFeedback(msg, "POSITIVE")}
+                        disabled={isSubmittingFeedback}
+                        aria-label="Respuesta útil"
+                      >
+                        👍
+                      </button>
+                      <button
+                        type="button"
+                        style={{
+                          ...styles.feedbackButton,
+                          color: msg.feedback === "NEGATIVE" ? "#dc2626" : "#6b7280",
+                          opacity: isSubmittingFeedback ? 0.5 : 1,
+                        }}
+                        onClick={() => handleFeedback(msg, "NEGATIVE")}
+                        disabled={isSubmittingFeedback}
+                        aria-label="Respuesta no útil"
+                      >
+                        👎
+                      </button>
+                      {msg.feedback && (
+                        <span style={styles.feedbackThanks}>
+                          {msg.feedback === "POSITIVE"
+                            ? "¡Gracias por tu retroalimentación!"
+                            : "Mejoraremos esta respuesta, gracias."}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
             {isLoading && (
               <div style={{ ...styles.message, ...styles.botMessage }}>...</div>
             )}
