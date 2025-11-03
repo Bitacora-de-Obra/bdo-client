@@ -11,6 +11,8 @@ import { useAuth } from '../contexts/AuthContext';
 import CommunicationsTable from './CommunicationsTable';
 import { useApi } from '../src/hooks/useApi';
 import api from '../src/services/api';
+import { usePermissions } from '../src/hooks/usePermissions';
+import { useToast } from './ui/ToastProvider';
 
 // Se elimina la interfaz de props, ya no recibe 'api'
 interface CommunicationsDashboardProps {
@@ -25,6 +27,9 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({
   onClearInitialCommunication,
 }) => {
   const { user } = useAuth();
+  const { canEditContent } = usePermissions();
+  const readOnly = !canEditContent;
+  const { showToast } = useToast();
 
   const { data: communications, isLoading, error, retry: refetchCommunications } = useApi.communications();
   const { data: users } = useApi.users();
@@ -69,7 +74,17 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({
     });
   }, [communications, filters, user]);
 
-  const handleOpenForm = () => setIsFormModalOpen(true);
+  const handleOpenForm = () => {
+    if (readOnly) {
+      showToast({
+        title: 'Acceso restringido',
+        message: 'El rol Viewer solo puede visualizar las comunicaciones.',
+        variant: 'warning',
+      });
+      return;
+    }
+    setIsFormModalOpen(true);
+  };
   const handleCloseForm = () => setIsFormModalOpen(false);
 
   const handleOpenDetail = (comm: Communication) => {
@@ -99,6 +114,14 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({
     if (!user) {
       throw new Error('No estás autenticado.');
     }
+    if (readOnly) {
+      showToast({
+        title: 'Acción no permitida',
+        message: 'El perfil Viewer no puede registrar comunicaciones.',
+        variant: 'error',
+      });
+      throw new Error('El perfil Viewer no puede registrar comunicaciones.');
+    }
 
     try {
       const uploadedAttachments = await Promise.all(
@@ -119,6 +142,14 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({
   }
 
   const handleStatusChange = async (commId: string, newStatus: CommunicationStatus) => {
+    if (readOnly) {
+      showToast({
+        title: 'Acción no permitida',
+        message: 'El perfil Viewer no puede actualizar estados.',
+        variant: 'error',
+      });
+      throw new Error('El perfil Viewer no puede actualizar estados.');
+    }
     try {
       await api.communications.updateStatus(commId, newStatus);
       refetchCommunications();
@@ -132,6 +163,14 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({
   };
 
   const handleAssignmentChange = async (commId: string, assigneeId: string | null) => {
+    if (readOnly) {
+      showToast({
+        title: 'Acción no permitida',
+        message: 'El perfil Viewer no puede reasignar comunicaciones.',
+        variant: 'error',
+      });
+      throw new Error('El perfil Viewer no puede reasignar comunicaciones.');
+    }
     try {
       const updatedComm = await api.communications.assign(commId, assigneeId);
       refetchCommunications();
@@ -169,9 +208,11 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({
                     <span className="hidden sm:inline">Tabla</span>
                 </button>
             </div>
-            <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
-              Registrar Comunicación
-            </Button>
+            {canEditContent && (
+              <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
+                Registrar Comunicación
+              </Button>
+            )}
         </div>
       </div>
 
@@ -188,9 +229,11 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({
                     title="No hay comunicaciones registradas"
                     message="Mantén un registro centralizado de todas las comunicaciones oficiales del proyecto, como oficios, solicitudes y respuestas."
                     actionButton={
-                        <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
-                        Registrar Comunicación
-                        </Button>
+                        canEditContent ? (
+                          <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
+                            Registrar Comunicación
+                          </Button>
+                        ) : undefined
                     }
                 />
             ) : viewMode === 'card' ? (
@@ -213,13 +256,15 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({
         </>
       )}
 
-      <CommunicationFormModal 
-        isOpen={isFormModalOpen}
-        onClose={handleCloseForm}
-        onSave={handleSaveCommunication}
-        communications={communications || []}
-        users={users || []}
-      />
+      {canEditContent && (
+        <CommunicationFormModal 
+          isOpen={isFormModalOpen}
+          onClose={handleCloseForm}
+          onSave={handleSaveCommunication}
+          communications={communications || []}
+          users={users || []}
+        />
+      )}
 
       {selectedComm && (
         <CommunicationDetailModal
@@ -230,6 +275,7 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({
             allCommunications={communications}
             users={users || []}
             onAssign={handleAssignmentChange}
+            readOnly={readOnly}
         />
       )}
     </div>

@@ -18,6 +18,8 @@ import ExportModal from "./ExportModal";
 import CalendarView from "./CalendarView";
 import { useAuth } from "../contexts/AuthContext";
 import { useApi } from "../src/hooks/useApi";
+import { usePermissions } from "../src/hooks/usePermissions";
+import { useToast } from "./ui/ToastProvider";
 
 interface ProjectDashboardProps {
   initialItemToOpen: { type: string; id: string } | null;
@@ -49,6 +51,9 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     startDate: "",
     endDate: "",
   });
+  const { canEditContent } = usePermissions();
+  const readOnly = !canEditContent;
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (initialItemToOpen && initialItemToOpen.type === "logEntry" && logEntries) {
@@ -120,6 +125,14 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   };
 
   const handleOpenForm = () => {
+    if (readOnly) {
+      showToast({
+        title: "Acceso restringido",
+        message: "El rol Viewer solo puede consultar información.",
+        variant: "warning",
+      });
+      return;
+    }
     setIsFormModalOpen(true);
   };
 
@@ -129,6 +142,14 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   };
 
   const handleDateClickOnCalendar = (dateStr: string) => {
+    if (readOnly) {
+      showToast({
+        title: "Acceso restringido",
+        message: "El rol Viewer no puede crear nuevas anotaciones.",
+        variant: "warning",
+      });
+      return;
+    }
     setNewEntryDefaultDate(dateStr);
     setIsFormModalOpen(true);
   };
@@ -149,6 +170,14 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   ) => {
     if (!user) {
       throw new Error("No estás autenticado.");
+    }
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede crear ni editar anotaciones.",
+        variant: "error",
+      });
+      throw new Error("El perfil Viewer no puede crear anotaciones.");
     }
 
     if (!project) {
@@ -174,6 +203,14 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   };
 
   const handleDeleteEntry = async (entryId: string) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede eliminar anotaciones.",
+        variant: "error",
+      });
+      throw new Error("El perfil Viewer no puede eliminar anotaciones.");
+    }
     try {
       await api.logEntries.delete(entryId);
       refetchLogEntries();
@@ -187,6 +224,14 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     commentText: string,
     files: File[]
   ) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede agregar comentarios.",
+        variant: "error",
+      });
+      throw new Error("El perfil Viewer no puede agregar comentarios.");
+    }
     if (!user) {
       throw new Error("No estás autenticado para comentar.");
     }
@@ -208,6 +253,14 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   };
 
   const handleUpdateEntry = async (updatedEntryData: LogEntry) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede editar anotaciones.",
+        variant: "error",
+      });
+      throw new Error("El perfil Viewer no puede editar anotaciones.");
+    }
     try {
       const updatedEntry = await api.logEntries.update(updatedEntryData.id, updatedEntryData);
       setSelectedEntry(updatedEntry);
@@ -223,6 +276,17 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     signer: User,
     password: string
   ): Promise<{ success: boolean; error?: string }> => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede firmar documentos.",
+        variant: "error",
+      });
+      return {
+        success: false,
+        error: "El perfil Viewer no puede firmar documentos.",
+      };
+    }
     try {
       const updatedEntry = await api.logEntries.addSignature(documentId, {
         signerId: signer.id,
@@ -387,14 +451,16 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
           >
             Exportar
           </Button>
-          <Button
-            onClick={handleOpenForm}
-            leftIcon={<PlusIcon />}
-            className="w-full sm:w-auto"
-            disabled={!project}
-          >
-            Nueva Anotación
-          </Button>
+          {canEditContent && (
+            <Button
+              onClick={handleOpenForm}
+              leftIcon={<PlusIcon />}
+              className="w-full sm:w-auto"
+              disabled={!project}
+            >
+              Nueva Anotación
+            </Button>
+          )}
         </div>
       </div>
 
@@ -423,9 +489,11 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
                   title="Aún no hay anotaciones"
                   message="Crea la primera anotación para iniciar el registro en la bitácora de obra. Puedes adjuntar archivos, fotos y más."
                   actionButton={
-                    <Button onClick={handleOpenForm} leftIcon={<PlusIcon />} disabled={!project}>
-                      Crear Primera Anotación
-                    </Button>
+                    canEditContent ? (
+                      <Button onClick={handleOpenForm} leftIcon={<PlusIcon />} disabled={!project}>
+                        Crear Primera Anotación
+                      </Button>
+                    ) : undefined
                   }
                 />
               )}
@@ -435,7 +503,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
             <CalendarView
               entries={filteredEntries}
               onEventClick={handleOpenDetail}
-              onDateClick={handleDateClickOnCalendar}
+              onDateClick={canEditContent ? handleDateClickOnCalendar : undefined}
             />
           )}
         </>
@@ -455,9 +523,10 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
           currentUser={user}
           availableUsers={users || []}
           onRefresh={refetchLogEntries}
+          readOnly={readOnly}
         />
       )}
-      {logEntries && (
+      {logEntries && canEditContent && (
         <EntryFormModal
           isOpen={isFormModalOpen}
           onClose={handleCloseForm}

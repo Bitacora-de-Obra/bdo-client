@@ -9,6 +9,8 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useApi } from '../src/hooks/useApi';
 import api from '../src/services/api';
+import { usePermissions } from '../src/hooks/usePermissions';
+import { useToast } from './ui/ToastProvider';
 
 type ProjectTaskImportPayload = {
   id: string;
@@ -215,6 +217,9 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
   const ganttGridRef = useRef<HTMLDivElement>(null);
   const ganttExportRef = useRef<HTMLDivElement>(null);
   const [uploadStatus, setUploadStatus] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+  const { canEditContent } = usePermissions();
+  const readOnly = !canEditContent;
+  const { showToast } = useToast();
 
 
   // Este useEffect reconstruye el árbol cuando flatTasks cambia
@@ -368,6 +373,14 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
 
 
   const handleFileUpload = async (file: File) => {
+    if (readOnly) {
+      showToast({
+        title: 'Acción no permitida',
+        message: 'El perfil Viewer no puede importar cronogramas.',
+        variant: 'error',
+      });
+        throw new Error('El perfil Viewer no puede importar cronogramas.');
+    }
     try {
       setUploadStatus({ type: 'info', message: `Procesando cronograma "${file.name}"...` });
       const tasksToImport = await parseMsProjectXml(file);
@@ -471,7 +484,13 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
               <p className="text-sm text-gray-500 mt-1">
                 Sube tu cronograma directamente desde MS Project en formato <strong>XML (.xml)</strong>. Esto reemplazará el cronograma actual.
               </p>
-              <FileUpload onFileUpload={handleFileUpload} />
+              {canEditContent ? (
+                <FileUpload onFileUpload={handleFileUpload} />
+              ) : (
+                <div className="mt-4 text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-md p-3">
+                  Solo los roles Editor o Admin pueden actualizar el cronograma.
+                </div>
+              )}
             </div>
           </Card>
           <Card>

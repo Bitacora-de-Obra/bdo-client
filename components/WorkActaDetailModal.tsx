@@ -12,6 +12,7 @@ interface WorkActaDetailModalProps {
   acta: WorkActa;
   contractItems: ContractItem[];
   onUpdate: (updatedActa: WorkActa) => void;
+  readOnly?: boolean;
 }
 
 const DetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
@@ -21,7 +22,7 @@ const DetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label,
     </div>
 );
 
-const WorkActaDetailModal: React.FC<WorkActaDetailModalProps> = ({ isOpen, onClose, acta, contractItems, onUpdate }) => {
+const WorkActaDetailModal: React.FC<WorkActaDetailModalProps> = ({ isOpen, onClose, acta, contractItems, onUpdate, readOnly = false }) => {
     const [editedActa, setEditedActa] = useState<WorkActa>(acta);
 
     useEffect(() => {
@@ -33,10 +34,16 @@ const WorkActaDetailModal: React.FC<WorkActaDetailModalProps> = ({ isOpen, onClo
     }, [contractItems]);
 
     const handleStatusChange = (newStatus: WorkActaStatus) => {
+        if (readOnly) {
+            return;
+        }
         setEditedActa(prev => ({ ...prev, status: newStatus }));
     };
 
     const handleSaveChanges = () => {
+        if (readOnly) {
+            return;
+        }
         onUpdate(editedActa);
         onClose();
     };
@@ -121,6 +128,7 @@ const WorkActaDetailModal: React.FC<WorkActaDetailModalProps> = ({ isOpen, onClo
                         id="status"
                         value={editedActa.status}
                         onChange={(e) => handleStatusChange(e.target.value as WorkActaStatus)}
+                        disabled={readOnly}
                     >
                         {Object.values(WorkActaStatus).map(s => <option key={s} value={s}>{s}</option>)}
                     </Select>
@@ -128,7 +136,9 @@ const WorkActaDetailModal: React.FC<WorkActaDetailModalProps> = ({ isOpen, onClo
             </div>
             <div className="mt-6 flex flex-col sm:flex-row sm:justify-end gap-2">
                 <Button variant="secondary" onClick={onClose}>Cerrar</Button>
-                <Button variant="primary" onClick={handleSaveChanges}>Guardar Cambios</Button>
+                {!readOnly && (
+                    <Button variant="primary" onClick={handleSaveChanges}>Guardar Cambios</Button>
+                )}
             </div>
         </Modal>
     );

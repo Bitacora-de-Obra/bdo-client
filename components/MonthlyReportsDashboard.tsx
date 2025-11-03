@@ -8,6 +8,8 @@ import ReportCard from "./ReportCard";
 import ReportDetailModal from "./ReportDetailModal";
 import ReportFormModal from "./ReportFormModal";
 import { useAuth } from "../contexts/AuthContext"; // Importa useAuth
+import { usePermissions } from "../src/hooks/usePermissions";
+import { useToast } from "./ui/ToastProvider";
 
 interface MonthlyReportsDashboardProps {
   project: Project; // Cambiado a Project genérico si ProjectDetails no es necesario aquí
@@ -19,6 +21,9 @@ const MonthlyReportsDashboard: React.FC<MonthlyReportsDashboardProps> = ({
   reportScope,
 }) => {
   const { user } = useAuth();
+  const { canEditContent } = usePermissions();
+  const readOnly = !canEditContent;
+  const { showToast } = useToast();
 
   // --- Estado local para datos reales ---
   const [monthlyReports, setMonthlyReports] = useState<Report[]>([]);
@@ -73,6 +78,15 @@ const MonthlyReportsDashboard: React.FC<MonthlyReportsDashboardProps> = ({
   };
 
   const handleOpenForm = () => {
+    if (readOnly) {
+      showToast({
+        title: "Acceso restringido",
+        message: "El rol Viewer no puede registrar informes mensuales.",
+        variant: "warning",
+      });
+      setIsFormModalOpen(false);
+      return;
+    }
     setFormMode("create");
     setBaseReportForForm(null);
     setIsFormModalOpen(true);
@@ -85,6 +99,14 @@ const MonthlyReportsDashboard: React.FC<MonthlyReportsDashboardProps> = ({
   };
 
   const handleCreateVersion = (report: Report) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede generar nuevas versiones de informes.",
+        variant: "error",
+      });
+      return;
+    }
     setBaseReportForForm(report);
     setFormMode("newVersion");
     setIsFormModalOpen(true);
@@ -100,6 +122,14 @@ const MonthlyReportsDashboard: React.FC<MonthlyReportsDashboardProps> = ({
     options: { previousReportId?: string } = {}
   ) => {
     if (!user) return;
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede registrar informes mensuales.",
+        variant: "error",
+      });
+      throw new Error("El perfil Viewer no puede registrar informes mensuales.");
+    }
     setError(null);
 
     try {
@@ -150,6 +180,14 @@ const MonthlyReportsDashboard: React.FC<MonthlyReportsDashboardProps> = ({
 
   // --- Funciones para Actualización y Firma (Pendientes - Simulación) ---
   const handleUpdateReport = async (updatedReport: Report) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede actualizar informes.",
+        variant: "error",
+      });
+      return;
+    }
     try {
       // Llamamos al endpoint PUT con los datos a actualizar
       const updatedReportFromServer = await api(
@@ -183,6 +221,14 @@ const MonthlyReportsDashboard: React.FC<MonthlyReportsDashboardProps> = ({
     signer: User,
     password?: string
   ): Promise<{ success: boolean; error?: string; updated?: Report }> => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede firmar informes.",
+        variant: "error",
+      });
+      return { success: false, error: "No autorizado" };
+    }
     if (!password) {
       return { success: false, error: "Se requiere contraseña para firmar." };
     }
@@ -237,9 +283,11 @@ const MonthlyReportsDashboard: React.FC<MonthlyReportsDashboardProps> = ({
           <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
           <p className="text-sm text-gray-500">Proyecto: {project.name}</p>
         </div>
-        <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
-          Registrar Informe Mensual
-        </Button>
+        {canEditContent && (
+          <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
+            Registrar Informe Mensual
+          </Button>
+        )}
       </div>
 
       {isLoading && <div className="text-center p-8">Cargando informes...</div>}
@@ -263,9 +311,11 @@ const MonthlyReportsDashboard: React.FC<MonthlyReportsDashboardProps> = ({
               title="No hay informes mensuales"
               message="Registra el informe mensual para consolidar el avance, la ejecución presupuestal y los hitos clave del periodo."
               actionButton={
-                <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
-                  Crear Primer Informe
-                </Button>
+                canEditContent ? (
+                  <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
+                    Crear Primer Informe
+                  </Button>
+                ) : undefined
               }
             />
           )}
@@ -282,20 +332,23 @@ const MonthlyReportsDashboard: React.FC<MonthlyReportsDashboardProps> = ({
           onSign={addSignature} // Conectado (simulado por ahora)
           currentUser={user}
           onSelectVersion={handleSelectVersion}
-          onCreateVersion={handleCreateVersion}
+          onCreateVersion={canEditContent ? handleCreateVersion : undefined}
+          readOnly={readOnly}
         />
       )}
 
       {/* Modal de Formulario (Usamos el genérico) */}
-      <ReportFormModal
-        isOpen={isFormModalOpen}
-        onClose={handleCloseForm}
-        onSave={handleSaveReport} // Conectado al backend con subida
-        reportType="Monthly" // Indicamos que es mensual
-        reportScope={reportScope} // Pasamos el scope
-        baseReport={baseReportForForm}
-        mode={formMode}
-      />
+      {canEditContent && (
+        <ReportFormModal
+          isOpen={isFormModalOpen}
+          onClose={handleCloseForm}
+          onSave={handleSaveReport}
+          reportType="Monthly"
+          reportScope={reportScope}
+          baseReport={baseReportForForm}
+          mode={formMode}
+        />
+      )}
     </div>
   );
 };

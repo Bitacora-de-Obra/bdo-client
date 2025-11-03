@@ -8,9 +8,10 @@ interface ControlPointCardProps {
   point: ControlPoint;
   onAddPhoto: () => void;
   onViewProgress: () => void;
+  canAddPhoto?: boolean;
 }
 
-const ControlPointCard: React.FC<ControlPointCardProps> = ({ point, onAddPhoto, onViewProgress }) => {
+const ControlPointCard: React.FC<ControlPointCardProps> = ({ point, onAddPhoto, onViewProgress, canAddPhoto = true }) => {
   const lastPhotoDate = point.photos.length > 0
     ? new Date(point.photos[point.photos.length - 1].date).toLocaleDateString('es-CO', {
         year: 'numeric',
@@ -38,7 +39,14 @@ const ControlPointCard: React.FC<ControlPointCardProps> = ({ point, onAddPhoto, 
         </div>
       </div>
       <div className="bg-gray-50/70 p-3 flex gap-2">
-        <Button onClick={onAddPhoto} leftIcon={<PlusIcon />} variant="secondary" size="sm" className="w-full">
+        <Button
+          onClick={onAddPhoto}
+          leftIcon={<PlusIcon />}
+          variant="secondary"
+          size="sm"
+          className="w-full"
+          disabled={!canAddPhoto}
+        >
           Añadir Foto
         </Button>
         <Button onClick={onViewProgress} variant="primary" size="sm" className="w-full" disabled={point.photos.length === 0}>

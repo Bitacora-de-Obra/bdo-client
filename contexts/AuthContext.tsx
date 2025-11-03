@@ -124,6 +124,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     };
   }, [loadProfile, logout]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    if (user?.appRole) {
+      localStorage.setItem("appRole", user.appRole);
+    } else {
+      localStorage.removeItem("appRole");
+    }
+  }, [user?.appRole]);
+
   const login = useCallback(async (email: string, password: string) => {
     setError(null);
     setIsLoading(true);

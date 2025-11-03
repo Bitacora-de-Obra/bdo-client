@@ -32,6 +32,7 @@ interface ReportDetailModalProps {
   onGenerateExcel?: (
     reportId: string
   ) => Promise<{ attachment?: Attachment; report?: Report } | void>;
+  readOnly?: boolean;
 }
 
 const DetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({
@@ -54,6 +55,7 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
   onSelectVersion,
   onCreateVersion,
   onGenerateExcel,
+  readOnly = false,
 }) => {
   const [editedReport, setEditedReport] = useState<Report>(report);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
@@ -80,6 +82,7 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
   }, [report, isOpen]);
 
   const handleStatusChange = (newStatus: ReportStatus) => {
+    if (readOnly) return;
     setEditedReport((prev) => ({ ...prev, status: newStatus }));
   };
 
@@ -106,6 +109,9 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
   const handleConfirmSignature = async (
     password: string
   ): Promise<{ success: boolean; error?: string }> => {
+    if (readOnly) {
+      return { success: false, error: "No autorizado" };
+    }
     // Ya no hacemos la validación de contraseña aquí
     const result = await onSign(report.id, "report", currentUser, password);
     if (!result.success) {
@@ -126,6 +132,7 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
 
   const handleSaveChanges = async () => {
     if (isSaving) return;
+    if (readOnly) return;
     try {
       setIsSaving(true);
       await Promise.resolve(onUpdate(editedReport));
@@ -172,7 +179,7 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
                     {isGeneratingExcel ? "Generando..." : "Generar Excel"}
                   </Button>
                 )}
-                {onCreateVersion && (
+                {onCreateVersion && !readOnly && (
                   <Button
                     variant="secondary"
                     onClick={() => onCreateVersion(report)}
@@ -195,7 +202,7 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
                     return (
                       <button
                         key={versionInfo.id}
-                        onClick={() =>
+                    onClick={() =>
                           !isCurrent &&
                           onSelectVersion &&
                           onSelectVersion(versionInfo.id)
@@ -298,6 +305,7 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
               onChange={(e) =>
                 handleStatusChange(e.target.value as ReportStatus)
               }
+              disabled={readOnly}
             >
               {Object.values(ReportStatus).map((s) => (
                 <option key={s} value={s}>
@@ -311,25 +319,30 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
             requiredSignatories={editedReport.requiredSignatories}
             signatures={editedReport.signatures}
             currentUser={currentUser}
-            onSignRequest={() => setIsSignatureModalOpen(true)}
+            onSignRequest={readOnly ? undefined : () => setIsSignatureModalOpen(true)}
             documentType="Informe"
+            readOnly={readOnly}
           />
         </div>
         <div className="mt-6 flex flex-col sm:flex-row sm:justify-end gap-2">
           <Button variant="secondary" onClick={onClose} disabled={isSaving}>
             Cancelar
           </Button>
-          <Button variant="primary" onClick={handleSaveChanges} disabled={isSaving}>
-            {isSaving ? "Guardando..." : "Guardar Cambios"}
-          </Button>
+          {!readOnly && (
+            <Button variant="primary" onClick={handleSaveChanges} disabled={isSaving}>
+              {isSaving ? "Guardando..." : "Guardar Cambios"}
+            </Button>
+          )}
         </div>
       </Modal>
-      <SignatureModal
-        isOpen={isSignatureModalOpen}
-        onClose={() => setIsSignatureModalOpen(false)}
-        onConfirm={handleConfirmSignature}
-        userToSign={currentUser}
-      />
+      {!readOnly && (
+        <SignatureModal
+          isOpen={isSignatureModalOpen}
+          onClose={() => setIsSignatureModalOpen(false)}
+          onConfirm={handleConfirmSignature}
+          userToSign={currentUser}
+        />
+      )}
     </>
   );
 };

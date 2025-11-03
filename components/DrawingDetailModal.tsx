@@ -9,12 +9,13 @@ interface DrawingDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   drawing: Drawing;
-  onAddVersion: () => void;
-  onAddComment: (drawingId: string, commentText: string) => Promise<void>;
+  onAddVersion?: () => void;
+  onAddComment?: (drawingId: string, commentText: string) => Promise<void>;
   currentUser: User;
+  readOnly?: boolean;
 }
 
-const DrawingDetailModal: React.FC<DrawingDetailModalProps> = ({ isOpen, onClose, drawing, onAddVersion, onAddComment, currentUser }) => {
+const DrawingDetailModal: React.FC<DrawingDetailModalProps> = ({ isOpen, onClose, drawing, onAddVersion, onAddComment, currentUser, readOnly = false }) => {
   const [newComment, setNewComment] = useState('');
 
   if (!drawing) return null;
@@ -34,6 +35,9 @@ const DrawingDetailModal: React.FC<DrawingDetailModalProps> = ({ isOpen, onClose
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (readOnly || !onAddComment) {
+      return;
+    }
     if (newComment.trim()) {
         await onAddComment(drawing.id, newComment.trim());
         setNewComment('');
@@ -136,29 +140,33 @@ const DrawingDetailModal: React.FC<DrawingDetailModalProps> = ({ isOpen, onClose
 </div>
         
         {/* Comment Form */}
-        <div className="pt-4 border-t">
-            <form onSubmit={handleCommentSubmit} className="flex items-start space-x-3">
-            <img src={currentUser.avatarUrl} alt={currentUser.fullName} className="h-8 w-8 rounded-full object-cover"/>
-            <div className="flex-1">
-                <textarea
-                rows={2}
-                className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                placeholder="Escribe tu comentario aquí..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                ></textarea>
-                <div className="mt-2 flex justify-end">
-                <Button type="submit" size="sm" disabled={!newComment.trim()}>
-                    Publicar Comentario
-                </Button>
-                </div>
-            </div>
-            </form>
-        </div>
+        {!readOnly && onAddComment && (
+          <div className="pt-4 border-t">
+              <form onSubmit={handleCommentSubmit} className="flex items-start space-x-3">
+              <img src={currentUser.avatarUrl} alt={currentUser.fullName} className="h-8 w-8 rounded-full object-cover"/>
+              <div className="flex-1">
+                  <textarea
+                  rows={2}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Escribe tu comentario aquí..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  ></textarea>
+                  <div className="mt-2 flex justify-end">
+                  <Button type="submit" size="sm" disabled={!newComment.trim()}>
+                      Publicar Comentario
+                  </Button>
+                  </div>
+              </div>
+              </form>
+          </div>
+        )}
 
       </div>
        <div className="mt-6 flex flex-col sm:flex-row sm:justify-end gap-2">
-         <Button variant="secondary" onClick={onAddVersion}>Cargar Nueva Versión</Button>
+         {onAddVersion && !readOnly && (
+           <Button variant="secondary" onClick={onAddVersion}>Cargar Nueva Versión</Button>
+         )}
          <Button variant="primary" onClick={onClose}>Cerrar</Button>
       </div>
     </Modal>

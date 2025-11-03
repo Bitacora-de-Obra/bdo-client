@@ -19,6 +19,8 @@ import WorkActaFormModal from "./WorkActaFormModal";
 import ContractItemsSummaryTable from "./ContractItemsSummaryTable";
 import ContractModificationFormModal from "./ContractModificationFormModal";
 import ContractModificationDetailModal from "./ContractModificationDetailModal";
+import { usePermissions } from "../src/hooks/usePermissions";
+import { useToast } from "./ui/ToastProvider";
 
 interface WorkProgressDashboardProps {
   project: ProjectDetails;
@@ -60,6 +62,9 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
   const [isModFormModalOpen, setIsModFormModalOpen] = useState(false);
   const [selectedModification, setSelectedModification] = useState<ContractModification | null>(null);
   const [isModificationDetailOpen, setIsModificationDetailOpen] = useState(false);
+  const { canEditContent } = usePermissions();
+  const readOnly = !canEditContent;
+  const { showToast } = useToast();
 
   // --- useEffect para cargar datos ---
   useEffect(() => {
@@ -198,6 +203,14 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
     newActaData: Omit<WorkActa, "id" | "attachments">,
     files: File[]
   ) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede registrar actas de avance.",
+        variant: "error",
+      });
+      throw new Error("El perfil Viewer no puede registrar actas de avance.");
+    }
     try {
       setError(null);
       let uploadedAttachments: Attachment[] = [];
@@ -226,6 +239,14 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
 
   // --- Implementaremos estas después ---
   const handleUpdateActa = async (updatedActa: WorkActa) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede modificar actas de avance.",
+        variant: "error",
+      });
+      return;
+    }
     try {
       // Llamamos al endpoint PUT con los datos actualizados (principalmente el estado)
       const updatedActaFromServer = await api(`/work-actas/${updatedActa.id}`, {
@@ -265,6 +286,14 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
     },
     file: File | null
   ) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede registrar modificaciones contractuales.",
+        variant: "error",
+      });
+      throw new Error("El perfil Viewer no puede registrar modificaciones.");
+    }
     try {
       let attachmentId: string | undefined;
       if (file) {
@@ -367,14 +396,16 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
           <h3 className="text-lg font-semibold text-gray-800">
             Historial de Modificaciones al Contrato
           </h3>
-          <Button
-            onClick={() => setIsModFormModalOpen(true)}
-            leftIcon={<PlusIcon />}
-            size="sm"
-            variant="secondary"
-          >
-            Registrar Modificación
-          </Button>
+          {canEditContent && (
+            <Button
+              onClick={() => setIsModFormModalOpen(true)}
+              leftIcon={<PlusIcon />}
+              size="sm"
+              variant="secondary"
+            >
+              Registrar Modificación
+            </Button>
+          )}
         </div>
         <div className="overflow-x-auto">
           {contractModificationsLoading ? (
@@ -427,14 +458,16 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
           <h3 className="text-xl font-semibold text-gray-800">
             Historial de Actas de Avance
           </h3>
-          <Button
-            onClick={() => setIsActaFormModalOpen(true)}
-            leftIcon={<PlusIcon />}
-            size="sm"
-            variant="secondary"
-          >
-            Nueva Acta de Avance
-          </Button>
+          {canEditContent && (
+            <Button
+              onClick={() => setIsActaFormModalOpen(true)}
+              leftIcon={<PlusIcon />}
+              size="sm"
+              variant="secondary"
+            >
+              Nueva Acta de Avance
+            </Button>
+          )}
         </div>
         <div className="overflow-x-auto">
           {isLoading && <div className="p-6 text-center">Cargando actas...</div>}
@@ -476,12 +509,14 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
                   title="No hay actas de avance registradas"
                   message="Registra la primera acta de avance para iniciar el seguimiento de cantidades y valores del contrato de obra."
                   actionButton={
-                    <Button
-                      onClick={() => setIsActaFormModalOpen(true)}
-                      leftIcon={<PlusIcon />}
-                    >
-                      Registrar Primera Acta
-                    </Button>
+                    canEditContent ? (
+                      <Button
+                        onClick={() => setIsActaFormModalOpen(true)}
+                        leftIcon={<PlusIcon />}
+                      >
+                        Registrar Primera Acta
+                      </Button>
+                    ) : undefined
                   }
                 />
               </div>
@@ -498,23 +533,28 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
           acta={selectedActa}
           contractItems={contractItems} // Pasa los ítems reales
           onUpdate={handleUpdateActa} // Conectado al backend
+          readOnly={readOnly}
         />
       )}
 
-      <WorkActaFormModal
-        isOpen={isActaFormModalOpen}
-        onClose={() => setIsActaFormModalOpen(false)}
-        onSave={handleSaveActa} // Conectado al backend
-        contractItems={contractItems} // Pasa los ítems reales
-        suggestedNumber={nextActaNumber}
-        itemsSummary={itemsSummaryData} // Pasa el resumen calculado
-      />
+      {canEditContent && (
+        <WorkActaFormModal
+          isOpen={isActaFormModalOpen}
+          onClose={() => setIsActaFormModalOpen(false)}
+          onSave={handleSaveActa} // Conectado al backend
+          contractItems={contractItems} // Pasa los ítems reales
+          suggestedNumber={nextActaNumber}
+          itemsSummary={itemsSummaryData} // Pasa el resumen calculado
+        />
+      )}
 
-      <ContractModificationFormModal
-        isOpen={isModFormModalOpen}
-        onClose={() => setIsModFormModalOpen(false)}
-        onSave={handleSaveModification} // Conectado al backend
-      />
+      {canEditContent && (
+        <ContractModificationFormModal
+          isOpen={isModFormModalOpen}
+          onClose={() => setIsModFormModalOpen(false)}
+          onSave={handleSaveModification} // Conectado al backend
+        />
+      )}
       {selectedModification && (
         <ContractModificationDetailModal
           isOpen={isModificationDetailOpen}

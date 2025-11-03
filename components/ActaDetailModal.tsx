@@ -8,6 +8,7 @@ import { ClockIcon } from "./icons/Icon";
 import ActaAreaBadge from "./ActaAreaBadge";
 import SignatureBlock from "./SignatureBlock";
 import SignatureModal from "./SignatureModal";
+import { useToast } from "./ui/ToastProvider";
 
 const EmailIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg
@@ -39,6 +40,7 @@ interface ActaDetailModalProps {
     password: string
   ) => Promise<{ success: boolean; error?: string; updated?: Acta }>;
   currentUser: User;
+  readOnly?: boolean;
 }
 
 const getDueDateColor = (dueDateStr: string, status: CommitmentStatus) => {
@@ -68,15 +70,25 @@ const ActaDetailModal: React.FC<ActaDetailModalProps> = ({
   onSendReminder,
   onSign,
   currentUser,
+  readOnly = false,
 }) => {
   const [editedActa, setEditedActa] = useState<Acta>(acta);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     setEditedActa(acta);
   }, [acta, isOpen]);
 
   const handleCommitmentToggle = (commitmentId: string) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "No tienes permisos para actualizar los compromisos.",
+        variant: "error",
+      });
+      return;
+    }
     setEditedActa((prevActa) => ({
       ...prevActa,
       commitments: prevActa.commitments.map((c) =>
@@ -94,16 +106,33 @@ const ActaDetailModal: React.FC<ActaDetailModalProps> = ({
   };
 
   const handleSendReminderClick = (commitment: Commitment) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "No tienes permisos para enviar recordatorios.",
+        variant: "error",
+      });
+      return;
+    }
     onSendReminder(commitment, acta);
-    // Fix: Replaced `commitment.responsible.name` with `commitment.responsible.fullName`.
-    alert(
-      `Recordatorio enviado a ${commitment.responsible.fullName} (${commitment.responsible.email})`
-    );
+    showToast({
+      title: "Recordatorio enviado",
+      message: `Se notificó a ${commitment.responsible.fullName}.`,
+      variant: "info",
+    });
   };
 
   const handleConfirmSignature = async (
     password: string
   ): Promise<{ success: boolean; error?: string }> => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "No tienes permisos para firmar esta acta.",
+        variant: "error",
+      });
+      return { success: false, error: "No autorizado" };
+    }
     const result = await onSign(acta.id, "acta", currentUser, password);
     if (!result.success) {
       return { success: false, error: result.error };
@@ -118,6 +147,14 @@ const ActaDetailModal: React.FC<ActaDetailModalProps> = ({
   };
 
   const handleSaveChanges = () => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "No tienes permisos para modificar esta acta.",
+        variant: "error",
+      });
+      return;
+    }
     onUpdate(editedActa);
     onClose();
   };
@@ -196,6 +233,7 @@ const ActaDetailModal: React.FC<ActaDetailModalProps> = ({
                             commitment.status === CommitmentStatus.COMPLETED
                           }
                           onChange={() => handleCommitmentToggle(commitment.id)}
+                          disabled={readOnly}
                         />
                         <label
                           htmlFor={`commitment-${commitment.id}`}
@@ -229,7 +267,8 @@ const ActaDetailModal: React.FC<ActaDetailModalProps> = ({
                           <button
                             onClick={() => handleSendReminderClick(commitment)}
                             title="Enviar recordatorio por email"
-                            className="text-gray-400 hover:text-brand-primary"
+                            className="text-gray-400 hover:text-brand-primary disabled:text-gray-300 disabled:cursor-not-allowed"
+                            disabled={readOnly}
                           >
                             <EmailIcon className="h-5 w-5" />
                           </button>
@@ -282,25 +321,30 @@ const ActaDetailModal: React.FC<ActaDetailModalProps> = ({
             requiredSignatories={requiredSignatories}
             signatures={signatures}
             currentUser={currentUser}
-            onSignRequest={() => setIsSignatureModalOpen(true)}
+            onSignRequest={readOnly ? undefined : () => setIsSignatureModalOpen(true)}
             documentType="Acta"
+            readOnly={readOnly}
           />
         </div>
         <div className="mt-6 flex flex-col sm:flex-row sm:justify-end gap-2">
           <Button variant="secondary" onClick={onClose}>
             Cerrar
           </Button>
-          <Button variant="primary" onClick={handleSaveChanges}>
-            Guardar Cambios
-          </Button>
+          {!readOnly && (
+            <Button variant="primary" onClick={handleSaveChanges}>
+              Guardar Cambios
+            </Button>
+          )}
         </div>
       </Modal>
-      <SignatureModal
-        isOpen={isSignatureModalOpen}
-        onClose={() => setIsSignatureModalOpen(false)}
-        onConfirm={handleConfirmSignature}
-        userToSign={currentUser}
-      />
+      {!readOnly && (
+        <SignatureModal
+          isOpen={isSignatureModalOpen}
+          onClose={() => setIsSignatureModalOpen(false)}
+          onConfirm={handleConfirmSignature}
+          userToSign={currentUser}
+        />
+      )}
     </>
   );
 };

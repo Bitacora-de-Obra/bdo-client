@@ -8,10 +8,11 @@ import { MapIcon, PlusIcon } from './icons/Icon';
 interface DrawingCardProps {
   drawing: Drawing;
   onSelect: (drawing: Drawing) => void;
-  onAddVersion: (drawing: Drawing) => void;
+  onAddVersion?: (drawing: Drawing) => void;
+  canEdit?: boolean;
 }
 
-const DrawingCard: React.FC<DrawingCardProps> = ({ drawing, onSelect, onAddVersion }) => {
+const DrawingCard: React.FC<DrawingCardProps> = ({ drawing, onSelect, onAddVersion, canEdit = true }) => {
   const latestVersion = drawing.versions[0];
 
   return (
@@ -29,20 +30,22 @@ const DrawingCard: React.FC<DrawingCardProps> = ({ drawing, onSelect, onAddVersi
         <h4 className="mt-2 font-bold text-gray-800 leading-tight truncate" title={drawing.title}>{drawing.title}</h4>
         <p className="text-sm text-gray-500 font-mono">{drawing.code}</p>
       </div>
-      <div className="p-2 bg-gray-50 border-t">
-        <Button 
-            variant="secondary" 
-            size="sm" 
-            className="w-full"
-            onClick={(e) => {
-                e.stopPropagation();
-                onAddVersion(drawing);
-            }}
-            leftIcon={<PlusIcon className="w-4 h-4" />}
-        >
-          Nueva Versión
-        </Button>
-      </div>
+      {canEdit && onAddVersion && (
+        <div className="p-2 bg-gray-50 border-t">
+          <Button 
+              variant="secondary" 
+              size="sm" 
+              className="w-full"
+              onClick={(e) => {
+                  e.stopPropagation();
+                  onAddVersion(drawing);
+              }}
+              leftIcon={<PlusIcon className="w-4 h-4" />}
+          >
+            Nueva Versión
+          </Button>
+        </div>
+      )}
     </Card>
   );
 };

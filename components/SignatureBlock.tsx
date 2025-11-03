@@ -9,8 +9,9 @@ interface SignatureBlockProps {
   signatureTasks?: SignatureTask[];
   signatureSummary?: SignatureSummary;
   currentUser: User;
-  onSignRequest: () => void;
+  onSignRequest?: () => void;
   documentType: string;
+  readOnly?: boolean;
 }
 
 const statusLabels: Record<SignatureTask['status'], string> = {
@@ -52,6 +53,7 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
   currentUser,
   onSignRequest,
   documentType,
+  readOnly = false,
 }) => {
   const signaturesById = useMemo(() => {
     const map = new Map<string, Signature>();
@@ -167,6 +169,9 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
   }, [requiredSignatories, signatureTasks, signatures, signaturesById]);
 
   const canCurrentUserSign = useMemo(() => {
+    if (readOnly || !onSignRequest) {
+      return false;
+    }
     const hasPendingTask = signatureTasks.some(
       (task) =>
         task.signer?.id === currentUser.id &&
@@ -185,7 +190,7 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
     );
     const alreadySigned = signaturesById.has(currentUser.id);
     return isRequired && !alreadySigned;
-  }, [currentUser.id, requiredSignatories, signatureTasks, signaturesById]);
+  }, [currentUser.id, onSignRequest, readOnly, requiredSignatories, signatureTasks, signaturesById]);
 
   if (displayParticipants.length === 0) {
     return null;
@@ -248,7 +253,7 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
           );
         })}
       </div>
-      {canCurrentUserSign && (
+      {canCurrentUserSign && onSignRequest && (
         <div className="mt-4 flex justify-end">
           <Button onClick={onSignRequest} leftIcon={<PencilSquareIcon />}>
             Firmar {documentType}

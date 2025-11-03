@@ -8,7 +8,7 @@ import Card from './ui/Card';
 interface CalendarViewProps {
   entries: LogEntry[];
   onEventClick: (entry: LogEntry) => void;
-  onDateClick: (dateStr: string) => void;
+  onDateClick?: (dateStr: string) => void;
 }
 
 const statusColorMap: Record<EntryStatus, string> = {
@@ -98,8 +98,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({ entries, onEventClick, onDa
         height="auto"
         eventClick={handleEventClick}
         eventDisplay="block"
-        selectable={true}
-        dateClick={(arg) => onDateClick(arg.dateStr)}
+        selectable={Boolean(onDateClick)}
+        dateClick={(arg) => {
+          if (onDateClick) {
+            onDateClick(arg.dateStr);
+          }
+        }}
       />
     </Card>
   );

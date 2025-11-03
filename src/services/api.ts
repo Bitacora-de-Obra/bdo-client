@@ -148,6 +148,26 @@ async function apiFetch(
     delete headers["Content-Type"];
   }
 
+  const method =
+    typeof options.method === "string"
+      ? options.method.toUpperCase()
+      : "GET";
+  const isMutatingMethod = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+  if (
+    isMutatingMethod &&
+    typeof window !== "undefined" &&
+    typeof localStorage !== "undefined"
+  ) {
+    const storedRole = localStorage.getItem("appRole");
+    if (storedRole === "viewer") {
+      throw handleApiError({
+        statusCode: 403,
+        message: "El rol Viewer solo puede consultar información.",
+        code: "VIEWER_READ_ONLY",
+      });
+    }
+  }
+
   const fetchUrl = `${API_URL}${endpoint}`;
 
   try {

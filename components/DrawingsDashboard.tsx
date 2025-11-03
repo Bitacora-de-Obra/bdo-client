@@ -15,6 +15,8 @@ import DrawingCard from "./DrawingCard";
 import DrawingsTable from "./DrawingsTable";
 import DrawingDetailModal from "./DrawingDetailModal";
 import DrawingUploadModal from "./DrawingUploadModal";
+import { usePermissions } from "../src/hooks/usePermissions";
+import { useToast } from "./ui/ToastProvider";
 
 interface DrawingsDashboardProps {
   project: Project;
@@ -22,6 +24,9 @@ interface DrawingsDashboardProps {
 
 const DrawingsDashboard: React.FC<DrawingsDashboardProps> = ({ project }) => {
   const { user } = useAuth();
+  const { canEditContent } = usePermissions();
+  const readOnly = !canEditContent;
+  const { showToast } = useToast();
 
   // --- Estado local para datos reales ---
   const [drawings, setDrawings] = useState<Drawing[]>([]);
@@ -68,11 +73,28 @@ const DrawingsDashboard: React.FC<DrawingsDashboardProps> = ({ project }) => {
   }, [drawings, filters]);
 
   const handleOpenUploadModal = () => {
+    if (readOnly) {
+      showToast({
+        title: "Acceso restringido",
+        message: "El rol Viewer no puede cargar planos.",
+        variant: "warning",
+      });
+      setIsUploadModalOpen(false);
+      return;
+    }
     setDrawingToUpdate(null);
     setIsUploadModalOpen(true);
   };
 
   const handleOpenNewVersionModal = (drawing: Drawing) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede cargar nuevas versiones.",
+        variant: "error",
+      });
+      return;
+    }
     setDrawingToUpdate(drawing);
     setIsUploadModalOpen(true);
     setIsDetailModalOpen(false);
@@ -89,6 +111,14 @@ const DrawingsDashboard: React.FC<DrawingsDashboardProps> = ({ project }) => {
     file: File
   ) => {
     if (!user) return;
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede registrar planos.",
+        variant: "error",
+      });
+      return;
+    }
     try {
       // Paso 1: Subir el archivo
       const uploadResult = await api.upload.uploadFile(file, "drawing");
@@ -116,8 +146,16 @@ const DrawingsDashboard: React.FC<DrawingsDashboardProps> = ({ project }) => {
   };
 
   // Estas funciones las implementaremos después
-  const handleSaveNewVersion = async (drawingId: string, file: File) => {
+const handleSaveNewVersion = async (drawingId: string, file: File) => {
     if (!user) return;
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede cargar versiones de planos.",
+        variant: "error",
+      });
+      return;
+    }
     try {
       // Paso 1: Subir el nuevo archivo (igual que antes)
       const uploadResult = await api.upload.uploadFile(file, "drawing");
@@ -151,6 +189,14 @@ const handleAddCommentToDrawing = async (
     commentText: string
   ) => {
     if (!user) return; // Guarda de seguridad
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede comentar planos.",
+        variant: "error",
+      });
+      return;
+    }
     try {
       // 1. Llama al endpoint del backend para crear el comentario
       const newComment = await api.drawings.addComment(drawingId, {
@@ -187,7 +233,7 @@ const handleAddCommentToDrawing = async (
           </p>
         </div>
         <div className="flex items-center flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          <div className="flex items-center bg-gray-200 rounded-lg p-1">
+         <div className="flex items-center bg-gray-200 rounded-lg p-1">
             <button
               onClick={() => setViewMode("card")}
               title="Vista de Tarjetas"
@@ -213,9 +259,11 @@ const handleAddCommentToDrawing = async (
               <span className="hidden sm:inline">Tabla</span>
             </button>
           </div>
-          <Button onClick={handleOpenUploadModal} leftIcon={<PlusIcon />}>
-            Cargar Plano
-          </Button>
+          {canEditContent && (
+            <Button onClick={handleOpenUploadModal} leftIcon={<PlusIcon />}>
+              Cargar Plano
+            </Button>
+          )}
         </div>
       </div>
 
@@ -234,7 +282,8 @@ const handleAddCommentToDrawing = async (
                     key={d.id}
                     drawing={d}
                     onSelect={handleOpenDetailModal}
-                    onAddVersion={handleOpenNewVersionModal}
+                    onAddVersion={canEditContent ? handleOpenNewVersionModal : undefined}
+                    canEdit={canEditContent}
                   />
                 ))}
               </div>
@@ -250,32 +299,37 @@ const handleAddCommentToDrawing = async (
               title="No hay planos cargados"
               message="Comienza por cargar el primer plano del proyecto para centralizar toda la documentación técnica."
               actionButton={
-                <Button onClick={handleOpenUploadModal} leftIcon={<PlusIcon />}>
-                  Cargar Primer Plano
-                </Button>
+                canEditContent ? (
+                  <Button onClick={handleOpenUploadModal} leftIcon={<PlusIcon />}>
+                    Cargar Primer Plano
+                  </Button>
+                ) : undefined
               }
             />
           )}
         </>
       )}
 
-      <DrawingUploadModal
-        isOpen={isUploadModalOpen}
-        onClose={() => setIsUploadModalOpen(false)}
-        onSaveDrawing={handleSaveDrawing}
-        onSaveNewVersion={handleSaveNewVersion}
-        existingDrawing={drawingToUpdate}
-        allDrawings={drawings}
-      />
+      {canEditContent && (
+        <DrawingUploadModal
+          isOpen={isUploadModalOpen}
+          onClose={() => setIsUploadModalOpen(false)}
+          onSaveDrawing={handleSaveDrawing}
+          onSaveNewVersion={handleSaveNewVersion}
+          existingDrawing={drawingToUpdate}
+          allDrawings={drawings}
+        />
+      )}
 
       {selectedDrawing && user && (
         <DrawingDetailModal
           isOpen={isDetailModalOpen}
           onClose={() => setIsDetailModalOpen(false)}
           drawing={selectedDrawing}
-          onAddVersion={() => handleOpenNewVersionModal(selectedDrawing)}
+          onAddVersion={canEditContent ? () => handleOpenNewVersionModal(selectedDrawing) : undefined}
           onAddComment={handleAddCommentToDrawing}
           currentUser={user}
+          readOnly={readOnly}
         />
       )}
     </div>

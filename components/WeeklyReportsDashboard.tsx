@@ -17,6 +17,7 @@ import ReportFormModal from "./ReportFormModal"; // Usamos el modal genérico
 import ReportDetailModal from "./ReportDetailModal"; // Importa el modal de detalle
 import { useAuth } from "../contexts/AuthContext"; // Importa useAuth
 import { useToast } from "./ui/ToastProvider";
+import { usePermissions } from "../src/hooks/usePermissions";
 
 interface WeeklyReportsDashboardProps {
   project: ProjectDetails;
@@ -29,6 +30,8 @@ const WeeklyReportsDashboard: React.FC<WeeklyReportsDashboardProps> = ({
 }) => {
   const { user } = useAuth(); // Obtenemos el usuario
   const { showToast } = useToast();
+  const { canEditContent } = usePermissions();
+  const readOnly = !canEditContent;
 
   // --- Estado local para datos reales ---
   const [weeklyReports, setWeeklyReports] = useState<Report[]>([]); // Usamos el tipo genérico Report
@@ -81,6 +84,15 @@ const WeeklyReportsDashboard: React.FC<WeeklyReportsDashboardProps> = ({
   };
 
   const handleOpenForm = () => {
+    if (readOnly) {
+      showToast({
+        title: "Acceso restringido",
+        message: "El rol Viewer no puede registrar informes semanales.",
+        variant: "warning",
+      });
+      setIsFormModalOpen(false);
+      return;
+    }
     setFormMode("create");
     setBaseReportForForm(null);
     setIsFormModalOpen(true);
@@ -93,6 +105,14 @@ const WeeklyReportsDashboard: React.FC<WeeklyReportsDashboardProps> = ({
   };
 
   const handleCreateVersion = (report: Report) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede generar nuevas versiones de informes.",
+        variant: "error",
+      });
+      return;
+    }
     setBaseReportForForm(report);
     setFormMode("newVersion");
     setIsFormModalOpen(true);
@@ -108,6 +128,14 @@ const WeeklyReportsDashboard: React.FC<WeeklyReportsDashboardProps> = ({
     options: { previousReportId?: string } = {}
   ) => {
     if (!user) return;
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede registrar informes semanales.",
+        variant: "error",
+      });
+      throw new Error("El perfil Viewer no puede registrar informes semanales.");
+    }
     setError(null);
 
     try {
@@ -180,6 +208,14 @@ const WeeklyReportsDashboard: React.FC<WeeklyReportsDashboardProps> = ({
 
   // --- Funciones para Actualización y Firma (Pendientes - Simulación) ---
   const handleUpdateReport = async (updatedReport: Report) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede actualizar informes.",
+        variant: "error",
+      });
+      return;
+    }
     try {
       // Llamamos al endpoint PUT con los datos a actualizar
       const updatedReportFromServer = await api(
@@ -226,6 +262,14 @@ const addSignature = async (
     signer: User,
     password?: string
   ): Promise<{ success: boolean; error?: string; updated?: Report }> => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede firmar informes.",
+        variant: "error",
+      });
+      return { success: false, error: "No autorizado" };
+    }
     if (!password) {
       return { success: false, error: "Se requiere contraseña para firmar." };
     }
@@ -347,9 +391,11 @@ const addSignature = async (
           </h2>
           <p className="text-sm text-gray-500">Proyecto: {project.name}</p>
         </div>
-        <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
-          Registrar Informe Semanal
-        </Button>
+        {canEditContent && (
+          <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
+            Registrar Informe Semanal
+          </Button>
+        )}
       </div>
 
       {isLoading && <div className="text-center p-8">Cargando informes...</div>}
@@ -374,9 +420,11 @@ const addSignature = async (
               title="No hay informes semanales"
               message="Genera el primer informe para consolidar el avance, personal, actividades y estado general del proyecto durante la semana."
               actionButton={
-                <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
-                  Registrar Primer Informe
-                </Button>
+                canEditContent ? (
+                  <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
+                    Registrar Primer Informe
+                  </Button>
+                ) : undefined
               }
             />
           )}
@@ -393,21 +441,24 @@ const addSignature = async (
           onSign={addSignature} // Conectado (simulado por ahora)
           currentUser={user}
           onSelectVersion={handleSelectVersion}
-          onCreateVersion={handleCreateVersion}
+          onCreateVersion={canEditContent ? handleCreateVersion : undefined}
           onGenerateExcel={handleGenerateWeeklyExcel}
+          readOnly={readOnly}
         />
       )}
 
       {/* Modal de Formulario (Usamos el genérico) */}
-      <ReportFormModal
-        isOpen={isFormModalOpen}
-        onClose={handleCloseForm}
-        onSave={handleSaveReport} // Conectado al backend con subida
-        reportType="Weekly"
-        reportScope={reportScope} // Pasamos el scope
-        baseReport={baseReportForForm}
-        mode={formMode}
-      />
+      {canEditContent && (
+        <ReportFormModal
+          isOpen={isFormModalOpen}
+          onClose={handleCloseForm}
+          onSave={handleSaveReport}
+          reportType="Weekly"
+          reportScope={reportScope}
+          baseReport={baseReportForForm}
+          mode={formMode}
+        />
+      )}
     </div>
   );
 };

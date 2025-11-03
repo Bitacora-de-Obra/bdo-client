@@ -47,6 +47,7 @@ interface EntryDetailModalProps {
   currentUser: User;
   availableUsers: User[];
   onRefresh?: () => void;
+  readOnly?: boolean;
 }
 
 const DetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({
@@ -79,6 +80,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   currentUser,
   availableUsers,
   onRefresh = () => {},
+  readOnly = false,
 }) => {
   const extractSignerIds = (entryData: LogEntry): string[] => {
     const fromTasks = (entryData.signatureTasks || [])
@@ -357,6 +359,14 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   }, [entry, isOpen]);
 
   const handleDelete = async () => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "No tienes permisos para eliminar anotaciones.",
+        variant: "error",
+      });
+      return;
+    }
     if (
       window.confirm(
         "¿Estás seguro de que quieres eliminar esta anotación? Esta acción no se puede deshacer."
@@ -567,6 +577,14 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "No tienes permisos para agregar comentarios.",
+        variant: "error",
+      });
+      return;
+    }
     if (newComment.trim() || commentFiles.length > 0) {
       await onAddComment(entry.id, newComment.trim(), commentFiles);
       setNewComment("");
@@ -576,6 +594,14 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
 
   const handleSave = async () => {
     setValidationError(null);
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "No tienes permisos para modificar esta anotación.",
+        variant: "error",
+      });
+      return;
+    }
 
     if (!formEntryDate) {
       setValidationError("Debes indicar la fecha de la bitácora.");
@@ -724,9 +750,17 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     }
   };
 
-const handleConfirmSignature = async (password: string): Promise<{ success: boolean, error?: string }> => {
+const handleConfirmSignature = async (password: string): Promise<{ success: boolean; error?: string }> => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "No tienes permisos para firmar documentos.",
+        variant: "error",
+      });
+      return { success: false, error: "No autorizado" };
+    }
     // Ya no verificamos la contraseña aquí, se la pasamos al backend
-    const result = await onSign(entry.id, 'logEntry', currentUser, password);
+    const result = await onSign(entry.id, "logEntry", currentUser, password);
     if (result.success) {
         setIsSignatureModalOpen(false);
     }
@@ -861,7 +895,8 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
   };
 
   const canEdit =
-    currentUser.id === author?.id || currentUser.projectRole === UserRole.ADMIN;
+    !readOnly &&
+    (currentUser.id === author?.id || currentUser.projectRole === UserRole.ADMIN);
 
   const entryDateDisplay = entryDateIso
     ? new Date(entryDateIso).toLocaleDateString("es-CO", { dateStyle: "long" })
@@ -1886,7 +1921,10 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
               signatureTasks={editedEntry.signatureTasks}
               signatureSummary={editedEntry.signatureSummary}
               currentUser={currentUser}
-              onSignRequest={() => setIsSignatureModalOpen(true)}
+              onSignRequest={
+                readOnly ? undefined : () => setIsSignatureModalOpen(true)
+              }
+              readOnly={readOnly}
               documentType="Anotación"
             />
           )}
@@ -1964,71 +2002,73 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
             )}
           </div>
           {/* New Comment Form */}
-          <div className="pt-4 border-t" onClick={(e) => e.stopPropagation()}>
-            <form
-              onSubmit={handleCommentSubmit}
-              className="flex items-start space-x-3"
-            >
-              <img
-                src={currentUser.avatarUrl}
-                alt={currentUser.fullName}
-                className="h-8 w-8 rounded-full object-cover"
-              />
-              <div className="flex-1">
-                <textarea
-                  rows={2}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                  placeholder="Escribe tu comentario aquí..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                ></textarea>
-                {commentFiles.length > 0 && (
-                  <div className="mt-2 space-y-1">
-                    {commentFiles.map((file, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between py-1 pl-2 pr-1 text-sm bg-blue-50 rounded-md border border-blue-200"
-                      >
-                        <span className="truncate font-medium flex-1 w-0 text-gray-700">
-                          {file.name}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveCommentFile(file)}
-                          className="ml-2 flex-shrink-0 text-red-500 hover:text-red-700"
+          {!readOnly && (
+            <div className="pt-4 border-t" onClick={(e) => e.stopPropagation()}>
+              <form
+                onSubmit={handleCommentSubmit}
+                className="flex items-start space-x-3"
+              >
+                <img
+                  src={currentUser.avatarUrl}
+                  alt={currentUser.fullName}
+                  className="h-8 w-8 rounded-full object-cover"
+                />
+                <div className="flex-1">
+                  <textarea
+                    rows={2}
+                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                    placeholder="Escribe tu comentario aquí..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                  ></textarea>
+                  {commentFiles.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {commentFiles.map((file, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between py-1 pl-2 pr-1 text-sm bg-blue-50 rounded-md border border-blue-200"
                         >
-                          <XMarkIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
+                          <span className="truncate font-medium flex-1 w-0 text-gray-700">
+                            {file.name}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveCommentFile(file)}
+                            className="ml-2 flex-shrink-0 text-red-500 hover:text-red-700"
+                          >
+                            <XMarkIcon className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="mt-2 flex justify-between items-center">
+                    <label
+                      htmlFor="comment-file-upload"
+                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-brand-primary bg-brand-primary/10 hover:bg-brand-primary/20 cursor-pointer"
+                    >
+                      <PaperClipIcon className="h-4 w-4 mr-2" />
+                      <span>Adjuntar</span>
+                      <input
+                        id="comment-file-upload"
+                        type="file"
+                        multiple
+                        onChange={handleCommentFileChange}
+                        className="sr-only"
+                      />
+                    </label>
+                    <Button
+                      type="submit"
+                      size="sm"
+                      disabled={!newComment.trim() && commentFiles.length === 0}
+                    >
+                      Publicar Comentario
+                    </Button>
                   </div>
-                )}
-                <div className="mt-2 flex justify-between items-center">
-                  <label
-                    htmlFor="comment-file-upload"
-                    className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-brand-primary bg-brand-primary/10 hover:bg-brand-primary/20 cursor-pointer"
-                  >
-                    <PaperClipIcon className="h-4 w-4 mr-2" />
-                    <span>Adjuntar</span>
-                    <input
-                      id="comment-file-upload"
-                      type="file"
-                      multiple
-                      onChange={handleCommentFileChange}
-                      className="sr-only"
-                    />
-                  </label>
-                  <Button
-                    type="submit"
-                    size="sm"
-                    disabled={!newComment.trim() && commentFiles.length === 0}
-                  >
-                    Publicar Comentario
-                  </Button>
                 </div>
-              </div>
-            </form>
-          </div>
+              </form>
+            </div>
+          )}
           {/* Change History */}
           <ChangeHistory history={history} />
         </div>

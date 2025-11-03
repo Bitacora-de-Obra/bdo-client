@@ -9,6 +9,8 @@ import ControlPointFormModal from './ControlPointFormModal';
 import PhotoUploadModal from './PhotoUploadModal';
 import ProgressViewerModal from './ProgressViewerModal';
 import { useAuth } from '../contexts/AuthContext'; // Importa useAuth
+import { usePermissions } from '../src/hooks/usePermissions';
+import { useToast } from './ui/ToastProvider';
 
 interface PhotographicProgressDashboardProps {
   project: Project;
@@ -17,6 +19,9 @@ interface PhotographicProgressDashboardProps {
 
 const PhotographicProgressDashboard: React.FC<PhotographicProgressDashboardProps> = ({ project }) => {
   const { user } = useAuth(); // Obtenemos el usuario actual
+  const { canEditContent } = usePermissions();
+  const readOnly = !canEditContent;
+  const { showToast } = useToast();
 
   // --- Estado local para datos reales ---
   const [controlPoints, setControlPoints] = useState<ControlPoint[]>([]);
@@ -80,9 +85,29 @@ const PhotographicProgressDashboard: React.FC<PhotographicProgressDashboardProps
   }, [controlPoints, selectedControlPoint]);
 
 
-  const handleOpenControlPointForm = () => setIsControlPointFormOpen(true);
+  const handleOpenControlPointForm = () => {
+    if (readOnly) {
+      showToast({
+        title: 'Acceso restringido',
+        message: 'El rol Viewer no puede crear puntos de control.',
+        variant: 'warning',
+      });
+      setIsControlPointFormOpen(false);
+      return;
+    }
+    setIsControlPointFormOpen(true);
+  };
 
   const handleOpenPhotoUpload = (point: ControlPoint) => {
+    if (readOnly) {
+      showToast({
+        title: 'Acción no permitida',
+        message: 'El perfil Viewer no puede cargar fotografías.',
+        variant: 'error',
+      });
+      setIsPhotoUploadOpen(false);
+      return;
+    }
     setSelectedControlPoint(point);
     setIsPhotoUploadOpen(true);
   };
@@ -94,6 +119,14 @@ const PhotographicProgressDashboard: React.FC<PhotographicProgressDashboardProps
 
   // --- Conecta handleSaveControlPoint ---
   const handleSaveControlPoint = async (data: Omit<ControlPoint, 'id' | 'photos'>) => {
+    if (readOnly) {
+      showToast({
+        title: 'Acción no permitida',
+        message: 'El perfil Viewer no puede registrar puntos de control.',
+        variant: 'error',
+      });
+      throw new Error('El perfil Viewer no puede registrar puntos de control.');
+    }
     try {
         setError(null);
         const newPoint = await api('/control-points', {
@@ -115,6 +148,14 @@ const PhotographicProgressDashboard: React.FC<PhotographicProgressDashboardProps
     file: File
     ) => {
       if (!selectedControlPoint || !user) return;
+      if (readOnly) {
+        showToast({
+          title: 'Acción no permitida',
+          message: 'El perfil Viewer no puede cargar fotos.',
+          variant: 'error',
+        });
+        return;
+      }
       setError(null);
       // setIsLoading(true); // Opcional: Feedback visual
 
@@ -168,9 +209,11 @@ const PhotographicProgressDashboard: React.FC<PhotographicProgressDashboardProps
           <h2 className="text-2xl font-bold text-gray-900">Avance Fotográfico</h2>
           <p className="text-sm text-gray-500">Proyecto: {project.name}</p>
         </div>
-         <Button onClick={handleOpenControlPointForm} leftIcon={<PlusIcon />}>
+        {canEditContent && (
+          <Button onClick={handleOpenControlPointForm} leftIcon={<PlusIcon />}>
             Crear Nuevo Punto de Control
-        </Button>
+          </Button>
+        )}
       </div>
 
        {isLoading && <div className="text-center p-8">Cargando puntos de control...</div>}
@@ -185,6 +228,7 @@ const PhotographicProgressDashboard: React.FC<PhotographicProgressDashboardProps
                         point={point}
                         onAddPhoto={() => handleOpenPhotoUpload(point)}
                         onViewProgress={() => handleOpenProgressViewer(point)}
+                        canAddPhoto={canEditContent}
                     />
                     ))}
                 </div>
@@ -194,30 +238,35 @@ const PhotographicProgressDashboard: React.FC<PhotographicProgressDashboardProps
                     title="Aún no hay Puntos de Control"
                     message="Crea puntos de control para zonas clave de la obra y sube fotos periódicamente para visualizar el avance en el tiempo."
                     actionButton={
-                        <Button onClick={handleOpenControlPointForm} leftIcon={<PlusIcon />}>
-                        Crear Primer Punto
-                        </Button>
+                        canEditContent ? (
+                          <Button onClick={handleOpenControlPointForm} leftIcon={<PlusIcon />}>
+                            Crear Primer Punto
+                          </Button>
+                        ) : undefined
                     }
                     />
                 )
         )}
 
-
-       <ControlPointFormModal
-        isOpen={isControlPointFormOpen}
-        onClose={() => setIsControlPointFormOpen(false)}
-        onSave={handleSaveControlPoint} // Conectado al backend
-      />
+      {canEditContent && (
+        <ControlPointFormModal
+          isOpen={isControlPointFormOpen}
+          onClose={() => setIsControlPointFormOpen(false)}
+          onSave={handleSaveControlPoint}
+        />
+      )}
 
       {/* Los modales PhotoUpload y ProgressViewer necesitan el selectedControlPoint */}
       {selectedControlPoint && user && (
           <>
-            <PhotoUploadModal
-              isOpen={isPhotoUploadOpen}
-              onClose={() => setIsPhotoUploadOpen(false)}
-              onSave={handleSavePhoto} // Conectado al backend con subida
-              controlPoint={selectedControlPoint}
-            />
+            {canEditContent && (
+              <PhotoUploadModal
+                isOpen={isPhotoUploadOpen}
+                onClose={() => setIsPhotoUploadOpen(false)}
+                onSave={handleSavePhoto}
+                controlPoint={selectedControlPoint}
+              />
+            )}
             <ProgressViewerModal
               isOpen={isProgressViewerOpen}
               onClose={() => setIsProgressViewerOpen(false)}

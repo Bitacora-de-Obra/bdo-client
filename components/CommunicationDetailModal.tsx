@@ -19,6 +19,7 @@ interface CommunicationDetailModalProps {
   onStatusChange: (commId: string, newStatus: CommunicationStatus) => Promise<void> | void;
   onAssign: (commId: string, assigneeId: string | null) => Promise<void>;
   users: User[];
+  readOnly?: boolean;
 }
 
 const DetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
@@ -83,6 +84,7 @@ const CommunicationDetailModal: React.FC<CommunicationDetailModalProps> = ({
   onStatusChange,
   onAssign,
   users,
+  readOnly = false,
 }) => {
   const [currentStatus, setCurrentStatus] = useState<CommunicationStatus>(communication.status);
   const [selectedAssigneeId, setSelectedAssigneeId] = useState<string>(communication.assignee?.id ?? '');
@@ -104,6 +106,9 @@ const CommunicationDetailModal: React.FC<CommunicationDetailModalProps> = ({
   }, [communication, isOpen]);
 
   const handleSave = async () => {
+    if (readOnly) {
+      return;
+    }
     const updates: Promise<void | unknown>[] = [];
     setSaveError(null);
 
@@ -233,7 +238,7 @@ const CommunicationDetailModal: React.FC<CommunicationDetailModalProps> = ({
                       id="status"
                       value={currentStatus}
                       onChange={(e) => setCurrentStatus(e.target.value as CommunicationStatus)}
-                      disabled={isSaving}
+                      disabled={isSaving || readOnly}
                     >
                       {Object.values(CommunicationStatus).map((s) => (
                         <option key={s} value={s}>
@@ -248,7 +253,7 @@ const CommunicationDetailModal: React.FC<CommunicationDetailModalProps> = ({
                       id="assignee"
                       value={selectedAssigneeId}
                       onChange={(e) => setSelectedAssigneeId(e.target.value)}
-                      disabled={isSaving || users.length === 0}
+                      disabled={isSaving || users.length === 0 || readOnly}
                     >
                       <option value="">Sin asignar</option>
                       {users
@@ -319,9 +324,11 @@ const CommunicationDetailModal: React.FC<CommunicationDetailModalProps> = ({
         </div>
         <div className="mt-6 flex flex-col sm:flex-row sm:justify-end gap-2">
              <Button variant="secondary" onClick={onClose} disabled={isSaving}>Cancelar</Button>
-             <Button variant="primary" onClick={handleSave} disabled={isSaving}>
-               {isSaving ? 'Guardando...' : 'Guardar Cambios'}
-             </Button>
+             {!readOnly && (
+               <Button variant="primary" onClick={handleSave} disabled={isSaving}>
+                 {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+               </Button>
+             )}
         </div>
     </Modal>
   );

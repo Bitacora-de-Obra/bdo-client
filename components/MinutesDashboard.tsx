@@ -10,6 +10,8 @@ import ActaFilterBar from "./ActaFilterBar";
 import { useAuth } from "../contexts/AuthContext";
 import { useApi } from "../src/hooks/useApi";
 import api from "../src/services/api";
+import { usePermissions } from "../src/hooks/usePermissions";
+import { useToast } from "./ui/ToastProvider";
 
 interface MinutesDashboardProps {
   // project: Project; // Ya no se recibe por props
@@ -25,6 +27,9 @@ const MinutesDashboard: React.FC<MinutesDashboardProps> = ({
   const { data: project, isLoading: isProjectLoading } = useApi.projectDetails();
   const { data: actas, isLoading: isActasLoading, error, retry: refetchActas } = useApi.actas();
   const { data: users, isLoading: isUsersLoading } = useApi.users();
+  const { canEditContent } = usePermissions();
+  const readOnly = !canEditContent;
+  const { showToast } = useToast();
 
   const [selectedActa, setSelectedActa] = useState<Acta | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -95,6 +100,15 @@ const MinutesDashboard: React.FC<MinutesDashboardProps> = ({
   };
 
   const handleOpenForm = () => {
+    if (readOnly) {
+      showToast({
+        title: "Acceso restringido",
+        message: "El rol Viewer solo puede consultar actas existentes.",
+        variant: "warning",
+      });
+      setIsFormModalOpen(false);
+      return;
+    }
     setIsFormModalOpen(true);
   };
 
@@ -103,6 +117,14 @@ const MinutesDashboard: React.FC<MinutesDashboardProps> = ({
   };
 
   const handleSaveActa = async (newActaData: Omit<Acta, "id">) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede registrar actas de comité.",
+        variant: "error",
+      });
+      throw new Error("El perfil Viewer no puede registrar actas.");
+    }
     try {
       await api.actas.create(newActaData);
       refetchActas();
@@ -113,6 +135,14 @@ const MinutesDashboard: React.FC<MinutesDashboardProps> = ({
   };
 
   const handleUpdateActa = async (updatedActa: Acta) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede modificar actas de comité.",
+        variant: "error",
+      });
+      return;
+    }
     try {
       // Actualizar el acta
       await api.actas.update(updatedActa.id, updatedActa);
@@ -147,6 +177,14 @@ const MinutesDashboard: React.FC<MinutesDashboardProps> = ({
   };
 
   const sendCommitmentReminderEmail = async (commitment: any, acta: Acta) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede enviar recordatorios de compromisos.",
+        variant: "error",
+      });
+      return;
+    }
     try {
       await api.actas.sendCommitmentReminder(acta.id, commitment.id);
     } catch (err) {
@@ -160,6 +198,14 @@ const MinutesDashboard: React.FC<MinutesDashboardProps> = ({
     signer: User,
     password: string
   ) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede firmar actas.",
+        variant: "error",
+      });
+      return { success: false, error: "No autorizado" };
+    }
     try {
       const updatedActa = await api.actas.addSignature(documentId, {
         signerId: signer.id,
@@ -187,13 +233,15 @@ const MinutesDashboard: React.FC<MinutesDashboardProps> = ({
             Proyecto: {project ? project.name : "Cargando..."}
           </p>
         </div>
-        <Button
-          onClick={handleOpenForm}
-          leftIcon={<PlusIcon />}
-          disabled={!users || users.length === 0}
-        >
-          Registrar Acta
-        </Button>
+        {canEditContent && (
+          <Button
+            onClick={handleOpenForm}
+            leftIcon={<PlusIcon />}
+            disabled={!users || users.length === 0}
+          >
+            Registrar Acta
+          </Button>
+        )}
       </div>
 
       <ActaFilterBar filters={filters} setFilters={setFilters} />
@@ -219,9 +267,11 @@ const MinutesDashboard: React.FC<MinutesDashboardProps> = ({
               title="No se encontraron actas"
               message="No hay actas que coincidan con los filtros seleccionados o aún no se ha registrado ninguna. ¡Crea la primera!"
               actionButton={
-                <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
-                  Registrar Primera Acta
-                </Button>
+                canEditContent ? (
+                  <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
+                    Registrar Primera Acta
+                  </Button>
+                ) : undefined
               }
             />
           )}
@@ -237,15 +287,17 @@ const MinutesDashboard: React.FC<MinutesDashboardProps> = ({
           onSendReminder={sendCommitmentReminderEmail}
           onSign={addSignature}
           currentUser={user}
+          readOnly={readOnly}
         />
       )}
-
-      <ActaFormModal
-        isOpen={isFormModalOpen}
-        onClose={handleCloseForm}
-        onSave={handleSaveActa}
-        users={users || []}
-      />
+      {canEditContent && (
+        <ActaFormModal
+          isOpen={isFormModalOpen}
+          onClose={handleCloseForm}
+          onSave={handleSaveActa}
+          users={users || []}
+        />
+      )}
     </div>
   );
 };
