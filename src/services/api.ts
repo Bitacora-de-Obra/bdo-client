@@ -29,10 +29,12 @@ const apiUrlFromVite =
     ? ((import.meta as any).env.VITE_API_URL as string)
     : undefined;
 
-const API_URL =
+export const API_URL =
   apiUrlFromVite ||
   (typeof process !== "undefined" && process.env?.REACT_APP_API_URL) ||
   "http://localhost:4001/api";
+
+export const API_BASE_URL = API_URL.replace(/\/+$/, "").replace(/\/api$/, "");
 
 let isRefreshing = false;
 let failedQueue: { resolve: Function; reject: Function }[] = [];

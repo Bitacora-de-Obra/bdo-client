@@ -99,6 +99,7 @@ export interface Attachment {
   size: number;
   type: string;
   downloadUrl?: string;
+  downloadPath?: string;
   storagePath?: string;
   createdAt?: string;
 }

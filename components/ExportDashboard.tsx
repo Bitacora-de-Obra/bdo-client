@@ -1,6 +1,6 @@
 
 
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { ProjectDetails, LogEntry, Communication, Acta, Report, Attachment } from '../types';
 import { useApi } from '../src/hooks/useApi';
 import Card from './ui/Card';
@@ -8,6 +8,7 @@ import Button from './ui/Button';
 import { DocumentArrowDownIcon, CheckCircleIcon } from './icons/Icon';
 import JSZip from 'jszip';
 import saveAs from 'file-saver';
+import { API_BASE_URL } from '../src/services/api';
 
 interface ExportDashboardProps {
   project: ProjectDetails;
@@ -118,10 +119,78 @@ ${acta.attachments.map(a => `- ${a.fileName}`).join('\n') || 'Sin adjuntos.'}
     `;
   };
   
-  // Helper to simulate fetching an attachment
-  const createAttachmentPlaceholder = (attachment: Attachment): Blob => {
-      const content = `Este es un archivo de marcador de posición para '${attachment.fileName}'.\nEn una exportación real, aquí estaría el contenido del archivo original.`;
-      return new Blob([content], { type: 'text/plain' });
+  const resolveAbsoluteUrl = (rawUrl?: string | null) => {
+    if (!rawUrl) return null;
+    try {
+      return new URL(rawUrl).toString();
+    } catch {
+      try {
+        return new URL(rawUrl, `${API_BASE_URL}/`).toString();
+      } catch {
+        return null;
+      }
+    }
+  };
+
+  const resolveAttachmentUrl = (attachment: Attachment): string | null => {
+    const downloadPath = attachment.downloadPath
+      ? `${API_BASE_URL}${attachment.downloadPath.startsWith("/") ? "" : "/"}${attachment.downloadPath}`
+      : null;
+
+    return (
+      resolveAbsoluteUrl(attachment.downloadUrl) ||
+      downloadPath ||
+      resolveAbsoluteUrl(attachment.url)
+    );
+  };
+
+  const buildAttachmentErrorBlob = (attachment: Attachment, reason: string) => {
+    const message = `No fue posible descargar el adjunto '${attachment.fileName}'.\nMotivo: ${reason}\nID adjunto: ${attachment.id}`;
+    return new Blob([message], { type: "text/plain" });
+  };
+
+  const fetchAttachmentContent = async (attachment: Attachment) => {
+    const resolvedUrl = resolveAttachmentUrl(attachment);
+    const safeBaseName = sanitizeFilename(attachment.fileName || `adjunto_${attachment.id}`);
+
+    if (!resolvedUrl) {
+      return {
+        fileName: `${safeBaseName || "adjunto"}_error.txt`,
+        blob: buildAttachmentErrorBlob(attachment, "URL de descarga no disponible."),
+      };
+    }
+
+    const headers: Record<string, string> = {};
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    try {
+      const response = await fetch(resolvedUrl, {
+        headers,
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      return {
+        fileName: safeBaseName,
+        blob,
+      };
+    } catch (error: any) {
+      console.error("Error descargando adjunto", attachment, error);
+      return {
+        fileName: `${safeBaseName || "adjunto"}_error.txt`,
+        blob: buildAttachmentErrorBlob(
+          attachment,
+          error?.message || "Error desconocido durante la descarga."
+        ),
+      };
+    }
   };
 
 
@@ -155,18 +224,19 @@ ${acta.attachments.map(a => `- ${a.fileName}`).join('\n') || 'Sin adjuntos.'}
     const bitacoraEntries = logEntries ?? [];
     setExportProgressMessage(`Procesando ${bitacoraEntries.length} anotaciones de bitácora...`);
     const bitacoraFolder = projectFolder.folder('1_Bitacora');
-    for (const entry of bitacoraEntries) {
+    for (let index = 0; index < bitacoraEntries.length; index += 1) {
+        const entry = bitacoraEntries[index];
         const entryText = formatLogEntryAsText(entry);
         const entryFolderName = sanitizeFilename(`Folio_${entry.folioNumber}_${entry.title}`);
         const entryFolder = bitacoraFolder?.folder(entryFolderName);
         entryFolder?.file('detalle_anotacion.txt', entryText);
         
-        if (entry.attachments.length > 0) {
+        if (entry.attachments && entry.attachments.length > 0) {
+            setExportProgressMessage(`Descargando adjuntos de bitácora (${index + 1}/${bitacoraEntries.length})...`);
             const adjuntosFolder = entryFolder?.folder('adjuntos');
             for (const att of entry.attachments) {
-                // In a real app, you would fetch the file from att.url
-                const fileContent = createAttachmentPlaceholder(att);
-                adjuntosFolder?.file(sanitizeFilename(att.fileName), fileContent);
+                const { fileName, blob } = await fetchAttachmentContent(att);
+                adjuntosFolder?.file(fileName, blob);
             }
         }
     }
@@ -176,16 +246,18 @@ ${acta.attachments.map(a => `- ${a.fileName}`).join('\n') || 'Sin adjuntos.'}
     const actasData = actas ?? [];
     setExportProgressMessage(`Procesando ${actasData.length} actas de comité...`);
     const actasFolder = projectFolder.folder('2_Actas_de_Comite');
-    for (const acta of actasData) {
+    for (let index = 0; index < actasData.length; index += 1) {
+        const acta = actasData[index];
         const actaText = formatActaAsText(acta);
         const actaFileName = sanitizeFilename(`${acta.number}.txt`);
         actasFolder?.file(actaFileName, actaText);
         
-        if (acta.attachments.length > 0) {
+        if (acta.attachments && acta.attachments.length > 0) {
+            setExportProgressMessage(`Descargando adjuntos de actas (${index + 1}/${actasData.length})...`);
             const adjuntosFolder = actasFolder?.folder(sanitizeFilename(acta.number) + '_adjuntos');
             for (const att of acta.attachments) {
-                 const fileContent = createAttachmentPlaceholder(att);
-                 adjuntosFolder?.file(sanitizeFilename(att.fileName), fileContent);
+                 const { fileName, blob } = await fetchAttachmentContent(att);
+                 adjuntosFolder?.file(fileName, blob);
             }
         }
     }
@@ -193,8 +265,11 @@ ${acta.attachments.map(a => `- ${a.fileName}`).join('\n') || 'Sin adjuntos.'}
     
     const communicationsData = communications ?? [];
     const communicationsFolder = projectFolder.folder('3_Comunicaciones');
-    for (const comm of communicationsData) {
-      const commFileName = sanitizeFilename(`${comm.radicado}_${comm.subject}.txt`);
+    for (let index = 0; index < communicationsData.length; index += 1) {
+      const comm = communicationsData[index];
+      const commFolderName = sanitizeFilename(`${comm.radicado}_${comm.subject}`) || `comunicacion_${index + 1}`;
+      const commFolder = communicationsFolder?.folder(commFolderName);
+      const commFileName = 'detalle_comunicacion.txt';
       const commContent = `Radicado: ${comm.radicado}
 Asunto: ${comm.subject}
 Estado: ${comm.status}
@@ -208,13 +283,25 @@ Fecha límite de respuesta: ${comm.requiresResponse && comm.responseDueDate ? ne
 Descripción:
 ${comm.description}
 `;
-      communicationsFolder?.file(commFileName, commContent);
+      commFolder?.file(commFileName, commContent);
+
+      if (comm.attachments && comm.attachments.length > 0) {
+        setExportProgressMessage(`Descargando adjuntos de comunicaciones (${index + 1}/${communicationsData.length})...`);
+        const adjuntosFolder = commFolder?.folder('adjuntos');
+        for (const att of comm.attachments) {
+          const { fileName, blob } = await fetchAttachmentContent(att);
+          adjuntosFolder?.file(fileName, blob);
+        }
+      }
     }
 
     const reportsData = reports ?? [];
     const reportsFolder = projectFolder.folder('4_Informes');
-    for (const report of reportsData) {
-      const reportFileName = sanitizeFilename(`${report.number}_${report.type}_${report.reportScope}.txt`);
+    for (let index = 0; index < reportsData.length; index += 1) {
+      const report = reportsData[index];
+      const reportFolderName = sanitizeFilename(`${report.number}_${report.type}_${report.reportScope}`) || `informe_${index + 1}`;
+      const reportFolder = reportsFolder?.folder(reportFolderName);
+      const reportFileName = 'detalle_informe.txt';
       const reportContent = `Número: ${report.number}
 Tipo: ${report.type}
 Ámbito: ${report.reportScope}
@@ -226,7 +313,16 @@ Fecha de presentación: ${new Date(report.submissionDate).toLocaleDateString('es
 Resumen:
 ${report.summary}
 `;
-      reportsFolder?.file(reportFileName, reportContent);
+      reportFolder?.file(reportFileName, reportContent);
+
+      if (report.attachments && report.attachments.length > 0) {
+        setExportProgressMessage(`Descargando adjuntos de informes (${index + 1}/${reportsData.length})...`);
+        const adjuntosFolder = reportFolder?.folder('adjuntos');
+        for (const att of report.attachments) {
+          const { fileName, blob } = await fetchAttachmentContent(att);
+          adjuntosFolder?.file(fileName, blob);
+        }
+      }
     }
 
     // 4. Generate ZIP and Download

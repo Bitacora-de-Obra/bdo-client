@@ -13,6 +13,7 @@ type Message = {
 };
 
 const HISTORY_LIMIT = 8;
+type HistoryPayloadItem = { role: "user" | "assistant"; content: string };
 
 export const ChatbotWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -32,11 +33,11 @@ export const ChatbotWidget: React.FC = () => {
     "¿Qué informes se han presentado?",
   ];
 
-  const buildHistoryPayload = (historyMessages: Message[]) =>
+  const buildHistoryPayload = (historyMessages: Message[]): HistoryPayloadItem[] =>
     historyMessages
       .filter((msg) => msg.sender === "user" || msg.sender === "bot")
       .slice(-HISTORY_LIMIT)
-      .map((msg) => ({
+      .map<HistoryPayloadItem>((msg) => ({
         role: msg.sender === "bot" ? "assistant" : "user",
         content: msg.text,
       }));

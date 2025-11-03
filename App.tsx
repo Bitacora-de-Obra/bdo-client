@@ -179,6 +179,17 @@ const MainApp = () => {
       );
     }
 
+    if (currentView === "export_project" && user?.appRole !== "admin") {
+      console.warn("Acceso no autorizado a la exportación de expediente.");
+      setCurrentView("summary");
+      return (
+        <ProjectSummaryDashboard
+          project={projectDetails}
+          contractModifications={contractModifications || []}
+        />
+      );
+    }
+
     switch (currentView) {
       case "summary":
         return (
@@ -253,6 +264,8 @@ const MainApp = () => {
             reportScope={ReportScope.INTERVENTORIA}
           />
         );
+      case "export_project":
+        return <ExportDashboard project={projectDetails} />;
       case "admin":
         return <AdminDashboard />;
       default:
