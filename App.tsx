@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Header from "./components/layout/Header";
 import Sidebar from "./components/layout/Sidebar";
 import ProjectDashboard from "./components/ProjectDashboard";
@@ -17,12 +17,13 @@ import ExportDashboard from "./components/ExportDashboard";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ToastProvider } from "./components/ui/ToastProvider";
 import LoginScreen from "./components/auth/LoginScreen";
-import { ReportScope, Notification, CommitmentStatus, User, CommunicationStatus, CommunicationDirection } from "./types";
+import { ReportScope, Notification, User } from "./types";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import DrawingsDashboard from "./components/DrawingsDashboard";
 import { ChatbotWidget } from "./components/chatbot/ChatbotWidget"; // <-- Añade esta línea
 import SignatureManagerModal from "./components/account/SignatureManagerModal";
 import ProjectChat from "./components/chat/ProjectChat";
+import api from "./src/services/api";
 
 type InitialItemToOpen = { type: "acta" | "logEntry" | "communication"; id: string };
 
@@ -42,116 +43,48 @@ const MainApp = () => {
     isLoading: isModificationsLoading,
     retry: refetchContractModifications,
   } = useApi.contractModifications();
-  const { data: actas, isLoading: isActasLoading } = useApi.actas();
-  const { data: communications, isLoading: isCommunicationsLoading } = useApi.communications();
 
   const isLoading =
-    isProjectLoading ||
-    isActasLoading ||
-    isCommunicationsLoading ||
-    (isModificationsLoading && !contractModifications);
+    isProjectLoading || (isModificationsLoading && !contractModifications);
+
+  const refreshNotifications = useCallback(async () => {
+    if (!user) {
+      setNotifications([]);
+      return;
+    }
+
+    try {
+      const incoming = (await api.notifications.getAll()) as Notification[];
+      setNotifications((previous) => {
+        const readStatus = new Map(previous.map((item) => [item.id, item.isRead]));
+        return incoming.map((item) => ({
+          ...item,
+          isRead: readStatus.get(item.id) ?? item.isRead ?? false,
+        }));
+      });
+    } catch (error) {
+      console.error("Error al cargar las notificaciones:", error);
+    }
+  }, [user]);
 
   useEffect(() => {
-    if (!user) return;
-    const generatedNotifications: Notification[] = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    let intervalId: number | undefined;
 
-    if (actas) {
-      actas.forEach((acta) => {
-        acta.commitments.forEach((commitment) => {
-          if (
-            commitment.responsible.id === user.id &&
-            commitment.status === CommitmentStatus.PENDING
-          ) {
-            const dueDate = new Date(commitment.dueDate);
-            const localDueDate = new Date(
-              dueDate.valueOf() + dueDate.getTimezoneOffset() * 60 * 1000
-            );
-            localDueDate.setHours(0, 0, 0, 0);
-            const timeDiff = localDueDate.getTime() - today.getTime();
-            const daysUntilDue = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-
-            let notification: Notification | null = null;
-            if (daysUntilDue < 0) {
-              notification = {
-                id: `commitment-${commitment.id}-overdue`,
-                type: "commitment_due",
-                urgency: "overdue",
-                message: `Compromiso vencido: ${commitment.description}`,
-                sourceDescription: `Acta ${acta.number} · ${acta.title}`,
-                relatedView: "minutes",
-                relatedItemType: "acta",
-                relatedItemId: acta.id,
-                createdAt: new Date().toISOString(),
-                isRead: false,
-              };
-            } else if (daysUntilDue <= 3) {
-              notification = {
-                id: `commitment-${commitment.id}-due-soon`,
-                type: "commitment_due",
-                urgency: "due_soon",
-                message: `Compromiso próximo a vencer (${daysUntilDue} día${
-                  daysUntilDue === 1 ? "" : "s"
-                }): ${commitment.description}`,
-                sourceDescription: `Acta ${acta.number} · ${acta.title}`,
-                relatedView: "minutes",
-                relatedItemType: "acta",
-                relatedItemId: acta.id,
-                createdAt: new Date().toISOString(),
-                isRead: false,
-              };
-            }
-            if (notification) generatedNotifications.push(notification);
-          }
-        });
-      });
+    if (user) {
+      refreshNotifications();
+      intervalId = window.setInterval(() => {
+        refreshNotifications();
+      }, 60000);
+    } else {
+      setNotifications([]);
     }
 
-    if (communications) {
-      communications
-        .filter(
-          (comm) =>
-            comm.assignee?.id === user.id &&
-            comm.status === CommunicationStatus.PENDIENTE &&
-            comm.direction === CommunicationDirection.RECEIVED &&
-            comm.requiresResponse
-        )
-        .forEach((comm) => {
-          let urgency: Notification["urgency"] = "info";
-          const dueSource = comm.responseDueDate || comm.dueDate;
-          if (dueSource) {
-            const dueDate = new Date(dueSource);
-            const localDueDate = new Date(
-              dueDate.valueOf() + dueDate.getTimezoneOffset() * 60 * 1000
-            );
-            localDueDate.setHours(0, 0, 0, 0);
-            const diff = localDueDate.getTime() - today.getTime();
-            const daysUntilDue = Math.ceil(diff / (1000 * 60 * 60 * 24));
-            if (daysUntilDue < 0) {
-              urgency = "overdue";
-            } else if (daysUntilDue <= 3) {
-              urgency = "due_soon";
-            }
-          }
-
-          generatedNotifications.push({
-            id: `communication-${comm.id}`,
-            type: "communication_assigned",
-            urgency,
-            message: `Comunicación pendiente: ${comm.subject}`,
-            sourceDescription: `Radicado ${comm.radicado}`,
-            relatedView: "communications",
-            relatedItemType: "communication",
-            relatedItemId: comm.id,
-            createdAt: new Date().toISOString(),
-            isRead: false,
-          });
-        });
-    }
-
-    setNotifications(generatedNotifications);
-  }, [actas, communications, user]);
+    return () => {
+      if (intervalId) {
+        window.clearInterval(intervalId);
+      }
+    };
+  }, [user, refreshNotifications]);
 
   const handleNavigateAndOpen = (view: string, item: InitialItemToOpen) => {
     setInitialItemToOpen(item);

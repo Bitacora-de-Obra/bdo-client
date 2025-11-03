@@ -21,6 +21,7 @@ import {
   Comment,
   Attachment,
   Commitment,
+  Notification,
 } from "../../types";
 import { handleApiError, ApiError } from "../utils/error-handling";
 
@@ -995,6 +996,12 @@ export const uploadApi = {
   },
 };
 
+export const notificationsApi = {
+  getAll: async (): Promise<Notification[]> => {
+    return apiFetch("/notifications");
+  },
+};
+
 // API Functions for Chatbot
 type ChatbotHistoryMessage = {
   role: "user" | "assistant";
@@ -1051,6 +1058,7 @@ export const api = Object.assign(
     weeklyReports: weeklyReportsApi,
     admin: adminApi,
     upload: uploadApi,
+    notifications: notificationsApi,
     chatbot: chatbotApi, // <-- ¡Añade esto aquí!
   }
 );
