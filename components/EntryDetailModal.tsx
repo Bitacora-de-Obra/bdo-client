@@ -796,7 +796,8 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
   // Eliminado: handleSignAttachment ya no se usa
   // El flujo de firma ahora es solo a través de "Firmar anotación" con contraseña
 
-  const { folioNumber, author, comments = [] } = entry;
+  const { folioNumber, author } = entry;
+  const { comments = [] } = editedEntry;
   const {
     title,
     description,
@@ -1963,7 +1964,7 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
             )}
           </div>
           {/* New Comment Form */}
-          <div className="pt-4 border-t">
+          <div className="pt-4 border-t" onClick={(e) => e.stopPropagation()}>
             <form
               onSubmit={handleCommentSubmit}
               className="flex items-start space-x-3"

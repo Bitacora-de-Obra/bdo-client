@@ -192,15 +192,11 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     }
 
     try {
-      if (files.length > 0) {
-        throw new Error("La carga de archivos en comentarios estará disponible próximamente.");
-      }
-
       // Crear el comentario
       await api.logEntries.addComment(entryId, {
         content: commentText,
         authorId: user.id,
-      });
+      }, files);
 
       // Refrescar la entrada
       const updatedEntry = await api.logEntries.getById(entryId);

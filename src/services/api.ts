@@ -555,11 +555,20 @@ export const logEntriesApi = {
   },
   addComment: async (
     entryId: string,
-    comment: { content: string; authorId: string }
+    comment: { content: string; authorId: string },
+    files: File[] = []
   ) => {
+    const formData = new FormData();
+    formData.append("content", comment.content);
+    formData.append("authorId", comment.authorId);
+    
+    files.forEach((file) => {
+      formData.append("attachments", file);
+    });
+
     return apiFetch(`/log-entries/${entryId}/comments`, {
       method: "POST",
-      body: JSON.stringify(comment),
+      body: formData,
     });
   },
   delete: async (id: string) => {
