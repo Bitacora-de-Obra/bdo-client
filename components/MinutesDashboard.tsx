@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Project, Acta, User } from "../types";
+import { Project, Acta, User, SignatureConsentPayload } from "../types";
 import Button from "./ui/Button";
 import { PlusIcon, ClipboardDocumentListIcon } from "./icons/Icon";
 import ActaCard from "./ActaCard";
@@ -196,7 +196,7 @@ const MinutesDashboard: React.FC<MinutesDashboardProps> = ({
     documentId: string,
     documentType: "acta",
     signer: User,
-    password: string
+    payload: SignatureConsentPayload
   ) => {
     if (readOnly) {
       showToast({
@@ -209,7 +209,9 @@ const MinutesDashboard: React.FC<MinutesDashboardProps> = ({
     try {
       const updatedActa = await api.actas.addSignature(documentId, {
         signerId: signer.id,
-        password,
+        password: payload.password,
+        consent: payload.consent,
+        consentStatement: payload.consentStatement,
       });
       setSelectedActa(updatedActa);
       refetchActas();

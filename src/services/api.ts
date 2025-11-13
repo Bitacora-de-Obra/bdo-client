@@ -601,7 +601,12 @@ export const logEntriesApi = {
   },
   addSignature: async (
     entryId: string,
-    data: { signerId: string; password: string }
+    data: {
+      signerId: string;
+      password: string;
+      consent: boolean;
+      consentStatement?: string;
+    }
   ) => {
     return apiFetch(`/log-entries/${entryId}/signatures`, {
       method: "POST",
@@ -733,7 +738,12 @@ export const actasApi = {
   },
   addSignature: async (
     actaId: string,
-    data: { signerId: string; password: string }
+    data: {
+      signerId: string;
+      password: string;
+      consent: boolean;
+      consentStatement?: string;
+    }
   ) => {
     return apiFetch(`/actas/${actaId}/signatures`, {
       method: "POST",

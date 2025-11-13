@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Acta, Commitment, CommitmentStatus, User } from "../types";
+import {
+  Acta,
+  Commitment,
+  CommitmentStatus,
+  SignatureConsentPayload,
+  User,
+} from "../types";
 import Modal from "./ui/Modal";
 import Button from "./ui/Button";
 import AttachmentItem from "./AttachmentItem";
@@ -37,7 +43,7 @@ interface ActaDetailModalProps {
     documentId: string,
     documentType: "acta",
     signer: User,
-    password: string
+    payload: SignatureConsentPayload
   ) => Promise<{ success: boolean; error?: string; updated?: Acta }>;
   currentUser: User;
   readOnly?: boolean;
@@ -123,7 +129,7 @@ const ActaDetailModal: React.FC<ActaDetailModalProps> = ({
   };
 
   const handleConfirmSignature = async (
-    password: string
+    payload: SignatureConsentPayload
   ): Promise<{ success: boolean; error?: string }> => {
     if (readOnly) {
       showToast({
@@ -133,7 +139,7 @@ const ActaDetailModal: React.FC<ActaDetailModalProps> = ({
       });
       return { success: false, error: "No autorizado" };
     }
-    const result = await onSign(acta.id, "acta", currentUser, password);
+    const result = await onSign(acta.id, "acta", currentUser, payload);
     if (!result.success) {
       return { success: false, error: result.error };
     }
@@ -343,6 +349,7 @@ const ActaDetailModal: React.FC<ActaDetailModalProps> = ({
           onClose={() => setIsSignatureModalOpen(false)}
           onConfirm={handleConfirmSignature}
           userToSign={currentUser}
+          consentStatement="Autorizo el uso de mi firma manuscrita digital para esta acta."
         />
       )}
     </>

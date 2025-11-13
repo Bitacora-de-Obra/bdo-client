@@ -8,6 +8,7 @@ import {
   LogEntryListItem,
   WeatherReport,
   PersonnelEntry,
+  SignatureConsentPayload,
 } from "../types";
 import Modal from "./ui/Modal";
 import Badge from "./ui/Badge";
@@ -41,7 +42,7 @@ interface EntryDetailModalProps {
     documentId: string,
     documentType: "logEntry",
     signer: User,
-    password: string
+    payload: SignatureConsentPayload
   ) => Promise<{ success: boolean; error?: string }>;
   onDelete: (entryId: string) => Promise<void>;
   currentUser: User;
@@ -750,7 +751,9 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     }
   };
 
-const handleConfirmSignature = async (password: string): Promise<{ success: boolean; error?: string }> => {
+  const handleConfirmSignature = async (
+    payload: SignatureConsentPayload
+  ): Promise<{ success: boolean; error?: string }> => {
     if (readOnly) {
       showToast({
         title: "Acción no permitida",
@@ -760,12 +763,12 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
       return { success: false, error: "No autorizado" };
     }
     // Ya no verificamos la contraseña aquí, se la pasamos al backend
-    const result = await onSign(entry.id, "logEntry", currentUser, password);
+    const result = await onSign(entry.id, "logEntry", currentUser, payload);
     if (result.success) {
-        setIsSignatureModalOpen(false);
+      setIsSignatureModalOpen(false);
     }
     return result; // Devolvemos el resultado al modal para que muestre el error si es necesario
-};
+  };
 
   const handleCancel = () => {
     applyEntryState(entry);
@@ -2128,6 +2131,7 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
         onClose={() => setIsSignatureModalOpen(false)}
         onConfirm={handleConfirmSignature}
         userToSign={currentUser}
+        consentStatement="Autorizo el uso de mi firma manuscrita digital para esta anotación de bitácora."
       />
     </>
   );

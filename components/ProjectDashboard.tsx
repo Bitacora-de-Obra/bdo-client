@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { ProjectDetails, LogEntry, User } from "../types";
+import { ProjectDetails, LogEntry, User, SignatureConsentPayload } from "../types";
 import api from "../src/services/api";
 import FilterBar from "./FilterBar";
 import EntryCard from "./EntryCard";
@@ -274,7 +274,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     documentId: string,
     documentType: "logEntry",
     signer: User,
-    password: string
+    payload: SignatureConsentPayload
   ): Promise<{ success: boolean; error?: string }> => {
     if (readOnly) {
       showToast({
@@ -290,7 +290,9 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     try {
       const updatedEntry = await api.logEntries.addSignature(documentId, {
         signerId: signer.id,
-        password,
+        password: payload.password,
+        consent: payload.consent,
+        consentStatement: payload.consentStatement,
       });
 
       setSelectedEntry(updatedEntry);
@@ -516,8 +518,8 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
           entry={selectedEntry}
           onUpdate={handleUpdateEntry}
           onAddComment={handleAddComment}
-          onSign={(docId, docType, signer, pass) =>
-            addSignature(docId, docType, signer, pass)
+          onSign={(docId, docType, signer, payload) =>
+            addSignature(docId, docType, signer, payload)
           }
           onDelete={handleDeleteEntry}
           currentUser={user}

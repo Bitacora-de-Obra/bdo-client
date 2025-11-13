@@ -152,6 +152,12 @@ export interface SignatureSummary {
   completed: boolean;
 }
 
+export interface SignatureConsentPayload {
+  password: string;
+  consent: boolean;
+  consentStatement: string;
+}
+
 export interface WeatherRainEvent {
   start: string;
   end: string;

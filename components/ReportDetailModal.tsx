@@ -4,6 +4,7 @@ import {
   Report,
   ReportStatus,
   ReportVersionInfo,
+  SignatureConsentPayload,
   User,
 } from "../types";
 import Modal from "./ui/Modal";
@@ -24,7 +25,7 @@ interface ReportDetailModalProps {
     documentId: string,
     documentType: "report",
     signer: User,
-    password: string
+    payload: SignatureConsentPayload
   ) => Promise<{ success: boolean; error?: string; updated?: Report }>;
   currentUser: User;
   onSelectVersion?: (reportId: string) => void | Promise<void>;
@@ -107,13 +108,13 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
   };
 
   const handleConfirmSignature = async (
-    password: string
+    payload: SignatureConsentPayload
   ): Promise<{ success: boolean; error?: string }> => {
     if (readOnly) {
       return { success: false, error: "No autorizado" };
     }
     // Ya no hacemos la validación de contraseña aquí
-    const result = await onSign(report.id, "report", currentUser, password);
+    const result = await onSign(report.id, "report", currentUser, payload);
     if (!result.success) {
       return {
         success: false,
@@ -341,6 +342,7 @@ const ReportDetailModal: React.FC<ReportDetailModalProps> = ({
           onClose={() => setIsSignatureModalOpen(false)}
           onConfirm={handleConfirmSignature}
           userToSign={currentUser}
+          consentStatement="Autorizo el uso de mi firma manuscrita digital para este informe."
         />
       )}
     </>

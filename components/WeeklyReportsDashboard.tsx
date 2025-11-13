@@ -4,6 +4,7 @@ import {
   Report,
   ReportScope,
   ReportStatus,
+  SignatureConsentPayload,
   User,
 } from "../types"; // Importa tipos necesarios
 import api from "../src/services/api"; // Cliente API centralizado
@@ -256,11 +257,11 @@ const WeeklyReportsDashboard: React.FC<WeeklyReportsDashboardProps> = ({
     }
   };
 
-const addSignature = async (
+  const addSignature = async (
     documentId: string,
     documentType: "report",
     signer: User,
-    password?: string
+    payload?: SignatureConsentPayload
   ): Promise<{ success: boolean; error?: string; updated?: Report }> => {
     if (readOnly) {
       showToast({
@@ -270,7 +271,7 @@ const addSignature = async (
       });
       return { success: false, error: "No autorizado" };
     }
-    if (!password) {
+    if (!payload) {
       return { success: false, error: "Se requiere contraseña para firmar." };
     }
     try {
@@ -280,7 +281,9 @@ const addSignature = async (
           method: "POST",
           body: JSON.stringify({
             signerId: signer.id,
-            password,
+            password: payload.password,
+            consent: payload.consent,
+            consentStatement: payload.consentStatement,
           }),
         }
       );

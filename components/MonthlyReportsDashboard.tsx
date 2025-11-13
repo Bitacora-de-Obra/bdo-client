@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react"; // Importa useEffect
-import { Project, Report, ReportScope, ReportStatus, User } from "../types"; // Importa tipos
+import {
+  Project,
+  Report,
+  ReportScope,
+  ReportStatus,
+  SignatureConsentPayload,
+  User,
+} from "../types"; // Importa tipos
 import api from "../src/services/api"; // Cliente API centralizado
 import Button from "./ui/Button";
 import { PlusIcon, CalendarIcon } from "./icons/Icon"; // Icono Calendar para el EmptyState
@@ -219,7 +226,7 @@ const MonthlyReportsDashboard: React.FC<MonthlyReportsDashboardProps> = ({
     documentId: string,
     documentType: "report",
     signer: User,
-    password?: string
+    payload?: SignatureConsentPayload
   ): Promise<{ success: boolean; error?: string; updated?: Report }> => {
     if (readOnly) {
       showToast({
@@ -229,7 +236,7 @@ const MonthlyReportsDashboard: React.FC<MonthlyReportsDashboardProps> = ({
       });
       return { success: false, error: "No autorizado" };
     }
-    if (!password) {
+    if (!payload) {
       return { success: false, error: "Se requiere contraseña para firmar." };
     }
     try {
@@ -239,7 +246,9 @@ const MonthlyReportsDashboard: React.FC<MonthlyReportsDashboardProps> = ({
           method: "POST",
           body: JSON.stringify({
             signerId: signer.id,
-            password,
+            password: payload.password,
+            consent: payload.consent,
+            consentStatement: payload.consentStatement,
           }),
         }
       );
