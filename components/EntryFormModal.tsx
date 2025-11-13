@@ -189,7 +189,8 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   const sortedUsers = useMemo(() => {
     const map = new Map<string, User>();
     const register = (user?: User | null) => {
-      if (user?.id && !map.has(user.id)) {
+      // Excluir usuarios con rol "viewer" - no pueden ser firmantes
+      if (user?.id && !map.has(user.id) && user.appRole !== "viewer") {
         map.set(user.id, user);
       }
     };

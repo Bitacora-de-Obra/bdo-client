@@ -149,9 +149,11 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
 
   const sortedUsers = useMemo(
     () =>
-      Array.from(knownUsers.values()).sort((a, b) =>
-        a.fullName.localeCompare(b.fullName, "es")
-      ),
+      Array.from(knownUsers.values())
+        .filter((user) => user.appRole !== "viewer") // Excluir viewers - no pueden ser firmantes
+        .sort((a, b) =>
+          a.fullName.localeCompare(b.fullName, "es")
+        ),
     [knownUsers]
   );
 

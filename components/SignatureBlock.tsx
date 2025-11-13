@@ -55,6 +55,7 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
   documentType,
   readOnly = false,
 }) => {
+
   const signaturesById = useMemo(() => {
     const map = new Map<string, Signature>();
     signatures.forEach((signature) => {
@@ -102,6 +103,10 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
         return;
       }
 
+      // Las tareas de firma tienen prioridad sobre las firmas existentes
+      // Si el participante nuevo viene de una tarea de firma (tiene status PENDING o SIGNED de tarea),
+      // y el existente viene de una firma antigua, usar el status de la tarea
+      // Si ambos vienen de tareas, usar el de mayor prioridad
       const shouldReplaceStatus =
         statusPriority[participant.status] > statusPriority[existing.status];
 
@@ -109,34 +114,58 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
         ...existing,
         ...participant,
         status: shouldReplaceStatus ? participant.status : existing.status,
-        signedAt: participant.signedAt ?? existing.signedAt,
+        // Si el nuevo tiene signedAt, usarlo; si no, mantener el existente solo si el status es SIGNED
+        signedAt: participant.signedAt ?? (existing.status === 'SIGNED' ? existing.signedAt : undefined),
         avatarUrl: participant.avatarUrl ?? existing.avatarUrl,
         projectRole: participant.projectRole ?? existing.projectRole,
       });
     };
 
+    // Procesar primero las tareas de firma (tienen prioridad)
     signatureTasks
       .filter((task): task is SignatureTask & { signer: User } => Boolean(task?.signer))
       .forEach((task) => {
         const signatureRecord = task.signer ? signaturesById.get(task.signer.id) : undefined;
+        // Si la tarea está firmada, usar signedAt de la tarea o de la firma
+        // Si la tarea está pendiente, no usar signedAt (debe ser null/undefined)
+        const signedAt = task.status === 'SIGNED' 
+          ? (task.signedAt || signatureRecord?.signedAt || undefined)
+          : undefined;
+        
         upsertParticipant({
           id: task.signer.id,
           fullName: task.signer.fullName,
           projectRole: task.signer.projectRole,
           avatarUrl: task.signer.avatarUrl,
           status: task.status,
-          signedAt: task.signedAt || signatureRecord?.signedAt,
+          signedAt: signedAt,
         });
       });
 
+    // Procesar firmas existentes solo si no hay una tarea de firma para ese usuario
     signatures.forEach((signature) => {
+      // Verificar si ya hay una tarea de firma para este usuario
+      const hasTask = signatureTasks.some(
+        (task) => task.signer?.id === signature.signer.id
+      );
+      
+      // Si ya hay una tarea de firma, no procesar la firma (la tarea tiene prioridad)
+      if (hasTask) {
+        return;
+      }
+      
+      // Usar signatureTaskStatus si está disponible, de lo contrario determinar basándose en signedAt
+      // IMPORTANTE: Si signedAt es null o undefined, NO está firmado
+      const hasSignedAt = signature.signedAt && signature.signedAt !== null && signature.signedAt !== undefined;
+      const status = signature.signatureTaskStatus || (hasSignedAt ? 'SIGNED' : 'PENDING');
+      
       upsertParticipant({
         id: signature.signer.id,
         fullName: signature.signer.fullName,
         projectRole: signature.signer.projectRole,
         avatarUrl: signature.signer.avatarUrl,
-        status: 'SIGNED',
-        signedAt: signature.signedAt,
+        status: status as SignatureTask['status'],
+        signedAt: hasSignedAt ? signature.signedAt : undefined,
       });
       if (!orderMap.has(signature.signer.id)) {
         orderMap.set(signature.signer.id, orderMap.size + participants.size);
@@ -144,21 +173,35 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
     });
 
     requiredSignatories.forEach((user) => {
+      // Verificar si ya hay una tarea de firma o una firma procesada para este usuario
+      const hasTask = signatureTasks.some(
+        (task) => task.signer?.id === user.id
+      );
+      const hasSignature = participants.has(user.id);
+      
+      // Si ya hay una tarea o firma procesada, no procesar requiredSignatories
+      if (hasTask || hasSignature) {
+        return;
+      }
+      
       const signatureRecord = signaturesById.get(user.id);
+      const hasSignedAt = signatureRecord?.signedAt && signatureRecord.signedAt !== null && signatureRecord.signedAt !== undefined;
+      const status = signatureRecord?.signatureTaskStatus || (hasSignedAt ? 'SIGNED' : 'PENDING');
+      
       upsertParticipant({
         id: user.id,
         fullName: user.fullName,
         projectRole: user.projectRole,
         avatarUrl: user.avatarUrl,
-        status: signatureRecord ? 'SIGNED' : 'PENDING',
-        signedAt: signatureRecord?.signedAt,
+        status: status as SignatureTask['status'],
+        signedAt: hasSignedAt ? signatureRecord.signedAt : undefined,
       });
       if (!orderMap.has(user.id)) {
         orderMap.set(user.id, orderMap.size + participants.size);
       }
     });
 
-    return Array.from(participants.values()).sort((a, b) => {
+    const finalParticipants = Array.from(participants.values()).sort((a, b) => {
       const orderA = orderMap.has(a.id) ? orderMap.get(a.id)! : Number.MAX_SAFE_INTEGER;
       const orderB = orderMap.has(b.id) ? orderMap.get(b.id)! : Number.MAX_SAFE_INTEGER;
       if (orderA !== orderB) {
@@ -166,6 +209,8 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
       }
       return a.fullName.localeCompare(b.fullName, 'es');
     });
+
+    return finalParticipants;
   }, [requiredSignatories, signatureTasks, signatures, signaturesById]);
 
   const canCurrentUserSign = useMemo(() => {

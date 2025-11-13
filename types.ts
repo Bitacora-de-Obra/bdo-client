@@ -123,7 +123,9 @@ export interface Change {
 
 export interface Signature {
   signer: User;
-  signedAt: string; // ISO date string
+  signedAt: string | null; // ISO date string, null if not signed
+  signatureTaskStatus?: 'PENDING' | 'SIGNED' | 'DECLINED' | 'CANCELLED'; // Status from signature task
+  signatureTaskId?: string | null; // ID of the signature task
 }
 
 export interface UserSignature {
