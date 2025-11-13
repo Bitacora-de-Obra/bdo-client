@@ -9,6 +9,9 @@ interface ChangeHistoryProps {
 const ChangeDetail: React.FC<{ change: Change }> = ({ change }) => {
     const { fieldName, oldValue, newValue } = change;
 
+    if (fieldName === 'created') {
+        return <span className="text-blue-600 font-medium truncate" title={newValue || ''}>{newValue || 'Anotación creada'}</span>;
+    }
     if (fieldName === 'Adjunto Añadido') {
         return <span className="text-green-600 font-medium truncate" title={newValue}>Añadido: {newValue}</span>;
     }
@@ -53,7 +56,9 @@ const ChangeHistory: React.FC<ChangeHistoryProps> = ({ history }) => {
             <div className="flex-1 text-sm">
                 <p className="text-gray-800">
                     <span className="font-semibold">{change.user.fullName}</span>
-                    {change.fieldName.startsWith('Adjunto') ? (
+                    {change.fieldName === 'created' ? (
+                       <span className="text-gray-500"> creó esta anotación.</span>
+                    ) : change.fieldName.startsWith('Adjunto') ? (
                        <span className="text-gray-500"> gestionó un archivo adjunto.</span>
                     ) : change.fieldName.startsWith('Asignado') ? (
                        <span className="text-gray-500"> actualizó las asignaciones.</span>

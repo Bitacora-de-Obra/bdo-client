@@ -147,6 +147,14 @@ export interface SignatureTask {
   signer: User | null;
 }
 
+export interface ReviewTask {
+  id: string;
+  status: 'PENDING' | 'COMPLETED';
+  assignedAt: string | null;
+  completedAt?: string | null;
+  reviewer: User | null;
+}
+
 export interface SignatureSummary {
   total: number;
   signed: number;
@@ -250,6 +258,7 @@ export interface LogEntry {
   requiredSignatories: User[];
   signatures: Signature[];
   signatureTasks?: SignatureTask[];
+  reviewTasks?: ReviewTask[];
   signatureSummary?: SignatureSummary;
   pendingSignatureSignatories?: User[];
 }

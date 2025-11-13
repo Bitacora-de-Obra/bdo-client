@@ -9,6 +9,7 @@ import {
   WeatherReport,
   PersonnelEntry,
   SignatureConsentPayload,
+  ReviewTask,
 } from "../types";
 import Modal from "./ui/Modal";
 import Badge from "./ui/Badge";
@@ -107,6 +108,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [formEntryDate, setFormEntryDate] = useState<string>("");
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
   const [hasStoredSignature, setHasStoredSignature] = useState(false);
   const [selectedSignerIds, setSelectedSignerIds] = useState<string[]>(() =>
     extractSignerIds(entry)
@@ -779,9 +781,57 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     setValidationError(null);
   };
 
+  const handleCompleteReview = async () => {
+    if (!canCompleteReview) {
+      showToast({
+        variant: "error",
+        title: "Acción no permitida",
+        message: "No tienes permisos para completar la revisión o ya la completaste.",
+      });
+      return;
+    }
+
+    if (
+      !window.confirm(
+        "¿Estás seguro de que deseas marcar tu revisión como completada? Esto indicará que has terminado de revisar y modificar la anotación."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setValidationError(null);
+      const updatedEntry = await api.logEntries.completeReview(entry.id);
+      
+      await onUpdate(updatedEntry);
+      await onRefresh();
+      
+      showToast({
+        variant: "success",
+        title: "Revisión completada",
+        message: "Tu revisión ha sido marcada como completada. El autor podrá aprobar la anotación cuando todas las revisiones estén completadas.",
+      });
+    } catch (error: any) {
+      const message =
+        error?.message || "No se pudo completar la revisión.";
+      setValidationError(message);
+      showToast({
+        variant: "error",
+        title: "Error al completar revisión",
+        message,
+      });
+    }
+  };
+
   const handleApprove = async () => {
+    // Prevenir doble ejecución
+    if (isApproving) {
+      console.log("DEBUG FRONTEND: Ya se está aprobando, ignorando segundo clic");
+      return;
+    }
+
     // Verificar que la anotación no esté ya aprobada
-    if (status === "Aprobado") {
+    if (status === "Aprobado" || status === EntryStatus.APPROVED) {
       showToast({
         variant: "error",
         title: "Anotación ya aprobada",
@@ -807,14 +857,35 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       return;
     }
 
+    setIsApproving(true);
     try {
       setValidationError(null);
+      console.log("DEBUG FRONTEND: Intentando aprobar anotación", {
+        entryId: entry.id,
+        currentStatus: status,
+        entryStatus: entry.status,
+      });
+      
       const updatedEntry = await api.logEntries.update(entry.id, {
         status: EntryStatus.APPROVED,
       });
       
+      console.log("DEBUG FRONTEND: Anotación aprobada exitosamente", {
+        newStatus: updatedEntry.status,
+      });
+      
+      // Actualizar el estado local primero antes de llamar a onUpdate/onRefresh
+      // para evitar que se dispare otra llamada
       await onUpdate(updatedEntry);
-      await onRefresh();
+      
+      // Solo refrescar si onRefresh existe y no causa problemas
+      if (onRefresh) {
+        try {
+          await onRefresh();
+        } catch (refreshError) {
+          console.warn("Error al refrescar después de aprobar:", refreshError);
+        }
+      }
       
       showToast({
         variant: "success",
@@ -822,14 +893,32 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
         message: "La anotación ha sido aprobada. Ahora se puede proceder a las firmas.",
       });
     } catch (error: any) {
+      console.error("DEBUG FRONTEND: Error al aprobar", error);
       const message =
         error?.message || "No se pudo aprobar la anotación.";
       setValidationError(message);
+      
+      // Si el error es que ya está aprobada, actualizar el estado local
+      if (error?.code === "ALREADY_APPROVED" || message.includes("ya está aprobada")) {
+        // Refrescar para obtener el estado actualizado, pero sin mostrar error
+        if (onRefresh) {
+          try {
+            await onRefresh();
+            // No mostrar error si ya está aprobada (probablemente se aprobó en la primera llamada)
+            return;
+          } catch (refreshError) {
+            console.warn("Error al refrescar después de error de aprobación:", refreshError);
+          }
+        }
+      }
+      
       showToast({
         variant: "error",
         title: "Error al aprobar",
         message,
       });
+    } finally {
+      setIsApproving(false);
     }
   };
 
@@ -924,6 +1013,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     attachments = [],
     requiredSignatories = [],
     signatures = [],
+    reviewTasks = [],
   } = editedEntry;
 
   const weatherReportData: WeatherReport = weatherReport
@@ -959,20 +1049,42 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const isAssignee = entry.assignees?.some((a) => a.id === currentUser.id) || false;
   const isAdmin = currentUser.projectRole === UserRole.ADMIN || currentUser.appRole === "admin";
   
+  // Verificar si el usuario es un responsable (firmante requerido)
+  const isRequiredSigner = entry.signatureTasks?.some(
+    (task) => task.signer?.id === currentUser.id
+  ) || false;
+  
+  // Verificar si el autor ya ha firmado
+  const authorHasSigned = entry.signatureTasks?.some(
+    (task) => task.signer?.id === author?.id && task.status === "SIGNED"
+  ) || false;
+  
+  // Permitir editar si:
+  // 1. Es el autor (siempre puede editar si el estado lo permite)
+  // 2. Es un asignado y el autor no ha firmado
+  // 3. Es un responsable (firmante) y el autor no ha firmado
+  // 4. Es admin
   const canEdit =
     !readOnly &&
     isEditableStatus &&
-    (isAuthor || isAssignee || isAdmin);
+    (isAuthor || 
+     isAdmin || 
+     (isAssignee && !authorHasSigned) || 
+     (isRequiredSigner && !authorHasSigned));
   
-  const canApprove = 
-    !readOnly &&
-    status !== "Aprobado" && // Asegurar que no esté ya aprobada
-    ["Borrador", "Radicado", "En Revisión"].includes(status) &&
-    (isAuthor || isAdmin);
+  // Ya no se requiere aprobación, se puede firmar directamente
+  const canApprove = false; // Deshabilitado - ya no se usa el flujo de aprobación
   
   const canSign = 
-    status === "Aprobado" &&
-    !readOnly;
+    !readOnly; // Permitir firmar en cualquier estado
+
+  // Verificar si el usuario actual puede completar su revisión
+  const myReviewTask = reviewTasks.find((task) => task.reviewer?.id === currentUser.id);
+  const canCompleteReview = 
+    !readOnly &&
+    status === "En Revisión" &&
+    myReviewTask?.status === "PENDING" &&
+    (isAssignee || isAdmin);
 
   const entryDateDisplay = entryDateIso
     ? new Date(entryDateIso).toLocaleDateString("es-CO", { dateStyle: "long" })
@@ -1047,26 +1159,26 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                     <p>
                       ✓ Esta anotación está en estado de <strong>{status}</strong> y puede ser editada.
                     </p>
+                    {authorHasSigned && (
+                      <p className="text-orange-700">
+                        ⚠ El autor ya ha firmado. Solo el autor puede hacer modificaciones ahora.
+                      </p>
+                    )}
+                    {!authorHasSigned && (isAssignee || isRequiredSigner) && (
+                      <p className="text-blue-700">
+                        ✓ El autor aún no ha firmado. Puedes hacer modificaciones como responsable.
+                      </p>
+                    )}
                     {canEdit && (
                       <p>✓ Puedes modificar el contenido, agregar comentarios y adjuntos.</p>
                     )}
-                    {canApprove && (
-                      <p>✓ Puedes aprobar esta anotación cuando esté lista para firmas.</p>
+                    {canSign && (
+                      <p>✓ Puedes firmar esta anotación si estás en la lista de firmantes.</p>
                     )}
                     {!canEdit && (
                       <p className="text-orange-700">
-                        ⚠ No tienes permisos para editar esta anotación. Solo el autor, los asignados o un administrador pueden editarla.
+                        ⚠ No tienes permisos para editar esta anotación. {authorHasSigned ? "El autor ya ha firmado, solo el autor puede hacer modificaciones." : "Solo el autor, los asignados, los responsables (firmantes) o un administrador pueden editarla."}
                       </p>
-                    )}
-                  </>
-                ) : status === "Aprobado" ? (
-                  <>
-                    <p>
-                      ✓ Esta anotación está <strong>aprobada</strong> y lista para firmas.
-                    </p>
-                    <p>✓ No se puede editar. Solo se pueden agregar firmas.</p>
-                    {canSign && (
-                      <p>✓ Puedes firmar esta anotación si estás en la lista de firmantes.</p>
                     )}
                   </>
                 ) : (
@@ -1607,6 +1719,10 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                 <textarea
                   value={listToPlainText(executedActivities)}
                   onChange={(e) => handleListChange("executedActivities", e.target.value)}
+                  onKeyDown={(e) => {
+                    // Permitir espacios y todos los caracteres normalmente
+                    e.stopPropagation();
+                  }}
                   rows={3}
                   className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
                   placeholder="Actividades ejecutadas"
@@ -1698,6 +1814,10 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                 <textarea
                   value={listToPlainText(projectIssues)}
                   onChange={(e) => handleListChange("projectIssues", e.target.value)}
+                  onKeyDown={(e) => {
+                    // Permitir espacios y todos los caracteres normalmente
+                    e.stopPropagation();
+                  }}
                   rows={3}
                   className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
                   placeholder="Novedades y contratiempos"
@@ -2042,6 +2162,93 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
               </div>
             )
           )}
+          
+          {/* Review Tasks Block */}
+          {!isEditing && reviewTasks && reviewTasks.length > 0 && (
+            <div className="pt-4 border-t">
+              <h4 className="text-md font-semibold text-gray-800 mb-3">
+                Revisiones del Documento
+              </h4>
+              <div className="mb-2 text-sm text-gray-600">
+                Revisiones completadas: {reviewTasks.filter((t) => t.status === "COMPLETED").length} de {reviewTasks.length}.
+              </div>
+              <div className="space-y-3">
+                {reviewTasks.map((task) => {
+                  const reviewer = task.reviewer;
+                  if (!reviewer) return null;
+                  
+                  const isCompleted = task.status === "COMPLETED";
+                  const isMyReview = reviewer.id === currentUser.id;
+                  
+                  return (
+                    <div
+                      key={task.id}
+                      className={`flex items-center justify-between p-3 rounded-lg border ${
+                        isCompleted
+                          ? "bg-green-50 border-green-200"
+                          : "bg-yellow-50 border-yellow-200"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3 flex-1">
+                        {reviewer.avatarUrl ? (
+                          <img
+                            src={reviewer.avatarUrl}
+                            alt={reviewer.fullName}
+                            className="h-10 w-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-medium">
+                            {reviewer.fullName.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">
+                            {reviewer.fullName}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {reviewer.projectRole || "Sin rol"}
+                          </p>
+                          {isCompleted && task.completedAt && (
+                            <p className="text-xs text-green-700 mt-1">
+                              Completada: {new Date(task.completedAt).toLocaleString("es-CO")}
+                            </p>
+                          )}
+                          {!isCompleted && task.assignedAt && (
+                            <p className="text-xs text-yellow-700 mt-1">
+                              Asignada: {new Date(task.assignedAt).toLocaleString("es-CO")}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {isCompleted ? (
+                            <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                              ✓ Completada
+                            </span>
+                          ) : (
+                            <span className="px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                              Pendiente
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {canCompleteReview && (
+                <div className="mt-4">
+                  <Button
+                    variant="primary"
+                    onClick={handleCompleteReview}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    Marcar Mi Revisión como Completada
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+          
           {/* Signature Block */}
           {!isEditing && (
             <SignatureBlock
@@ -2242,15 +2449,16 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                 >
                   {isGeneratingPdf ? "Generando..." : "Exportar PDF"}
                 </Button>
-                {canApprove && (
-                  <Button 
-                    variant="primary" 
-                    onClick={handleApprove}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    Aprobar Anotación
-                  </Button>
-                )}
+                         {canApprove && (
+                           <Button 
+                             variant="primary" 
+                             onClick={handleApprove}
+                             className="bg-green-600 hover:bg-green-700"
+                             disabled={isApproving}
+                           >
+                             {isApproving ? "Aprobando..." : "Aprobar Anotación"}
+                           </Button>
+                         )}
                 {canEdit && (
                   <Button variant="primary" onClick={() => setIsEditing(true)}>
                     Modificar Anotación

@@ -618,6 +618,11 @@ export const logEntriesApi = {
       method: "POST",
     });
   },
+  completeReview: async (entryId: string) => {
+    return apiFetch(`/log-entries/${entryId}/reviews/complete`, {
+      method: "POST",
+    });
+  },
 };
 
 export const userSignatureApi = {
