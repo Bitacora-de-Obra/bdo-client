@@ -779,6 +779,60 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     setValidationError(null);
   };
 
+  const handleApprove = async () => {
+    // Verificar que la anotación no esté ya aprobada
+    if (status === "Aprobado") {
+      showToast({
+        variant: "error",
+        title: "Anotación ya aprobada",
+        message: "Esta anotación ya está aprobada. No se puede aprobar nuevamente.",
+      });
+      return;
+    }
+
+    if (!canApprove) {
+      showToast({
+        variant: "error",
+        title: "Acción no permitida",
+        message: "No tienes permisos para aprobar esta anotación o la anotación no está en un estado que permita aprobación.",
+      });
+      return;
+    }
+
+    if (
+      !window.confirm(
+        "¿Estás seguro de que deseas aprobar esta anotación? Una vez aprobada, no se podrá editar y se procederá a las firmas."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setValidationError(null);
+      const updatedEntry = await api.logEntries.update(entry.id, {
+        status: EntryStatus.APPROVED,
+      });
+      
+      await onUpdate(updatedEntry);
+      await onRefresh();
+      
+      showToast({
+        variant: "success",
+        title: "Anotación aprobada",
+        message: "La anotación ha sido aprobada. Ahora se puede proceder a las firmas.",
+      });
+    } catch (error: any) {
+      const message =
+        error?.message || "No se pudo aprobar la anotación.";
+      setValidationError(message);
+      showToast({
+        variant: "error",
+        title: "Error al aprobar",
+        message,
+      });
+    }
+  };
+
   const handleExportPdf = async () => {
     setValidationError(null);
     setIsGeneratingPdf(true);
@@ -899,9 +953,26 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     return localISOTime.substring(0, 16);
   };
 
+  // Determinar permisos basados en estado y roles
+  const isEditableStatus = ["Borrador", "Radicado", "En Revisión"].includes(status);
+  const isAuthor = currentUser.id === author?.id;
+  const isAssignee = entry.assignees?.some((a) => a.id === currentUser.id) || false;
+  const isAdmin = currentUser.projectRole === UserRole.ADMIN || currentUser.appRole === "admin";
+  
   const canEdit =
     !readOnly &&
-    (currentUser.id === author?.id || currentUser.projectRole === UserRole.ADMIN);
+    isEditableStatus &&
+    (isAuthor || isAssignee || isAdmin);
+  
+  const canApprove = 
+    !readOnly &&
+    status !== "Aprobado" && // Asegurar que no esté ya aprobada
+    ["Borrador", "Radicado", "En Revisión"].includes(status) &&
+    (isAuthor || isAdmin);
+  
+  const canSign = 
+    status === "Aprobado" &&
+    !readOnly;
 
   const entryDateDisplay = entryDateIso
     ? new Date(entryDateIso).toLocaleDateString("es-CO", { dateStyle: "long" })
@@ -937,23 +1008,76 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
             </div>
             <div className="mt-2 flex justify-between items-center">
               <p className="text-sm text-gray-500 mt-1">{type}</p>
-              {isEditing ? (
-                <Select
-                  name="status"
-                  value={status}
-                  onChange={handleInputChange}
-                >
-                  {Object.values(EntryStatus).map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </Select>
-              ) : (
-                <Badge status={status} />
-              )}
+              <div className="flex items-center gap-2">
+                {isEditing ? (
+                  <Select
+                    name="status"
+                    value={status}
+                    onChange={handleInputChange}
+                  >
+                    {Object.values(EntryStatus).map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </Select>
+                ) : (
+                  <>
+                    <Badge status={status} />
+                    {!isEditableStatus && (
+                      <span className="text-xs text-gray-500">
+                        (No editable)
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
+          
+          {/* Estado y Acciones Permitidas */}
+          {!isEditing && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-blue-900 mb-2">
+                Estado y Acciones Disponibles
+              </h4>
+              <div className="text-sm text-blue-800 space-y-1">
+                {isEditableStatus ? (
+                  <>
+                    <p>
+                      ✓ Esta anotación está en estado de <strong>{status}</strong> y puede ser editada.
+                    </p>
+                    {canEdit && (
+                      <p>✓ Puedes modificar el contenido, agregar comentarios y adjuntos.</p>
+                    )}
+                    {canApprove && (
+                      <p>✓ Puedes aprobar esta anotación cuando esté lista para firmas.</p>
+                    )}
+                    {!canEdit && (
+                      <p className="text-orange-700">
+                        ⚠ No tienes permisos para editar esta anotación. Solo el autor, los asignados o un administrador pueden editarla.
+                      </p>
+                    )}
+                  </>
+                ) : status === "Aprobado" ? (
+                  <>
+                    <p>
+                      ✓ Esta anotación está <strong>aprobada</strong> y lista para firmas.
+                    </p>
+                    <p>✓ No se puede editar. Solo se pueden agregar firmas.</p>
+                    {canSign && (
+                      <p>✓ Puedes firmar esta anotación si estás en la lista de firmantes.</p>
+                    )}
+                  </>
+                ) : (
+                  <p>
+                    ⚠ Esta anotación está en estado <strong>{status}</strong> y no puede ser editada.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+          
           {/* Details Grid */}
           <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-6">
             <DetailRow label="Autor" value={author?.fullName || "N/A"} />
@@ -2118,6 +2242,15 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                 >
                   {isGeneratingPdf ? "Generando..." : "Exportar PDF"}
                 </Button>
+                {canApprove && (
+                  <Button 
+                    variant="primary" 
+                    onClick={handleApprove}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    Aprobar Anotación
+                  </Button>
+                )}
                 {canEdit && (
                   <Button variant="primary" onClick={() => setIsEditing(true)}>
                     Modificar Anotación
