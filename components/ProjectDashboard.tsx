@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { ProjectDetails, LogEntry, User, SignatureConsentPayload } from "../types";
+import { ProjectDetails, LogEntry, User, SignatureConsentPayload, UserRole } from "../types";
 import api from "../src/services/api";
 import FilterBar from "./FilterBar";
 import EntryCard from "./EntryCard";
@@ -52,7 +52,8 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     endDate: "",
   });
   const { canEditContent } = usePermissions();
-  const readOnly = !canEditContent;
+  const isContractorRep = user?.projectRole === UserRole.CONTRACTOR_REP;
+  const readOnly = !canEditContent && !isContractorRep;
   const { showToast } = useToast();
 
   useEffect(() => {

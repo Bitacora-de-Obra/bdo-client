@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import {
   LogEntry,
   EntryStatus,
+  EntryType,
   User,
   UserRole,
   Attachment,
@@ -75,12 +76,36 @@ const LEGACY_STATUS_ALIASES: Record<string, EntryStatus> = {
   Radicado: EntryStatus.SUBMITTED,
   "En Revisión": EntryStatus.NEEDS_REVIEW,
   Aprobado: EntryStatus.APPROVED,
+  "Revisión contratista": EntryStatus.SUBMITTED,
+  "Revisión final": EntryStatus.NEEDS_REVIEW,
+  "Listo para firmas": EntryStatus.APPROVED,
+  Firmado: EntryStatus.SIGNED,
+};
+
+const PROJECT_ROLE_ALIASES: Record<string, UserRole> = {
+  resident: UserRole.RESIDENT,
+  "residente de obra": UserRole.RESIDENT,
+  supervisor: UserRole.SUPERVISOR,
+  "contractor_rep": UserRole.CONTRACTOR_REP,
+  contratista: UserRole.CONTRACTOR_REP,
+  "representante contratista": UserRole.CONTRACTOR_REP,
+  "admin": UserRole.ADMIN,
+  "administrador": UserRole.ADMIN,
+  "administrador idu": UserRole.ADMIN,
 };
 
 const normalizeWorkflowStatusValue = (
   value: string
 ): EntryStatus | string => {
   return LEGACY_STATUS_ALIASES[value] || value;
+};
+
+const normalizeProjectRoleValue = (value?: string | null): UserRole | string => {
+  if (!value) {
+    return value || "";
+  }
+  const key = value.trim().toLowerCase();
+  return PROJECT_ROLE_ALIASES[key] || value;
 };
 
 const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
@@ -132,8 +157,20 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const [rainEventsDraft, setRainEventsDraft] = useState<
     Array<{ start: string; end: string }>
   >([{ start: "", end: "" }]);
-  const [contractorNotesDraft, setContractorNotesDraft] = useState(
-    entry.contractorObservations || ""
+  const initialContractorResponses = useMemo(
+    () => ({
+      contractorObservations: entry.contractorObservations || "",
+      safetyContractorResponse: entry.safetyContractorResponse || "",
+      environmentContractorResponse: entry.environmentContractorResponse || "",
+      socialContractorResponse: entry.socialContractorResponse || "",
+    }),
+    [entry.contractorObservations,
+      entry.environmentContractorResponse,
+      entry.safetyContractorResponse,
+      entry.socialContractorResponse]
+  );
+  const [contractorResponsesDraft, setContractorResponsesDraft] = useState(
+    initialContractorResponses
   );
   const [isContractorEditingNotes, setIsContractorEditingNotes] =
     useState(false);
@@ -234,6 +271,14 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       siteVisits: entryData.siteVisits || [],
       contractorObservations: entryData.contractorObservations || "",
       interventoriaObservations: entryData.interventoriaObservations || "",
+      safetyFindings: entryData.safetyFindings || "",
+      safetyContractorResponse: entryData.safetyContractorResponse || "",
+      environmentFindings: entryData.environmentFindings || "",
+      environmentContractorResponse: entryData.environmentContractorResponse || "",
+      socialActivities: entryData.socialActivities || [],
+      socialObservations: entryData.socialObservations || "",
+      socialContractorResponse: entryData.socialContractorResponse || "",
+      socialPhotoSummary: entryData.socialPhotoSummary || "",
       scheduleDay: entryData.scheduleDay || "",
       locationDetails: entryData.locationDetails || "",
       weatherReport: entryData.weatherReport || null,
@@ -354,7 +399,12 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     setEquipmentResourcesDraft(
       toEquipmentDraft(entryData.equipmentResources as any)
     );
-    setContractorNotesDraft(entryData.contractorObservations || "");
+    setContractorResponsesDraft({
+      contractorObservations: entryData.contractorObservations || "",
+      safetyContractorResponse: entryData.safetyContractorResponse || "",
+      environmentContractorResponse: entryData.environmentContractorResponse || "",
+      socialContractorResponse: entryData.socialContractorResponse || "",
+    });
     setIsContractorEditingNotes(false);
 
     setSelectedSignerIds(extractSignerIds(entryData));
@@ -461,7 +511,8 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     | "materialsReceived"
     | "safetyNotes"
     | "projectIssues"
-    | "siteVisits";
+    | "siteVisits"
+    | "socialActivities";
 
   const listToPlainText = (items?: LogEntryListItem[]) =>
     (items || []).map((item) => item.text).join("\n");
@@ -478,6 +529,44 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     setEditedEntry((prev) => ({
       ...prev,
       [field]: plainTextToList(value),
+    }));
+  };
+
+  type ContractorResponseKey =
+    | "contractorObservations"
+    | "safetyContractorResponse"
+    | "environmentContractorResponse"
+    | "socialContractorResponse";
+
+  const contractorResponseFields: Array<{
+    key: ContractorResponseKey;
+    label: string;
+  }> = [
+    {
+      key: "contractorObservations",
+      label: "Observaciones generales del contratista",
+    },
+    {
+      key: "safetyContractorResponse",
+      label: "Respuesta componente SST",
+    },
+    {
+      key: "environmentContractorResponse",
+      label: "Respuesta componente ambiental",
+    },
+    {
+      key: "socialContractorResponse",
+      label: "Respuesta componente social",
+    },
+  ];
+
+  const handleContractorResponseDraftChange = (
+    field: ContractorResponseKey,
+    value: string
+  ) => {
+    setContractorResponsesDraft((prev) => ({
+      ...prev,
+      [field]: value,
     }));
   };
 
@@ -831,7 +920,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     setIsSendingToContractor(true);
     try {
       const updatedEntry = await api.logEntries.sendToContractor(entry.id);
-      await onUpdate(updatedEntry);
+      syncEntryState(updatedEntry);
       await onRefresh();
       showToast({
         variant: "success",
@@ -875,7 +964,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       const updatedEntry = await api.logEntries.completeContractorReview(
         entry.id
       );
-      await onUpdate(updatedEntry);
+      syncEntryState(updatedEntry);
       await onRefresh();
       showToast({
         variant: "success",
@@ -921,7 +1010,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
         entry.id,
         payload
       );
-      await onUpdate(updatedEntry);
+      syncEntryState(updatedEntry);
       await onRefresh();
       showToast({
         variant: "success",
@@ -945,7 +1034,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   };
 
   const handleSaveContractorNotes = async () => {
-    if (!canEditContractorObservations) {
+    if (!canEditContractorResponses) {
       showToast({
         variant: "error",
         title: "Acción no permitida",
@@ -956,10 +1045,18 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
 
     setIsSavingContractorNotes(true);
     try {
-      const updatedEntry = await api.logEntries.update(entry.id, {
-        contractorObservations: contractorNotesDraft.trim(),
-      } as Partial<LogEntry>);
-      await onUpdate(updatedEntry);
+      const payload: Partial<LogEntry> = {
+        contractorObservations:
+          contractorResponsesDraft.contractorObservations.trim(),
+        safetyContractorResponse:
+          contractorResponsesDraft.safetyContractorResponse.trim(),
+        environmentContractorResponse:
+          contractorResponsesDraft.environmentContractorResponse.trim(),
+        socialContractorResponse:
+          contractorResponsesDraft.socialContractorResponse.trim(),
+      };
+      const updatedEntry = await api.logEntries.update(entry.id, payload);
+      syncEntryState(updatedEntry);
       await onRefresh();
       showToast({
         variant: "success",
@@ -1003,7 +1100,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       setValidationError(null);
       const updatedEntry = await api.logEntries.completeReview(entry.id);
       
-      await onUpdate(updatedEntry);
+      syncEntryState(updatedEntry);
       await onRefresh();
       
       showToast({
@@ -1072,17 +1169,11 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
         newStatus: updatedEntry.status,
       });
       
-      // Actualizar el estado local primero antes de llamar a onUpdate/onRefresh
-      // para evitar que se dispare otra llamada
-      await onUpdate(updatedEntry);
-      
-      // Solo refrescar si onRefresh existe y no causa problemas
-      if (onRefresh) {
-        try {
-          await onRefresh();
-        } catch (refreshError) {
-          console.warn("Error al refrescar después de aprobar:", refreshError);
-        }
+      syncEntryState(updatedEntry);
+      try {
+        await onRefresh();
+      } catch (refreshError) {
+        console.warn("Error al refrescar después de aprobar:", refreshError);
       }
       
       showToast({
@@ -1203,6 +1294,14 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     siteVisits = [],
     contractorObservations = "",
     interventoriaObservations = "",
+    safetyFindings = "",
+    safetyContractorResponse = "",
+    environmentFindings = "",
+    environmentContractorResponse = "",
+    socialActivities = [],
+    socialObservations = "",
+    socialContractorResponse = "",
+    socialPhotoSummary = "",
     type,
     status,
     isConfidential,
@@ -1214,8 +1313,23 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     reviewTasks = [],
   } = editedEntry;
 
-const workflowStatus = normalizeWorkflowStatusValue(status);
-const statusLabel = workflowStatus as string;
+  const workflowStatus = normalizeWorkflowStatusValue(status);
+  const statusLabel = workflowStatus as string;
+  const entryTypeValue = type as EntryType;
+  const showGeneralSections = [
+    EntryType.GENERAL,
+    EntryType.TECHNICAL,
+    EntryType.ADMINISTRATIVE,
+    EntryType.QUALITY,
+  ].includes(entryTypeValue);
+  const showSafetyPanel = entryTypeValue === EntryType.SAFETY;
+  const showEnvironmentalPanel = entryTypeValue === EntryType.ENVIRONMENTAL;
+  const showSocialPanel = entryTypeValue === EntryType.SOCIAL;
+  const syncEntryState = (updatedEntry: LogEntry) => {
+    applyEntryState(updatedEntry);
+    setIsEditing(false);
+    setValidationError(null);
+  };
 
   const weatherReportData: WeatherReport = weatherReport
     ? { ...weatherReport, rainEvents: weatherReport.rainEvents || [] }
@@ -1245,10 +1359,17 @@ const statusLabel = workflowStatus as string;
   };
 
   // Determinar permisos basados en estado y roles
+  const normalizedCurrentProjectRole = normalizeProjectRoleValue(
+    currentUser.projectRole
+  );
   const isAuthor = currentUser.id === author?.id;
   const isAssignee = entry.assignees?.some((a) => a.id === currentUser.id) || false;
-  const isAdmin = currentUser.projectRole === UserRole.ADMIN || currentUser.appRole === "admin";
-  const isContractorUser = currentUser.projectRole === UserRole.CONTRACTOR_REP;
+  const isAdmin =
+    normalizedCurrentProjectRole === UserRole.ADMIN ||
+    currentUser.appRole === "admin";
+  const isContractorUser =
+    normalizedCurrentProjectRole === UserRole.CONTRACTOR_REP;
+  const effectiveReadOnly = readOnly && !isContractorUser;
   const isDraftStatus = workflowStatus === EntryStatus.DRAFT;
   const isContractorReviewStatus = workflowStatus === EntryStatus.SUBMITTED;
   const isFinalReviewStatus = workflowStatus === EntryStatus.NEEDS_REVIEW;
@@ -1275,42 +1396,46 @@ const statusLabel = workflowStatus as string;
     isDraftStatus || isFinalReviewStatus;
 
   const canEdit =
-    !readOnly &&
+    !effectiveReadOnly &&
+    (!isContractorUser || isAdmin) &&
     isStatusEditableForInterventoria &&
-    (isAuthor || 
-     isAdmin || 
-     (isAssignee && !authorHasSigned) || 
-     (isRequiredSigner && !authorHasSigned));
+    (isAuthor ||
+      isAdmin ||
+      (isAssignee && !authorHasSigned) ||
+      (isRequiredSigner && !authorHasSigned));
   
   const canSendToContractor =
-    !readOnly && isDraftStatus && (isAuthor || isAdmin);
+    !effectiveReadOnly && isDraftStatus && (isAuthor || isAdmin);
 
   const canCompleteContractorReview =
-    !readOnly && isContractorReviewStatus && (isContractorUser || isAdmin);
+    !effectiveReadOnly &&
+    isContractorReviewStatus &&
+    (isContractorUser || isAdmin);
 
   const canReturnToContractor =
-    !readOnly && isFinalReviewStatus && (isAuthor || isAdmin);
+    !effectiveReadOnly && isFinalReviewStatus && (isAuthor || isAdmin);
 
   const canApprove =
-    !readOnly &&
+    !effectiveReadOnly &&
     isFinalReviewStatus &&
     contractorReviewCompleted &&
     (isAuthor || isAdmin);
   
-  const canSign = 
-    !readOnly && (isReadyForSignaturesStatus || isSignedStatus);
+  const isSigningStage = isReadyForSignaturesStatus || isSignedStatus;
+  const signatureBlockReadOnly = readOnly || !isSigningStage;
+  const canSign = !effectiveReadOnly && isSigningStage;
 
   // Verificar si el usuario actual puede completar su revisión
   const myReviewTask = reviewTasks.find((task) => task.reviewer?.id === currentUser.id);
-  const canCompleteReview = 
-    !readOnly &&
+  const canCompleteReview =
+    !effectiveReadOnly &&
     isFinalReviewStatus &&
     myReviewTask?.status === "PENDING" &&
     (isAssignee || isAdmin);
-  const canEditContractorObservations =
-    !readOnly &&
+  const isAssignedContractor = isAssignee || entry.assignees?.some((u) => u.id === currentUser.id);
+  const canEditContractorResponses =
     isContractorReviewStatus &&
-    (isContractorUser || isAdmin);
+    (isContractorUser || isAdmin || isAssignedContractor);
 
   const workflowActionButtons: React.ReactNode[] = [];
 
@@ -1426,6 +1551,184 @@ const statusLabel = workflowStatus as string;
               </div>
             </div>
           </div>
+
+          {(showSafetyPanel || showEnvironmentalPanel || showSocialPanel) && (
+          <div className="space-y-6">
+            {showSafetyPanel && (
+            <div className="border border-gray-200 rounded-lg p-4 space-y-3 shadow-sm bg-white">
+              <div className="flex items-center justify-between">
+                <h4 className="text-md font-semibold text-gray-800">
+                  Componente SST (SST y MEV)
+                </h4>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">
+                  Observaciones de la interventoría
+                </p>
+                {isEditing ? (
+                  <textarea
+                    name="safetyFindings"
+                    value={safetyFindings}
+                    onChange={(e) =>
+                      setEditedEntry((prev) => ({
+                        ...prev,
+                        safetyFindings: e.target.value,
+                      }))
+                    }
+                    rows={3}
+                    className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  />
+                ) : (
+                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                    {safetyFindings || "Sin observaciones."}
+                  </p>
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">
+                  Respuesta del contratista
+                </p>
+                <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">
+                  {safetyContractorResponse || "Sin respuesta registrada."}
+                </p>
+              </div>
+            </div>
+            )}
+
+            {showEnvironmentalPanel && (
+            <div className="border border-gray-200 rounded-lg p-4 space-y-3 shadow-sm bg-white">
+              <div className="flex items-center justify-between">
+                <h4 className="text-md font-semibold text-gray-800">
+                  Componente ambiental (ambiental, forestal, fauna)
+                </h4>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">
+                  Observaciones de la interventoría
+                </p>
+                {isEditing ? (
+                  <textarea
+                    name="environmentFindings"
+                    value={environmentFindings}
+                    onChange={(e) =>
+                      setEditedEntry((prev) => ({
+                        ...prev,
+                        environmentFindings: e.target.value,
+                      }))
+                    }
+                    rows={3}
+                    className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  />
+                ) : (
+                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                    {environmentFindings || "Sin observaciones."}
+                  </p>
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">
+                  Respuesta del contratista
+                </p>
+                <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">
+                  {environmentContractorResponse || "Sin respuesta registrada."}
+                </p>
+              </div>
+            </div>
+            )}
+
+            {showSocialPanel && (
+            <div className="border border-gray-200 rounded-lg p-4 space-y-4 shadow-sm bg-white">
+              <div>
+                <h4 className="text-md font-semibold text-gray-800">
+                  Componente social
+                </h4>
+                <p className="text-sm text-gray-500">
+                  Registro diario de actividades, soporte fotográfico y observaciones.
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">
+                  Registro diario de actividades
+                </p>
+                {isEditing ? (
+                  <textarea
+                    value={listToPlainText(socialActivities)}
+                    onChange={(e) =>
+                      handleListChange("socialActivities", e.target.value)
+                    }
+                    rows={4}
+                    className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                    placeholder="Describe cada actividad en una línea."
+                  />
+                ) : socialActivities.length ? (
+                  <ul className="mt-2 list-disc list-inside space-y-1 text-sm text-gray-700">
+                    {socialActivities.map((item, index) => (
+                      <li key={`social-act-${index}`}>{item.text}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-sm text-gray-500">Sin registro.</p>
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">
+                  Registro fotográfico (referencia)
+                </p>
+                {isEditing ? (
+                  <textarea
+                    name="socialPhotoSummary"
+                    value={socialPhotoSummary}
+                    onChange={(e) =>
+                      setEditedEntry((prev) => ({
+                        ...prev,
+                        socialPhotoSummary: e.target.value,
+                      }))
+                    }
+                    rows={2}
+                    className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                    placeholder="Describe o referencia las fotografías relacionadas."
+                  />
+                ) : (
+                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                    {socialPhotoSummary || "Sin registro."}
+                  </p>
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">
+                  Observaciones de la interventoría
+                </p>
+                {isEditing ? (
+                  <textarea
+                    name="socialObservations"
+                    value={socialObservations}
+                    onChange={(e) =>
+                      setEditedEntry((prev) => ({
+                        ...prev,
+                        socialObservations: e.target.value,
+                      }))
+                    }
+                    rows={3}
+                    className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  />
+                ) : (
+                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                    {socialObservations || "Sin observaciones."}
+                  </p>
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">
+                  Respuesta del contratista
+                </p>
+                <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">
+                  {socialContractorResponse || "Sin respuesta registrada."}
+                </p>
+              </div>
+            </div>
+            )}
+          </div>
+          )}
           
           {/* Estado y Acciones Permitidas */}
           {!isEditing && (
@@ -1460,7 +1763,7 @@ const statusLabel = workflowStatus as string;
                       técnico está congelado. Solo se pueden registrar las
                       observaciones del contratista.
                     </p>
-                    {canEditContractorObservations ? (
+                    {canEditContractorResponses ? (
                       <p>
                         ✓ Puedes actualizar tus observaciones en el panel
                         inferior.
@@ -1516,11 +1819,11 @@ const statusLabel = workflowStatus as string;
                   </p>
                 )}
               </div>
-              {workflowActionButtons.length > 0 && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {workflowActionButtons}
-                </div>
-              )}
+                {workflowActionButtons.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {workflowActionButtons}
+                  </div>
+                )}
             </div>
           )}
           
@@ -1785,6 +2088,7 @@ const statusLabel = workflowStatus as string;
             </div>
           </div>
 
+          {showGeneralSections && (
           <div>
             <h4 className="text-md font-semibold text-gray-800">
               Recursos del día
@@ -2043,7 +2347,9 @@ const statusLabel = workflowStatus as string;
               </div>
             )}
           </div>
+          )}
 
+          {showGeneralSections && (
           <div>
             <h4 className="text-md font-semibold text-gray-800">
               Ejecución de actividades
@@ -2117,7 +2423,9 @@ const statusLabel = workflowStatus as string;
               </div>
             )}
           </div>
+          )}
 
+          {showGeneralSections && (
           <div>
             <h4 className="text-md font-semibold text-gray-800">
               Control, novedades e incidencias
@@ -2229,6 +2537,7 @@ const statusLabel = workflowStatus as string;
               </div>
             )}
           </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
@@ -2252,22 +2561,34 @@ const statusLabel = workflowStatus as string;
                   <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
                     {contractorObservations || "Sin observaciones."}
                   </p>
-                  {canEditContractorObservations && (
+                  {canEditContractorResponses && (
                     <div className="mt-3 rounded-lg border border-yellow-200 bg-yellow-50 p-3 space-y-3">
                       <p className="text-xs text-yellow-800">
-                        Solo puedes editar este campo durante la revisión del
+                        Solo puedes editar tus respuestas durante la revisión del
                         contratista.
                       </p>
                       {isContractorEditingNotes ? (
                         <>
-                          <textarea
-                            value={contractorNotesDraft}
-                            onChange={(e) =>
-                              setContractorNotesDraft(e.target.value)
-                            }
-                            rows={3}
-                            className="block w-full border border-yellow-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm p-2"
-                          />
+                          <div className="space-y-3">
+                            {contractorResponseFields.map(({ key, label }) => (
+                              <div key={key}>
+                                <label className="text-xs font-semibold text-yellow-900">
+                                  {label}
+                                </label>
+                                <textarea
+                                  value={contractorResponsesDraft[key]}
+                                  onChange={(e) =>
+                                    handleContractorResponseDraftChange(
+                                      key,
+                                      e.target.value
+                                    )
+                                  }
+                                  rows={key === "contractorObservations" ? 3 : 2}
+                                  className="mt-1 block w-full border border-yellow-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm p-2"
+                                />
+                              </div>
+                            ))}
+                          </div>
                           <div className="flex flex-wrap gap-2">
                             <Button
                               variant="primary"
@@ -2282,9 +2603,16 @@ const statusLabel = workflowStatus as string;
                               variant="secondary"
                               onClick={() => {
                                 setIsContractorEditingNotes(false);
-                                setContractorNotesDraft(
-                                  contractorObservations || ""
-                                );
+                                setContractorResponsesDraft({
+                                  contractorObservations:
+                                    contractorObservations || "",
+                                  safetyContractorResponse:
+                                    safetyContractorResponse || "",
+                                  environmentContractorResponse:
+                                    environmentContractorResponse || "",
+                                  socialContractorResponse:
+                                    socialContractorResponse || "",
+                                });
                               }}
                               disabled={isSavingContractorNotes}
                             >
@@ -2296,13 +2624,20 @@ const statusLabel = workflowStatus as string;
                         <Button
                           variant="secondary"
                           onClick={() => {
-                            setContractorNotesDraft(
-                              contractorObservations || ""
-                            );
+                            setContractorResponsesDraft({
+                              contractorObservations:
+                                contractorObservations || "",
+                              safetyContractorResponse:
+                                safetyContractorResponse || "",
+                              environmentContractorResponse:
+                                environmentContractorResponse || "",
+                              socialContractorResponse:
+                                socialContractorResponse || "",
+                            });
                             setIsContractorEditingNotes(true);
                           }}
                         >
-                          Editar observaciones
+                          Editar respuestas
                         </Button>
                       )}
                     </div>
@@ -2642,18 +2977,28 @@ const statusLabel = workflowStatus as string;
           
           {/* Signature Block */}
           {!isEditing && (
-            <SignatureBlock
-              requiredSignatories={requiredSignatories}
-              signatures={editedEntry.signatures}
-              signatureTasks={editedEntry.signatureTasks}
-              signatureSummary={editedEntry.signatureSummary}
-              currentUser={currentUser}
-              onSignRequest={
-                readOnly ? undefined : () => setIsSignatureModalOpen(true)
-              }
-              readOnly={readOnly}
-              documentType="Anotación"
-            />
+            <>
+              <SignatureBlock
+                requiredSignatories={requiredSignatories}
+                signatures={editedEntry.signatures}
+                signatureTasks={editedEntry.signatureTasks}
+                signatureSummary={editedEntry.signatureSummary}
+                currentUser={currentUser}
+                onSignRequest={
+                  signatureBlockReadOnly
+                    ? undefined
+                    : () => setIsSignatureModalOpen(true)
+                }
+                readOnly={signatureBlockReadOnly}
+                documentType="Anotación"
+              />
+              {!isSigningStage && (
+                <p className="mt-2 text-sm text-gray-500">
+                  Las firmas se habilitan cuando la interventoría marca la
+                  anotación como “Listo para firmas”.
+                </p>
+              )}
+            </>
           )}
           {/* Comments */}
           <div>

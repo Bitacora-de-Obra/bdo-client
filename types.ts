@@ -208,10 +208,13 @@ export enum EntryStatus {
 }
 
 export enum EntryType {
+  GENERAL = 'General',
+  SAFETY = 'HSE',
+  ENVIRONMENTAL = 'Ambiental',
+  SOCIAL = 'Social',
   QUALITY = 'Calidad',
   ADMINISTRATIVE = 'Administrativo',
-  SAFETY = 'HSE',
-  GENERAL = 'General',
+  TECHNICAL = 'Técnico',
 }
 
 export interface LogEntry {
@@ -241,6 +244,14 @@ export interface LogEntry {
   siteVisits: LogEntryListItem[];
   contractorObservations: string;
   interventoriaObservations: string;
+  safetyFindings: string;
+  safetyContractorResponse: string;
+  environmentFindings: string;
+  environmentContractorResponse: string;
+  socialActivities?: LogEntryListItem[];
+  socialObservations: string;
+  socialContractorResponse: string;
+  socialPhotoSummary: string;
   contractorReviewCompleted?: boolean;
   contractorReviewCompletedAt?: string | null;
   contractorReviewer?: User | null;

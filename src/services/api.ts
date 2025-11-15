@@ -530,6 +530,23 @@ export const logEntriesApi = {
     appendJson("siteVisits", (data as any).siteVisits);
     appendIfDefined("contractorObservations", (data as any).contractorObservations);
     appendIfDefined("interventoriaObservations", (data as any).interventoriaObservations);
+    appendIfDefined("safetyFindings", (data as any).safetyFindings);
+    appendIfDefined(
+      "safetyContractorResponse",
+      (data as any).safetyContractorResponse
+    );
+    appendIfDefined("environmentFindings", (data as any).environmentFindings);
+    appendIfDefined(
+      "environmentContractorResponse",
+      (data as any).environmentContractorResponse
+    );
+    appendJson("socialActivities", (data as any).socialActivities);
+    appendIfDefined("socialObservations", (data as any).socialObservations);
+    appendIfDefined(
+      "socialContractorResponse",
+      (data as any).socialContractorResponse
+    );
+    appendIfDefined("socialPhotoSummary", (data as any).socialPhotoSummary);
 
     const serializeUsers = (users?: Array<Partial<User> | string>) => {
       if (!users || users.length === 0) {

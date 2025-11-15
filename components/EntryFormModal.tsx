@@ -3,6 +3,7 @@ import { LogEntry, EntryStatus, EntryType, User } from "../types";
 import Modal from "./ui/Modal";
 import Button from "./ui/Button";
 import Input from "./ui/Input";
+import Select from "./ui/Select";
 import { XMarkIcon } from "./icons/Icon";
 
 interface EntryFormModalProps {
@@ -38,6 +39,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   projectStartDate
 }) => {
   const [entryDate, setEntryDate] = useState<string>("");
+  const [entryType, setEntryType] = useState<EntryType>(EntryType.GENERAL);
   const [title, setTitle] = useState<string>("");
   const [summary, setSummary] = useState<string>("");
   const [activitiesPerformed, setActivitiesPerformed] = useState<string>("");
@@ -80,6 +82,17 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     useState<string>("");
   const [interventoriaObservations, setInterventoriaObservations] =
     useState<string>("");
+  const [safetyFindings, setSafetyFindings] = useState<string>("");
+  const [safetyContractorResponse, setSafetyContractorResponse] =
+    useState<string>("");
+  const [environmentFindings, setEnvironmentFindings] = useState<string>("");
+  const [environmentContractorResponse, setEnvironmentContractorResponse] =
+    useState<string>("");
+  const [socialActivitiesText, setSocialActivitiesText] = useState<string>("");
+  const [socialObservations, setSocialObservations] = useState<string>("");
+  const [socialContractorResponse, setSocialContractorResponse] =
+    useState<string>("");
+  const [socialPhotoSummary, setSocialPhotoSummary] = useState<string>("");
   const [files, setFiles] = useState<File[]>([]);
   const [photos, setPhotos] = useState<File[]>([]);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -89,6 +102,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
 
   const resetForm = () => {
     setEntryDate("");
+    setEntryType(EntryType.GENERAL);
     setTitle("");
     setSummary("");
     setActivitiesPerformed("");
@@ -115,6 +129,14 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     setSiteVisitsText("");
     setContractorObservations("");
     setInterventoriaObservations("");
+    setSafetyFindings("");
+    setSafetyContractorResponse("");
+    setEnvironmentFindings("");
+    setEnvironmentContractorResponse("");
+    setSocialActivitiesText("");
+    setSocialObservations("");
+    setSocialContractorResponse("");
+    setSocialPhotoSummary("");
     setFiles([]);
     setPhotos([]);
     setValidationError(null);
@@ -166,6 +188,20 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
       setScheduleDay(calculateScheduleDay(entryDate));
     }
   }, [entryDate]);
+
+  const entryTypeOptions = [
+    { value: EntryType.GENERAL, label: "General / Técnica" },
+    { value: EntryType.SAFETY, label: "SST / HSE" },
+    { value: EntryType.ENVIRONMENTAL, label: "Ambiental" },
+    { value: EntryType.SOCIAL, label: "Social" },
+    { value: EntryType.ADMINISTRATIVE, label: "Administrativo" },
+    { value: EntryType.QUALITY, label: "Calidad" },
+  ];
+  const showGeneralSections =
+    entryType === EntryType.GENERAL || entryType === EntryType.TECHNICAL;
+  const showSafetySection = entryType === EntryType.SAFETY;
+  const showEnvironmentalSection = entryType === EntryType.ENVIRONMENTAL;
+  const showSocialSection = entryType === EntryType.SOCIAL;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -422,11 +458,19 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           siteVisits: linesToItems(siteVisitsText),
           contractorObservations: contractorObservations.trim(),
           interventoriaObservations: interventoriaObservations.trim(),
+          safetyFindings: safetyFindings.trim(),
+          safetyContractorResponse: safetyContractorResponse.trim(),
+          environmentFindings: environmentFindings.trim(),
+          environmentContractorResponse: environmentContractorResponse.trim(),
+          socialActivities: linesToItems(socialActivitiesText),
+          socialObservations: socialObservations.trim(),
+          socialContractorResponse: socialContractorResponse.trim(),
+          socialPhotoSummary: socialPhotoSummary.trim(),
           activityStartDate: normalizedDate.toISOString(),
           activityEndDate: endOfDay.toISOString(),
           subject: "",
           location: "",
-          type: EntryType.GENERAL,
+          type: entryType,
           status: EntryStatus.DRAFT,
           isConfidential: false,
           assignees: [],
@@ -469,6 +513,17 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             required
           />
         </div>
+        <Select
+          label="Tipo de anotación"
+          value={entryType}
+          onChange={(e) => setEntryType(e.target.value as EntryType)}
+        >
+          {entryTypeOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </Select>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
@@ -489,6 +544,8 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           />
         </div>
 
+        {showGeneralSections && (
+          <>
         <div>
           <h4 className="text-sm font-semibold text-gray-800 mb-2">
             Condiciones climáticas
@@ -579,61 +636,67 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             required
           />
         </div>
+          </>
+        )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Actividades realizadas
-            </label>
-            <textarea
-              value={activitiesPerformed}
-              onChange={(e) => setActivitiesPerformed(e.target.value)}
-              rows={4}
-              className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-              placeholder="Describe las tareas ejecutadas en la jornada"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Materiales utilizados
-            </label>
-            <textarea
-              value={materialsUsed}
-              onChange={(e) => setMaterialsUsed(e.target.value)}
-              rows={4}
-              className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-              placeholder="Registra cantidades, tipos de material, proveedores, etc."
-            />
-          </div>
-        </div>
+        {showGeneralSections && (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Actividades realizadas
+                </label>
+                <textarea
+                  value={activitiesPerformed}
+                  onChange={(e) => setActivitiesPerformed(e.target.value)}
+                  rows={4}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Describe las tareas ejecutadas en la jornada"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Materiales utilizados
+                </label>
+                <textarea
+                  value={materialsUsed}
+                  onChange={(e) => setMaterialsUsed(e.target.value)}
+                  rows={4}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Registra cantidades, tipos de material, proveedores, etc."
+                />
+              </div>
+            </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Personal en obra
-            </label>
-            <textarea
-              value={workforce}
-              onChange={(e) => setWorkforce(e.target.value)}
-              rows={3}
-              className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-              placeholder="Cuadrillas presentes, subcontratistas, horas hombre..."
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Condiciones climáticas
-            </label>
-            <textarea
-              value={weatherConditions}
-              onChange={(e) => setWeatherConditions(e.target.value)}
-              rows={3}
-              className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-              placeholder="Estado del clima, incidencia en las actividades, riesgos, etc."
-            />
-          </div>
-        </div>
-
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Personal en obra
+                </label>
+                <textarea
+                  value={workforce}
+                  onChange={(e) => setWorkforce(e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Cuadrillas presentes, subcontratistas, horas hombre..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Condiciones climáticas
+                </label>
+                <textarea
+                  value={weatherConditions}
+                  onChange={(e) => setWeatherConditions(e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Estado del clima, incidencia en las actividades, riesgos, etc."
+                />
+              </div>
+            </div>
+          </>
+        )}
+        {showGeneralSections && (
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between">
@@ -778,6 +841,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             </div>
           </div>
         </div>
+        )}
 
         <div>
           <h4 className="text-sm font-semibold text-gray-800 mb-1">
@@ -806,6 +870,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           />
         </div>
 
+        {showGeneralSections && (
         <div>
           <h4 className="text-sm font-semibold text-gray-800 mb-1">
             Controles y novedades
@@ -846,31 +911,153 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             placeholder="Visitas registradas"
           />
         </div>
+        )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Observaciones del contratista
-            </label>
-            <textarea
-              value={contractorObservations}
-              onChange={(e) => setContractorObservations(e.target.value)}
-              rows={3}
-              className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-            />
+        {showGeneralSections && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium.text-gray-700 mb-1">
+                Observaciones del contratista
+              </label>
+              <textarea
+                value={contractorObservations}
+                onChange={(e) => setContractorObservations(e.target.value)}
+                rows={3}
+                className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Observaciones de la interventoría
+              </label>
+              <textarea
+                value={interventoriaObservations}
+                onChange={(e) => setInterventoriaObservations(e.target.value)}
+                rows={3}
+                className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+              />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Observaciones de la interventoría
-            </label>
-            <textarea
-              value={interventoriaObservations}
-              onChange={(e) => setInterventoriaObservations(e.target.value)}
-              rows={3}
-              className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-            />
+        )}
+
+        {showSafetySection && (
+          <div className="space-y-5 border border-gray-200 rounded-lg p-4 bg-gray-50">
+            <h4 className="text-sm font-semibold text-gray-800">
+              Componente SST (SST y MEV)
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Observaciones SST (Interventoría)
+                </label>
+                <textarea
+                  value={safetyFindings}
+                  onChange={(e) => setSafetyFindings(e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Respuesta del contratista
+                </label>
+                <textarea
+                  value={safetyContractorResponse}
+                  onChange={(e) => setSafetyContractorResponse(e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                />
+              </div>
+            </div>
           </div>
-        </div>
+        )}
+
+        {showEnvironmentalSection && (
+          <div className="space-y-5 border border-gray-200 rounded-lg p-4 bg-gray-50">
+            <h4 className="text-sm font-semibold text-gray-800">
+              Componente ambiental (ambiental, forestal, fauna)
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Observaciones ambientales (Interventoría)
+                </label>
+                <textarea
+                  value={environmentFindings}
+                  onChange={(e) => setEnvironmentFindings(e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Respuesta del contratista
+                </label>
+                <textarea
+                  value={environmentContractorResponse}
+                  onChange={(e) =>
+                    setEnvironmentContractorResponse(e.target.value)
+                  }
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showSocialSection && (
+          <div className="space-y-5 border border-gray-200 rounded-lg p-4 bg-gray-50">
+            <h4 className="text-sm font-semibold text-gray-800">
+              Componente social
+            </h4>
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-gray-700">
+                Registro diario de actividades
+              </label>
+              <textarea
+                value={socialActivitiesText}
+                onChange={(e) => setSocialActivitiesText(e.target.value)}
+                rows={3}
+                className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                placeholder="Describe cada actividad social en una línea."
+              />
+              <label className="block text-sm font-medium text-gray-700">
+                Registro fotográfico (referencia)
+              </label>
+              <textarea
+                value={socialPhotoSummary}
+                onChange={(e) => setSocialPhotoSummary(e.target.value)}
+                rows={2}
+                className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Observaciones de la interventoría
+                  </label>
+                  <textarea
+                    value={socialObservations}
+                    onChange={(e) => setSocialObservations(e.target.value)}
+                    rows={3}
+                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Respuesta del contratista
+                  </label>
+                  <textarea
+                    value={socialContractorResponse}
+                    onChange={(e) => setSocialContractorResponse(e.target.value)}
+                    rows={3}
+                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
