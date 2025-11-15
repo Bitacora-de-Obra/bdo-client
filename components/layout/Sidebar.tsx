@@ -101,8 +101,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, setIsSidebarOpen, curr
             <div className="h-full px-3 py-4 overflow-y-auto">
                 <div className="flex items-center justify-between mb-5">
                     <a href="#" className="flex items-center pl-2.5">
-                        <img src="https://www.idu.gov.co/sites/default/files/2022-10/logo-bogota.png" className="h-8 mr-3" alt="Bogota Logo" />
-                        <span className="self-center text-xl font-semibold whitespace-nowrap text-white">IDU</span>
+                        <div className="h-8 w-8 mr-3 rounded-full bg-white text-gray-800 font-bold flex items-center justify-center">
+                          ID
+                        </div>
+                        <span className="self-center text-xl font-semibold whitespace-nowrap text-white">Bitácora IDU</span>
                     </a>
                      <button 
                         onClick={() => setIsSidebarOpen(false)}

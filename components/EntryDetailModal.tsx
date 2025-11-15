@@ -440,9 +440,10 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
 
   const plainTextToList = (value: string): LogEntryListItem[] =>
     value
+      .replace(/\r/g, "")
       .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean)
+      .map((line) => line)
+      .filter((line) => line.trim().length > 0)
       .map((text) => ({ text }));
 
   const handleListChange = (field: TextListField, value: string) => {
