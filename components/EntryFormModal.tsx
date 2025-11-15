@@ -427,7 +427,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           subject: "",
           location: "",
           type: EntryType.GENERAL,
-          status: EntryStatus.SUBMITTED,
+          status: EntryStatus.DRAFT,
           isConfidential: false,
           assignees: [],
           requiredSignatories,

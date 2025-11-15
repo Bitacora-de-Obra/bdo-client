@@ -71,6 +71,18 @@ const formatBytes = (bytes: number, decimals = 2) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
 };
 
+const LEGACY_STATUS_ALIASES: Record<string, EntryStatus> = {
+  Radicado: EntryStatus.SUBMITTED,
+  "En Revisión": EntryStatus.NEEDS_REVIEW,
+  Aprobado: EntryStatus.APPROVED,
+};
+
+const normalizeWorkflowStatusValue = (
+  value: string
+): EntryStatus | string => {
+  return LEGACY_STATUS_ALIASES[value] || value;
+};
+
 const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   isOpen,
   onClose,
@@ -120,6 +132,20 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const [rainEventsDraft, setRainEventsDraft] = useState<
     Array<{ start: string; end: string }>
   >([{ start: "", end: "" }]);
+  const [contractorNotesDraft, setContractorNotesDraft] = useState(
+    entry.contractorObservations || ""
+  );
+  const [isContractorEditingNotes, setIsContractorEditingNotes] =
+    useState(false);
+  const [isSavingContractorNotes, setIsSavingContractorNotes] =
+    useState(false);
+  const [isSendingToContractor, setIsSendingToContractor] = useState(false);
+  const [
+    isCompletingContractorReview,
+    setIsCompletingContractorReview,
+  ] = useState(false);
+  const [isReturningToContractor, setIsReturningToContractor] =
+    useState(false);
   const [contractorPersonnelDraft, setContractorPersonnelDraft] = useState<
     Array<{ role: string; quantity: string; notes: string }>
   >([{ role: "", quantity: "", notes: "" }]);
@@ -328,6 +354,8 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     setEquipmentResourcesDraft(
       toEquipmentDraft(entryData.equipmentResources as any)
     );
+    setContractorNotesDraft(entryData.contractorObservations || "");
+    setIsContractorEditingNotes(false);
 
     setSelectedSignerIds(extractSignerIds(entryData));
     if (entryData.entryDate) {
@@ -782,6 +810,177 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     setValidationError(null);
   };
 
+  const handleSendToContractor = async () => {
+    if (!canSendToContractor) {
+      showToast({
+        variant: "error",
+        title: "Acción no permitida",
+        message: "No puedes enviar esta anotación al contratista.",
+      });
+      return;
+    }
+
+    if (
+      !window.confirm(
+        "¿Enviar esta anotación al contratista para su revisión? Después de hacerlo, no podrás editar el contenido hasta que vuelva."
+      )
+    ) {
+      return;
+    }
+
+    setIsSendingToContractor(true);
+    try {
+      const updatedEntry = await api.logEntries.sendToContractor(entry.id);
+      await onUpdate(updatedEntry);
+      await onRefresh();
+      showToast({
+        variant: "success",
+        title: "Anotación enviada",
+        message:
+          "La anotación fue enviada al contratista para su revisión.",
+      });
+    } catch (error: any) {
+      const message = error?.message || "No se pudo enviar la anotación.";
+      setValidationError(message);
+      showToast({
+        variant: "error",
+        title: "Error al enviar",
+        message,
+      });
+    } finally {
+      setIsSendingToContractor(false);
+    }
+  };
+
+  const handleCompleteContractorReview = async () => {
+    if (!canCompleteContractorReview) {
+      showToast({
+        variant: "error",
+        title: "Acción no permitida",
+        message: "No puedes completar esta etapa.",
+      });
+      return;
+    }
+
+    if (
+      !window.confirm(
+        "¿Confirmas que completaste la revisión del contratista? Notificarás a la interventoría para la revisión final."
+      )
+    ) {
+      return;
+    }
+
+    setIsCompletingContractorReview(true);
+    try {
+      const updatedEntry = await api.logEntries.completeContractorReview(
+        entry.id
+      );
+      await onUpdate(updatedEntry);
+      await onRefresh();
+      showToast({
+        variant: "success",
+        title: "Revisión registrada",
+        message:
+          "Tu revisión quedó registrada. La interventoría continuará con la revisión final.",
+      });
+    } catch (error: any) {
+      const message =
+        error?.message || "No se pudo registrar la revisión.";
+      setValidationError(message);
+      showToast({
+        variant: "error",
+        title: "Error al completar revisión",
+        message,
+      });
+    } finally {
+      setIsCompletingContractorReview(false);
+    }
+  };
+
+  const handleReturnToContractor = async () => {
+    if (!canReturnToContractor) {
+      showToast({
+        variant: "error",
+        title: "Acción no permitida",
+        message: "No puedes devolver esta anotación al contratista.",
+      });
+      return;
+    }
+
+    const reason = window.prompt(
+      "Describe brevemente el motivo de la devolución (opcional):"
+    );
+
+    setIsReturningToContractor(true);
+    try {
+      const payload =
+        reason && reason.trim().length > 0
+          ? { reason: reason.trim() }
+          : undefined;
+      const updatedEntry = await api.logEntries.returnToContractor(
+        entry.id,
+        payload
+      );
+      await onUpdate(updatedEntry);
+      await onRefresh();
+      showToast({
+        variant: "success",
+        title: "Anotación devuelta",
+        message:
+          "La anotación fue devuelta al contratista para una nueva iteración.",
+      });
+    } catch (error: any) {
+      const message =
+        error?.message ||
+        "No se pudo devolver la anotación al contratista.";
+      setValidationError(message);
+      showToast({
+        variant: "error",
+        title: "Error al devolver anotación",
+        message,
+      });
+    } finally {
+      setIsReturningToContractor(false);
+    }
+  };
+
+  const handleSaveContractorNotes = async () => {
+    if (!canEditContractorObservations) {
+      showToast({
+        variant: "error",
+        title: "Acción no permitida",
+        message: "No puedes editar las observaciones del contratista.",
+      });
+      return;
+    }
+
+    setIsSavingContractorNotes(true);
+    try {
+      const updatedEntry = await api.logEntries.update(entry.id, {
+        contractorObservations: contractorNotesDraft.trim(),
+      } as Partial<LogEntry>);
+      await onUpdate(updatedEntry);
+      await onRefresh();
+      showToast({
+        variant: "success",
+        title: "Observaciones guardadas",
+        message: "Tus observaciones fueron registradas correctamente.",
+      });
+      setIsContractorEditingNotes(false);
+    } catch (error: any) {
+      const message =
+        error?.message || "No se pudieron guardar las observaciones.";
+      setValidationError(message);
+      showToast({
+        variant: "error",
+        title: "Error al guardar observaciones",
+        message,
+      });
+    } finally {
+      setIsSavingContractorNotes(false);
+    }
+  };
+
   const handleCompleteReview = async () => {
     if (!canCompleteReview) {
       showToast({
@@ -832,7 +1031,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     }
 
     // Verificar que la anotación no esté ya aprobada
-    if (status === "Aprobado" || status === EntryStatus.APPROVED) {
+    if (isReadyForSignaturesStatus) {
       showToast({
         variant: "error",
         title: "Anotación ya aprobada",
@@ -867,9 +1066,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
         entryStatus: entry.status,
       });
       
-      const updatedEntry = await api.logEntries.update(entry.id, {
-        status: EntryStatus.APPROVED,
-      });
+      const updatedEntry = await api.logEntries.approveForSignature(entry.id);
       
       console.log("DEBUG FRONTEND: Anotación aprobada exitosamente", {
         newStatus: updatedEntry.status,
@@ -891,7 +1088,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       showToast({
         variant: "success",
         title: "Anotación aprobada",
-        message: "La anotación ha sido aprobada. Ahora se puede proceder a las firmas.",
+        message: "La anotación ha sido aprobada y quedó lista para firmas.",
       });
     } catch (error: any) {
       console.error("DEBUG FRONTEND: Error al aprobar", error);
@@ -1017,6 +1214,9 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     reviewTasks = [],
   } = editedEntry;
 
+const workflowStatus = normalizeWorkflowStatusValue(status);
+const statusLabel = workflowStatus as string;
+
   const weatherReportData: WeatherReport = weatherReport
     ? { ...weatherReport, rainEvents: weatherReport.rainEvents || [] }
     : { rainEvents: [] };
@@ -1045,10 +1245,16 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   };
 
   // Determinar permisos basados en estado y roles
-  const isEditableStatus = ["Borrador", "Radicado", "En Revisión"].includes(status);
   const isAuthor = currentUser.id === author?.id;
   const isAssignee = entry.assignees?.some((a) => a.id === currentUser.id) || false;
   const isAdmin = currentUser.projectRole === UserRole.ADMIN || currentUser.appRole === "admin";
+  const isContractorUser = currentUser.projectRole === UserRole.CONTRACTOR_REP;
+  const isDraftStatus = workflowStatus === EntryStatus.DRAFT;
+  const isContractorReviewStatus = workflowStatus === EntryStatus.SUBMITTED;
+  const isFinalReviewStatus = workflowStatus === EntryStatus.NEEDS_REVIEW;
+  const isReadyForSignaturesStatus = workflowStatus === EntryStatus.APPROVED;
+  const isSignedStatus = workflowStatus === EntryStatus.SIGNED;
+  const contractorReviewCompleted = !!entry.contractorReviewCompleted;
   
   // Verificar si el usuario es un responsable (firmante requerido)
   const isRequiredSigner = entry.signatureTasks?.some(
@@ -1065,27 +1271,105 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   // 2. Es un asignado y el autor no ha firmado
   // 3. Es un responsable (firmante) y el autor no ha firmado
   // 4. Es admin
+  const isStatusEditableForInterventoria =
+    isDraftStatus || isFinalReviewStatus;
+
   const canEdit =
     !readOnly &&
-    isEditableStatus &&
+    isStatusEditableForInterventoria &&
     (isAuthor || 
      isAdmin || 
      (isAssignee && !authorHasSigned) || 
      (isRequiredSigner && !authorHasSigned));
   
-  // Ya no se requiere aprobación, se puede firmar directamente
-  const canApprove = false; // Deshabilitado - ya no se usa el flujo de aprobación
+  const canSendToContractor =
+    !readOnly && isDraftStatus && (isAuthor || isAdmin);
+
+  const canCompleteContractorReview =
+    !readOnly && isContractorReviewStatus && (isContractorUser || isAdmin);
+
+  const canReturnToContractor =
+    !readOnly && isFinalReviewStatus && (isAuthor || isAdmin);
+
+  const canApprove =
+    !readOnly &&
+    isFinalReviewStatus &&
+    contractorReviewCompleted &&
+    (isAuthor || isAdmin);
   
   const canSign = 
-    !readOnly; // Permitir firmar en cualquier estado
+    !readOnly && (isReadyForSignaturesStatus || isSignedStatus);
 
   // Verificar si el usuario actual puede completar su revisión
   const myReviewTask = reviewTasks.find((task) => task.reviewer?.id === currentUser.id);
   const canCompleteReview = 
     !readOnly &&
-    status === "En Revisión" &&
+    isFinalReviewStatus &&
     myReviewTask?.status === "PENDING" &&
     (isAssignee || isAdmin);
+  const canEditContractorObservations =
+    !readOnly &&
+    isContractorReviewStatus &&
+    (isContractorUser || isAdmin);
+
+  const workflowActionButtons: React.ReactNode[] = [];
+
+  if (canSendToContractor) {
+    workflowActionButtons.push(
+      <Button
+        key="send-to-contractor"
+        variant="primary"
+        onClick={handleSendToContractor}
+        disabled={isSendingToContractor}
+      >
+        {isSendingToContractor ? "Enviando..." : "Enviar a contratista"}
+      </Button>
+    );
+  }
+
+  if (canCompleteContractorReview) {
+    workflowActionButtons.push(
+      <Button
+        key="complete-contractor-review"
+        variant="primary"
+        onClick={handleCompleteContractorReview}
+        disabled={isCompletingContractorReview}
+      >
+        {isCompletingContractorReview
+          ? "Registrando..."
+          : "Marcar revisión completada"}
+      </Button>
+    );
+  }
+
+  if (canReturnToContractor) {
+    workflowActionButtons.push(
+      <Button
+        key="return-to-contractor"
+        variant="secondary"
+        onClick={handleReturnToContractor}
+        disabled={isReturningToContractor}
+      >
+        {isReturningToContractor
+          ? "Devolviendo..."
+          : "Devolver al contratista"}
+      </Button>
+    );
+  }
+
+  if (canApprove) {
+    workflowActionButtons.push(
+      <Button
+        key="approve"
+        variant="primary"
+        onClick={handleApprove}
+        disabled={isApproving}
+        className="bg-green-600 hover:bg-green-700"
+      >
+        {isApproving ? "Aprobando..." : "Aprobar para firmas"}
+      </Button>
+    );
+  }
 
   const entryDateDisplay = entryDateIso
     ? new Date(entryDateIso).toLocaleDateString("es-CO", { dateStyle: "long" })
@@ -1123,21 +1407,16 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
               <p className="text-sm text-gray-500 mt-1">{type}</p>
               <div className="flex items-center gap-2">
                 {isEditing ? (
-                  <Select
-                    name="status"
-                    value={status}
-                    onChange={handleInputChange}
-                  >
-                    {Object.values(EntryStatus).map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </Select>
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <Badge status={statusLabel as EntryStatus} />
+                    <span>
+                      El estado cambia mediante las acciones del flujo.
+                    </span>
+                  </div>
                 ) : (
                   <>
-                    <Badge status={status} />
-                    {!isEditableStatus && (
+                    <Badge status={statusLabel as EntryStatus} />
+                    {!isStatusEditableForInterventoria && (
                       <span className="text-xs text-gray-500">
                         (No editable)
                       </span>
@@ -1154,40 +1433,94 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
               <h4 className="text-sm font-semibold text-blue-900 mb-2">
                 Estado y Acciones Disponibles
               </h4>
-              <div className="text-sm text-blue-800 space-y-1">
-                {isEditableStatus ? (
+              <div className="text-sm text-blue-800 space-y-2">
+                {isDraftStatus && (
                   <>
                     <p>
-                      ✓ Esta anotación está en estado de <strong>{status}</strong> y puede ser editada.
+                      📝 <strong>Borrador:</strong> la interventoría puede
+                      ajustar toda la información antes de enviarla al
+                      contratista.
                     </p>
-                    {authorHasSigned && (
-                      <p className="text-orange-700">
-                        ⚠ El autor ya ha firmado. Solo el autor puede hacer modificaciones ahora.
+                    {canEdit ? (
+                      <p>
+                        ✓ Puedes seguir editando el contenido y agregando
+                        adjuntos.
                       </p>
-                    )}
-                    {!authorHasSigned && (isAssignee || isRequiredSigner) && (
-                      <p className="text-blue-700">
-                        ✓ El autor aún no ha firmado. Puedes hacer modificaciones como responsable.
-                      </p>
-                    )}
-                    {canEdit && (
-                      <p>✓ Puedes modificar el contenido, agregar comentarios y adjuntos.</p>
-                    )}
-                    {canSign && (
-                      <p>✓ Puedes firmar esta anotación si estás en la lista de firmantes.</p>
-                    )}
-                    {!canEdit && (
+                    ) : (
                       <p className="text-orange-700">
-                        ⚠ No tienes permisos para editar esta anotación. {authorHasSigned ? "El autor ya ha firmado, solo el autor puede hacer modificaciones." : "Solo el autor, los asignados, los responsables (firmantes) o un administrador pueden editarla."}
+                        ⚠ No tienes permisos para editar este borrador.
                       </p>
                     )}
                   </>
-                ) : (
+                )}
+                {isContractorReviewStatus && (
+                  <>
+                    <p>
+                      📨 <strong>Revisión contratista:</strong> el contenido
+                      técnico está congelado. Solo se pueden registrar las
+                      observaciones del contratista.
+                    </p>
+                    {canEditContractorObservations ? (
+                      <p>
+                        ✓ Puedes actualizar tus observaciones en el panel
+                        inferior.
+                      </p>
+                    ) : (
+                      <p className="text-orange-700">
+                        ⚠ Solo el contratista asignado puede editar su sección.
+                      </p>
+                    )}
+                  </>
+                )}
+                {isFinalReviewStatus && (
+                  <>
+                    <p>
+                      🔍 <strong>Revisión final:</strong> la interventoría valida
+                      las observaciones antes de aprobar para firmas.
+                    </p>
+                    {contractorReviewCompleted ? (
+                      <p>✓ El contratista ya completó su revisión.</p>
+                    ) : (
+                      <p className="text-orange-700">
+                        ⚠ Falta que el contratista confirme su revisión.
+                      </p>
+                    )}
+                    {canEdit ? (
+                      <p>✓ Puedes realizar ajustes finales antes de aprobar.</p>
+                    ) : (
+                      <p className="text-orange-700">
+                        ⚠ Solo la interventoría puede editar en esta etapa.
+                      </p>
+                    )}
+                  </>
+                )}
+                {isReadyForSignaturesStatus && (
+                  <>
+                    <p>
+                      ✍️ <strong>Listo para firmas:</strong> el contenido está
+                      cerrado y solo resta recolectar firmas.
+                    </p>
+                    {canSign ? (
+                      <p>✓ Puedes firmar si estás en la lista de firmantes.</p>
+                    ) : (
+                      <p className="text-orange-700">
+                        ⚠ Solo los firmantes designados pueden firmar.
+                      </p>
+                    )}
+                  </>
+                )}
+                {isSignedStatus && (
                   <p>
-                    ⚠ Esta anotación está en estado <strong>{status}</strong> y no puede ser editada.
+                    ✔️ <strong>Firmado:</strong> el documento está cerrado y
+                    disponible únicamente para consulta.
                   </p>
                 )}
               </div>
+              {workflowActionButtons.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {workflowActionButtons}
+                </div>
+              )}
             </div>
           )}
           
@@ -1915,9 +2248,66 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                   className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
                 />
               ) : (
-                <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
-                  {contractorObservations || "Sin observaciones."}
-                </p>
+                <>
+                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                    {contractorObservations || "Sin observaciones."}
+                  </p>
+                  {canEditContractorObservations && (
+                    <div className="mt-3 rounded-lg border border-yellow-200 bg-yellow-50 p-3 space-y-3">
+                      <p className="text-xs text-yellow-800">
+                        Solo puedes editar este campo durante la revisión del
+                        contratista.
+                      </p>
+                      {isContractorEditingNotes ? (
+                        <>
+                          <textarea
+                            value={contractorNotesDraft}
+                            onChange={(e) =>
+                              setContractorNotesDraft(e.target.value)
+                            }
+                            rows={3}
+                            className="block w-full border border-yellow-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm p-2"
+                          />
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              variant="primary"
+                              onClick={handleSaveContractorNotes}
+                              disabled={isSavingContractorNotes}
+                            >
+                              {isSavingContractorNotes
+                                ? "Guardando..."
+                                : "Guardar"}
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              onClick={() => {
+                                setIsContractorEditingNotes(false);
+                                setContractorNotesDraft(
+                                  contractorObservations || ""
+                                );
+                              }}
+                              disabled={isSavingContractorNotes}
+                            >
+                              Cancelar
+                            </Button>
+                          </div>
+                        </>
+                      ) : (
+                        <Button
+                          variant="secondary"
+                          onClick={() => {
+                            setContractorNotesDraft(
+                              contractorObservations || ""
+                            );
+                            setIsContractorEditingNotes(true);
+                          }}
+                        >
+                          Editar observaciones
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </div>
             <div>
@@ -2450,16 +2840,6 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                 >
                   {isGeneratingPdf ? "Generando..." : "Exportar PDF"}
                 </Button>
-                         {canApprove && (
-                           <Button 
-                             variant="primary" 
-                             onClick={handleApprove}
-                             className="bg-green-600 hover:bg-green-700"
-                             disabled={isApproving}
-                           >
-                             {isApproving ? "Aprobando..." : "Aprobar Anotación"}
-                           </Button>
-                         )}
                 {canEdit && (
                   <Button variant="primary" onClick={() => setIsEditing(true)}>
                     Modificar Anotación

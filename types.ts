@@ -199,12 +199,12 @@ export interface EquipmentResourceEntry {
 
 // LOGBOOK ENTRIES (ANOTACIONES)
 export enum EntryStatus {
-  APPROVED = 'Aprobado',
-  NEEDS_REVIEW = 'En Revisión',
-  SUBMITTED = 'Radicado',
-  REJECTED = 'Rechazado',
   DRAFT = 'Borrador',
+  SUBMITTED = 'Revisión contratista',
+  NEEDS_REVIEW = 'Revisión final',
+  APPROVED = 'Listo para firmas',
   SIGNED = 'Firmado',
+  REJECTED = 'Rechazado',
 }
 
 export enum EntryType {
@@ -241,6 +241,9 @@ export interface LogEntry {
   siteVisits: LogEntryListItem[];
   contractorObservations: string;
   interventoriaObservations: string;
+  contractorReviewCompleted?: boolean;
+  contractorReviewCompletedAt?: string | null;
+  contractorReviewer?: User | null;
   author: User;
   createdAt: string; // ISO date string
   updatedAt?: string; // ISO date string

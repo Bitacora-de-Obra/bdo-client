@@ -618,6 +618,30 @@ export const logEntriesApi = {
       method: "POST",
     });
   },
+  sendToContractor: async (entryId: string) => {
+    return apiFetch(`/log-entries/${entryId}/send-to-contractor`, {
+      method: "POST",
+    });
+  },
+  completeContractorReview: async (entryId: string) => {
+    return apiFetch(`/log-entries/${entryId}/contractor-review/complete`, {
+      method: "POST",
+    });
+  },
+  returnToContractor: async (
+    entryId: string,
+    payload: { reason?: string } = {}
+  ) => {
+    return apiFetch(`/log-entries/${entryId}/return-to-contractor`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+  approveForSignature: async (entryId: string) => {
+    return apiFetch(`/log-entries/${entryId}/approve-for-signature`, {
+      method: "POST",
+    });
+  },
   completeReview: async (entryId: string) => {
     return apiFetch(`/log-entries/${entryId}/reviews/complete`, {
       method: "POST",
