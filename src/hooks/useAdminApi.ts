@@ -18,6 +18,8 @@ type UpdateUserPayload = Partial<{
   appRole: AppRole;
   status: "active" | "inactive";
   projectRole: string;
+  entity: string | null;
+  cargo: string | null;
 }>;
 
 export const useAdminApi = () => {

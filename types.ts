@@ -38,8 +38,8 @@ export interface AppSettings {
 export enum UserRole {
   RESIDENT = 'Residente de Obra',
   SUPERVISOR = 'Supervisor',
-  CONTRACTOR_REP = 'Representante Contratista',
-  ADMIN = 'Administrador IDU',
+  CONTRACTOR_REP = 'Contratista',
+  ADMIN = 'IDU',
 }
 
 export interface User {
@@ -47,10 +47,12 @@ export interface User {
   fullName: string;
   email: string;
   projectRole: UserRole;
+  appRole: AppRole;
+  entity?: string; // IDU, INTERVENTORIA, CONTRATISTA
+  cargo?: string; // Cargo o posición del usuario
   avatarUrl: string;
   password?: string;
   // Admin fields
-  appRole: AppRole;
   permissions?: Partial<Permission>;
   status: "active" | "inactive";
   lastLoginAt?: string; // ISO

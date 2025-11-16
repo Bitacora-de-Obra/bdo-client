@@ -4,7 +4,7 @@ import Input from "../ui/Input";
 import Button from "../ui/Button";
 import Select from "../ui/Select";
 import Modal from "../ui/Modal";
-import { AppRole, AppSettings, AuditLogEntry, User } from "../../types";
+import { AppRole, AppSettings, AuditLogEntry, User, UserRole } from "../../types";
 import { useAdminApi } from "../../src/hooks/useAdminApi";
 import { ShieldCheckIcon } from "../icons/Icon";
 import { useToast } from "../ui/ToastProvider";
@@ -25,10 +25,40 @@ const PROJECT_ROLE_OPTIONS: { value: string; label: string }[] = [
   { value: "Administrador IDU", label: "Administrador IDU" },
 ];
 
+// Mapeo de roles para asegurar que siempre se muestre el nombre completo
+// Ahora basado en la entidad: IDU, Interventoría, Contratista
+const getFullRoleName = (role: string | UserRole, entity?: string): string => {
+  // Si tenemos la entidad, usarla para determinar el rol
+  if (entity) {
+    if (entity === 'IDU') return 'IDU';
+    if (entity === 'INTERVENTORIA') return 'Interventoría';
+    if (entity === 'CONTRATISTA') return 'Contratista';
+  }
+  
+  // Fallback al mapeo tradicional
+  const roleMap: Record<string, string> = {
+    'RESIDENT': 'Residente de Obra',
+    'SUPERVISOR': 'Supervisor',
+    'CONTRACTOR_REP': 'Contratista',
+    'ADMIN': 'IDU',
+    'Residente de Obra': 'Residente de Obra',
+    'Supervisor': 'Supervisor',
+    'Contratista': 'Contratista',
+    'IDU': 'IDU',
+    'Interventoría': 'Interventoría',
+    'Representante Contratista': 'Contratista', // Compatibilidad
+    'Administrador IDU': 'IDU', // Compatibilidad
+    'Invitado': 'Contratista',
+  };
+  return roleMap[role] || String(role);
+};
+
 type UserAdminPatch = {
   appRole?: AppRole;
   status?: "active" | "inactive";
   projectRole?: string;
+  entity?: string | null;
+  cargo?: string | null;
 };
 
 type UsersViewProps = {
@@ -217,6 +247,7 @@ const UsersView: React.FC<UsersViewProps> = ({
   const [search, setSearch] = useState("");
   const [appRoleFilter, setAppRoleFilter] = useState<"all" | AppRole>("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+  const [entityFilter, setEntityFilter] = useState<"all" | "IDU" | "INTERVENTORIA" | "CONTRATISTA">("all");
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
@@ -227,7 +258,8 @@ const UsersView: React.FC<UsersViewProps> = ({
         !normalizedSearch ||
         user.fullName.toLowerCase().includes(normalizedSearch) ||
         user.email?.toLowerCase().includes(normalizedSearch) ||
-        user.projectRole.toLowerCase().includes(normalizedSearch);
+        user.projectRole.toLowerCase().includes(normalizedSearch) ||
+        (user.entity && user.entity.toLowerCase().includes(normalizedSearch));
 
       const matchesAppRole =
         appRoleFilter === "all" || user.appRole === appRoleFilter;
@@ -235,13 +267,16 @@ const UsersView: React.FC<UsersViewProps> = ({
       const matchesStatus =
         statusFilter === "all" || user.status === statusFilter;
 
-      return matchesSearch && matchesAppRole && matchesStatus;
+      const matchesEntity =
+        entityFilter === "all" || user.entity === entityFilter;
+
+      return matchesSearch && matchesAppRole && matchesStatus && matchesEntity;
     });
-  }, [users, search, appRoleFilter, statusFilter]);
+  }, [users, search, appRoleFilter, statusFilter, entityFilter]);
 
   useEffect(() => {
     setPage(1);
-  }, [search, appRoleFilter, statusFilter]);
+  }, [search, appRoleFilter, statusFilter, entityFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / ITEMS_PER_PAGE));
   const currentPage = Math.min(page, totalPages);
@@ -319,6 +354,16 @@ const UsersView: React.FC<UsersViewProps> = ({
             <option value="active">Activos</option>
             <option value="inactive">Inactivos</option>
           </Select>
+          <Select
+            value={entityFilter}
+            onChange={(e) => setEntityFilter(e.target.value as typeof entityFilter)}
+            label="Entidad"
+          >
+            <option value="all">Todas las entidades</option>
+            <option value="IDU">IDU</option>
+            <option value="INTERVENTORIA">INTERVENTORIA</option>
+            <option value="CONTRATISTA">CONTRATISTA</option>
+          </Select>
           <Button
             variant="secondary"
             onClick={onRefresh}
@@ -354,6 +399,12 @@ const UsersView: React.FC<UsersViewProps> = ({
                   Email
                 </th>
                 <th scope="col" className="px-6 py-3">
+                  Entidad
+                </th>
+                <th scope="col" className="px-6 py-3">
+                  Cargo
+                </th>
+                <th scope="col" className="px-6 py-3">
                   Rol de Aplicación
                 </th>
                 <th scope="col" className="px-6 py-3">
@@ -380,8 +431,24 @@ const UsersView: React.FC<UsersViewProps> = ({
                     {user.fullName}
                   </td>
                   <td className="px-6 py-4">{user.email}</td>
+                  <td className="px-6 py-4">
+                    {user.entity ? (
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                        {user.entity}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    {user.cargo ? (
+                      <span className="text-sm text-gray-700">{user.cargo}</span>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
                   <td className="px-6 py-4 capitalize">{user.appRole}</td>
-                  <td className="px-6 py-4">{user.projectRole}</td>
+                  <td className="px-6 py-4">{getFullRoleName(user.projectRole, user.entity)}</td>
                   <td className="px-6 py-4">
                     <span
                       className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -858,6 +925,8 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     PROJECT_ROLE_OPTIONS[0].value
   );
   const [status, setStatus] = useState<"active" | "inactive">("active");
+  const [entity, setEntity] = useState<string>("");
+  const [cargo, setCargo] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -866,6 +935,8 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       setAppRole(user.appRole);
       setProjectRole(String(user.projectRole));
       setStatus(user.status as "active" | "inactive");
+      setEntity(user.entity || "");
+      setCargo(user.cargo || "");
       setError(null);
       setIsSubmitting(false);
     }
@@ -884,6 +955,8 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
         appRole,
         projectRole,
         status,
+        entity: entity || null,
+        cargo: cargo || null,
       });
     } catch (err) {
       const message =
@@ -928,6 +1001,22 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
             </option>
           ))}
         </Select>
+        <Select
+          label="Entidad"
+          value={entity}
+          onChange={(e) => setEntity(e.target.value)}
+        >
+          <option value="">Sin entidad</option>
+          <option value="IDU">IDU</option>
+          <option value="INTERVENTORIA">INTERVENTORIA</option>
+          <option value="CONTRATISTA">CONTRATISTA</option>
+        </Select>
+        <Input
+          label="Cargo"
+          value={cargo}
+          onChange={(e) => setCargo(e.target.value)}
+          placeholder="Ej: Supervisor Ambiental, Residente Técnico, etc."
+        />
         <Select
           label="Estado"
           value={status}
