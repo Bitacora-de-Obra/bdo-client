@@ -223,19 +223,41 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({
 
       {!isLoading && !error && (
         <>
-            {filteredCommunications.length === 0 ? (
-                <EmptyState
-                    icon={<ChatBubbleLeftRightIcon />}
-                    title="No hay comunicaciones registradas"
-                    message="Mantén un registro centralizado de todas las comunicaciones oficiales del proyecto, como oficios, solicitudes y respuestas."
-                    actionButton={
-                        canEditContent ? (
-                          <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
-                            Registrar Comunicación
-                          </Button>
-                        ) : undefined
+            {(!communications || communications.length === 0) ? (
+              <EmptyState
+                icon={<ChatBubbleLeftRightIcon />}
+                title="No hay comunicaciones registradas"
+                message="Mantén un registro centralizado de todas las comunicaciones oficiales del proyecto, como oficios, solicitudes y respuestas."
+                actionButton={
+                  canEditContent ? (
+                    <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
+                      Registrar Comunicación
+                    </Button>
+                  ) : undefined
+                }
+              />
+            ) : filteredCommunications.length === 0 ? (
+              <EmptyState
+                icon={<ChatBubbleLeftRightIcon />}
+                title="Sin resultados"
+                message="No encontramos comunicaciones que coincidan con los filtros aplicados. Ajusta o limpia los filtros para ver resultados."
+                actionButton={
+                  <Button
+                    variant="secondary"
+                    onClick={() =>
+                      setFilters({
+                        searchTerm: '',
+                        sender: '',
+                        recipient: '',
+                        status: 'all',
+                        direction: 'all',
+                      })
                     }
-                />
+                  >
+                    Limpiar filtros
+                  </Button>
+                }
+              />
             ) : viewMode === 'card' ? (
                 <div className="space-y-4">
                 {filteredCommunications.map(comm => (
