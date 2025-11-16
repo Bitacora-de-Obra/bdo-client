@@ -3,6 +3,7 @@ import { getUserAvatarUrl } from '../src/utils/avatar';
 import { User, Signature, SignatureTask, SignatureSummary } from '../types';
 import Button from './ui/Button';
 import { CheckCircleIcon, ClockIcon, ExclamationTriangleIcon, PencilSquareIcon } from './icons/Icon';
+import { getFullRoleName } from '../src/utils/roleDisplay';
 
 interface SignatureBlockProps {
   requiredSignatories?: User[]; // Hacer opcional
@@ -71,6 +72,7 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
       fullName: string;
       projectRole?: string;
       cargo?: string;
+      entity?: string;
       status: SignatureTask['status'];
       signedAt?: string;
       avatarUrl?: string;
@@ -121,6 +123,7 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
         avatarUrl: participant.avatarUrl ?? existing.avatarUrl,
         projectRole: participant.projectRole ?? existing.projectRole,
         cargo: participant.cargo ?? existing.cargo,
+        entity: participant.entity ?? existing.entity,
       });
     };
 
@@ -140,6 +143,7 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
           fullName: task.signer.fullName,
           projectRole: task.signer.projectRole,
           cargo: task.signer.cargo,
+          entity: task.signer.entity,
           avatarUrl: task.signer.avatarUrl,
           status: task.status,
           signedAt: signedAt,
@@ -168,6 +172,7 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
         fullName: signature.signer.fullName,
         projectRole: signature.signer.projectRole,
         cargo: signature.signer.cargo,
+        entity: signature.signer.entity,
         avatarUrl: signature.signer.avatarUrl,
         status: status as SignatureTask['status'],
         signedAt: hasSignedAt ? signature.signedAt : undefined,
@@ -198,6 +203,7 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
         fullName: user.fullName,
         projectRole: user.projectRole,
         cargo: user.cargo,
+        entity: user.entity,
         avatarUrl: user.avatarUrl,
         status: status as SignatureTask['status'],
         signedAt: hasSignedAt ? signatureRecord.signedAt : undefined,
@@ -276,7 +282,7 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
                   {participant.cargo ? (
                     <p className="text-xs text-gray-500">{participant.cargo}</p>
                   ) : participant.projectRole ? (
-                    <p className="text-xs text-gray-500">{participant.projectRole}</p>
+                    <p className="text-xs text-gray-500">{getFullRoleName(participant.projectRole, participant.entity)}</p>
                   ) : null}
                 </div>
               </div>
