@@ -74,6 +74,16 @@ export interface KeyPersonnel {
   dedication?: string | null;
 }
 
+export interface CorredorVialElement {
+  id: string;
+  civ: string;
+  ubicacion: string;
+  pkId: string;
+  tipoElemento: string;
+  costado: string;
+  sortOrder: number;
+}
+
 export interface ProjectDetails {
   id: string;
   name: string;
@@ -84,6 +94,8 @@ export interface ProjectDetails {
   initialValue: number;
   startDate: string; // ISO date string
   initialEndDate: string; // ISO date string
+  civs?: string | null; // CIVs del corredor vial (JSON array) - DEPRECATED
+  corredorVialElements?: CorredorVialElement[];
   keyPersonnel: KeyPersonnel[];
   // New fields for Interventoria
   interventoriaContractId: string;
@@ -446,13 +458,22 @@ export interface CostActa {
   paymentDueDate: string | null;
   billedAmount: number;
   totalContractValue: number;
+  periodValue?: number | null; // Valor del periodo
+  advancePaymentPercentage?: number | null; // % de anticipo amortizado
   status: CostActaStatus;
   observations: Observation[];
-  relatedProgress: string;
+  relatedProgress?: string | null;
   attachments: Attachment[];
 }
 
 // WORK PROGRESS (AVANCE DE OBRA)
+export interface ContractItemExecution {
+  id: string;
+  contractItemId: string;
+  pkId: string;
+  quantity: number;
+}
+
 export interface ContractItem {
   id: string;
   itemCode: string;
@@ -460,6 +481,8 @@ export interface ContractItem {
   unit: string;
   unitPrice: number;
   contractQuantity: number;
+  executedQuantity?: number; // Cantidad ejecutada total (suma de todas las ejecuciones)
+  executions?: ContractItemExecution[]; // Ejecuciones por PK_ID
 }
 
 export interface WorkActaItem {

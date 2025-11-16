@@ -161,23 +161,8 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
   }, [costActas, modifications, project.initialValue]);
 
   const itemsSummaryData = useMemo(() => {
-    const executedQuantities = new Map<string, number>();
-
-    workActas
-      .filter((acta) => acta.status === WorkActaStatus.APPROVED)
-      .forEach((acta) => {
-        acta.items.forEach((item) => {
-          const currentQuantity =
-            executedQuantities.get(item.contractItemId) || 0;
-          executedQuantities.set(
-            item.contractItemId,
-            currentQuantity + item.quantity
-          );
-        });
-      });
-
     return contractItems.map((item) => {
-      const executedQuantity = executedQuantities.get(item.id) || 0;
+      const executedQuantity = item.executedQuantity || 0;
       const balance = item.contractQuantity - executedQuantity;
       const executionPercentage =
         item.contractQuantity > 0
@@ -190,7 +175,7 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
         executionPercentage,
       };
     });
-  }, [workActas, contractItems]);
+  }, [contractItems]);
 
   const nextActaNumber = useMemo(() => {
     if (workActas.length === 0) {
@@ -280,6 +265,8 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
       const updatedActaFromServer = await api.costActas.update(updatedActa.id, {
         status: updatedActa.status,
         relatedProgress: updatedActa.relatedProgress,
+        periodValue: updatedActa.periodValue,
+        advancePaymentPercentage: updatedActa.advancePaymentPercentage,
       });
 
       setCostActas((prev) =>
@@ -525,6 +512,35 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
       <ContractItemsSummaryTable
         items={itemsSummaryData}
         isLoading={isLoading}
+        onUpdateQuantity={async (itemId, newQuantity, pkId) => {
+          if (readOnly) {
+            showToast({
+              title: "Acción no permitida",
+              message: "El perfil Viewer no puede modificar cantidades ejecutadas.",
+              variant: "error",
+            });
+            return;
+          }
+          try {
+            await api.contractItems.updateExecutedQuantity(itemId, newQuantity, pkId);
+            // Refrescar los items en segundo plano sin bloquear la UI
+            api.contractItems.getAll().then(updatedItems => {
+              setContractItems(updatedItems);
+            }).catch(err => {
+              console.error('Error al refrescar items:', err);
+            });
+            // No mostrar toast aquí, el componente hijo ya muestra feedback visual
+          } catch (err) {
+            showToast({
+              title: "Error",
+              message: err instanceof Error ? err.message : "Error al actualizar la cantidad ejecutada.",
+              variant: "error",
+            });
+            throw err; // Re-lanzar el error para que el componente hijo pueda manejarlo
+          }
+        }}
+        canEdit={canEditContent}
+        corredorVialElements={project.corredorVialElements || []}
       />
 
       {/* Cost Actas History (Actas de Cobro) */}
@@ -552,10 +568,10 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
               <thead className="text-xs text-gray-700 uppercase bg-gray-50">
                 <tr>
                   <th scope="col" className="px-6 py-3">N° Acta</th>
-                  <th scope="col" className="px-6 py-3">Objeto/Descripción</th>
                   <th scope="col" className="px-6 py-3">Periodo</th>
                   <th scope="col" className="px-6 py-3">Fecha</th>
-                  <th scope="col" className="px-6 py-3">Valor Bruto</th>
+                  <th scope="col" className="px-6 py-3 text-right">Valor del Periodo</th>
+                  <th scope="col" className="px-6 py-3 text-right">% Anticipo Amortizado</th>
                   <th scope="col" className="px-6 py-3">Estado</th>
                 </tr>
               </thead>
@@ -569,10 +585,16 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
                       onClick={() => handleOpenCostActaDetail(acta)}
                     >
                       <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{acta.number}</th>
-                      <td className="px-6 py-4">{acta.relatedProgress || '-'}</td>
                       <td className="px-6 py-4">{acta.period}</td>
                       <td className="px-6 py-4">{new Date(acta.submissionDate).toLocaleDateString("es-CO")}</td>
-                      <td className="px-6 py-4 font-semibold">{formatCurrency(acta.billedAmount)}</td>
+                      <td className="px-6 py-4 text-right font-semibold">
+                        {acta.periodValue ? formatCurrency(acta.periodValue) : '-'}
+                      </td>
+                      <td className="px-6 py-4 text-right font-semibold">
+                        {acta.advancePaymentPercentage !== null && acta.advancePaymentPercentage !== undefined 
+                          ? `${acta.advancePaymentPercentage.toFixed(2)}%` 
+                          : '-'}
+                      </td>
                       <td className="px-6 py-4"><CostActaStatusBadge status={acta.status} /></td>
                     </tr>
                   ))}

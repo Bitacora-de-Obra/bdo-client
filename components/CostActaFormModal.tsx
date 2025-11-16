@@ -17,6 +17,8 @@ const CostActaFormModal: React.FC<CostActaFormModalProps> = ({ isOpen, onClose, 
   const [period, setPeriod] = useState('');
   const [submissionDate, setSubmissionDate] = useState('');
   const [billedAmount, setBilledAmount] = useState('');
+  const [periodValue, setPeriodValue] = useState('');
+  const [advancePaymentPercentage, setAdvancePaymentPercentage] = useState('');
   const [relatedProgress, setRelatedProgress] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -36,6 +38,8 @@ const CostActaFormModal: React.FC<CostActaFormModalProps> = ({ isOpen, onClose, 
     setPeriod('');
     setSubmissionDate('');
     setBilledAmount('');
+    setPeriodValue('');
+    setAdvancePaymentPercentage('');
     setRelatedProgress('');
     setFiles([]);
     setValidationError(null);
@@ -61,7 +65,9 @@ const CostActaFormModal: React.FC<CostActaFormModalProps> = ({ isOpen, onClose, 
       period,
       submissionDate: new Date(submissionDate).toISOString(),
       billedAmount: parseFloat(billedAmount),
-      relatedProgress,
+      periodValue: periodValue ? parseFloat(periodValue) : null,
+      advancePaymentPercentage: advancePaymentPercentage ? parseFloat(advancePaymentPercentage) : null,
+      relatedProgress: relatedProgress || null,
       totalContractValue,
       status: CostActaStatus.SUBMITTED,
       approvalDate: null,
@@ -84,6 +90,12 @@ const CostActaFormModal: React.FC<CostActaFormModalProps> = ({ isOpen, onClose, 
             <Input label="Fecha de Radicación" id="submissionDate" type="date" value={submissionDate} onChange={(e) => setSubmissionDate(e.target.value)} required />
             <Input label="Valor Facturado (COP)" id="billedAmount" type="number" value={billedAmount} onChange={(e) => setBilledAmount(e.target.value)} required 
                    placeholder="Ej: 150000000" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input label="Valor del Periodo (COP)" id="periodValue" type="number" value={periodValue} onChange={(e) => setPeriodValue(e.target.value)} 
+                   placeholder="Ej: 150000000" />
+            <Input label="% Anticipo Amortizado" id="advancePaymentPercentage" type="number" value={advancePaymentPercentage} onChange={(e) => setAdvancePaymentPercentage(e.target.value)} 
+                   placeholder="Ej: 15.5" step="0.01" min="0" max="100" />
         </div>
         <div>
             <label htmlFor="relatedProgress" className="block text-sm font-medium text-gray-700 mb-1">Relación con Avance Físico (Opcional)</label>

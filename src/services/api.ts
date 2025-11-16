@@ -885,6 +885,12 @@ export const contractItemsApi = {
   getAll: async () => {
     return apiFetch("/contract-items");
   },
+  updateExecutedQuantity: async (itemId: string, executedQuantity: number, pkId: string) => {
+    return apiFetch(`/contract-items/${itemId}/executed-quantity`, {
+      method: "PATCH",
+      body: JSON.stringify({ executedQuantity, pkId }),
+    });
+  },
 };
 
 // API Functions for Control Points

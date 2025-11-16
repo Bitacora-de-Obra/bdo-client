@@ -231,6 +231,55 @@ const CostActaDetailModal: React.FC<CostActaDetailModalProps> = ({
           />
         </dl>
 
+        {/* Campos Financieros Editables */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
+          <div>
+            <label
+              htmlFor="periodValue"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Valor del Periodo (COP)
+            </label>
+            <input
+              id="periodValue"
+              name="periodValue"
+              type="number"
+              value={editedActa.periodValue || ''}
+              onChange={(e) => {
+                const value = e.target.value === '' ? null : parseFloat(e.target.value);
+                setEditedActa((prev) => ({ ...prev, periodValue: value }));
+              }}
+              className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+              placeholder="Ej: 150000000"
+              step="0.01"
+              min="0"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="advancePaymentPercentage"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              % Anticipo Amortizado
+            </label>
+            <input
+              id="advancePaymentPercentage"
+              name="advancePaymentPercentage"
+              type="number"
+              value={editedActa.advancePaymentPercentage !== null && editedActa.advancePaymentPercentage !== undefined ? editedActa.advancePaymentPercentage : ''}
+              onChange={(e) => {
+                const value = e.target.value === '' ? null : parseFloat(e.target.value);
+                setEditedActa((prev) => ({ ...prev, advancePaymentPercentage: value }));
+              }}
+              className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+              placeholder="Ej: 15.5"
+              step="0.01"
+              min="0"
+              max="100"
+            />
+          </div>
+        </div>
+
         {/* Relación con Avance Físico (Editable) */}
         <div>
           <label

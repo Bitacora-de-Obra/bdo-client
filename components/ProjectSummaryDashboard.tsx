@@ -27,6 +27,8 @@ const ProjectSummaryDashboard: React.FC<ProjectSummaryDashboardProps> = ({ proje
     remainingCap: number;
   } | null>(null);
   const [personnelSearch, setPersonnelSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     api.contractModifications.summary().then(setCapSummary).catch(() => setCapSummary(null));
@@ -81,6 +83,20 @@ const ProjectSummaryDashboard: React.FC<ProjectSummaryDashboardProps> = ({ proje
         person.role.toLowerCase().includes(searchLower)
     );
   }, [project.keyPersonnel, personnelSearch]);
+
+  // Paginación del personal
+  const paginatedPersonnel = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredPersonnel.slice(startIndex, endIndex);
+  }, [filteredPersonnel, currentPage]);
+
+  const totalPages = Math.ceil(filteredPersonnel.length / itemsPerPage);
+
+  // Resetear a página 1 cuando cambia el filtro de búsqueda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [personnelSearch]);
 
   return (
     <div className="space-y-8">
@@ -157,6 +173,44 @@ const ProjectSummaryDashboard: React.FC<ProjectSummaryDashboardProps> = ({ proje
       </Card>
 
       <Card>
+        <div className="p-5">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">
+            CIVs que Conforman el Corredor Vial
+          </h3>
+          {project.corredorVialElements && project.corredorVialElements.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left text-gray-500">
+                <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-4 py-3">CIV</th>
+                    <th scope="col" className="px-4 py-3 min-w-[250px]">UBICACIÓN</th>
+                    <th scope="col" className="px-4 py-3">PK_ID</th>
+                    <th scope="col" className="px-4 py-3">TIPO DE ELEMENTO</th>
+                    <th scope="col" className="px-4 py-3">COSTADO</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {project.corredorVialElements.map((element) => (
+                    <tr key={element.id} className="bg-white border-b hover:bg-gray-50">
+                      <td className="px-4 py-4 font-medium text-gray-900">{element.civ}</td>
+                      <td className="px-4 py-4">{element.ubicacion}</td>
+                      <td className="px-4 py-4">{element.pkId}</td>
+                      <td className="px-4 py-4">{element.tipoElemento}</td>
+                      <td className="px-4 py-4">{element.costado}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-gray-500 italic">
+              No se han registrado elementos del corredor vial para este proyecto.
+            </p>
+          )}
+        </div>
+      </Card>
+
+      <Card>
          <div className="p-5 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <h3 className="text-lg font-semibold text-gray-800">Personal Clave</h3>
             <div className="relative w-full md:w-64">
@@ -203,7 +257,7 @@ const ProjectSummaryDashboard: React.FC<ProjectSummaryDashboardProps> = ({ proje
                 {personnelSearch.trim() ? 'No se encontraron resultados' : 'No hay personal registrado'}
               </div>
             ) : (
-              filteredPersonnel.map(person => {
+              paginatedPersonnel.map(person => {
               // Debug: verificar que dedication existe
               const dedication = person.dedication ?? null;
               return (
@@ -227,6 +281,59 @@ const ProjectSummaryDashboard: React.FC<ProjectSummaryDashboardProps> = ({ proje
               })
             )}
          </div>
+         {/* Paginación */}
+         {filteredPersonnel.length > itemsPerPage && (
+           <div className="p-4 border-t bg-gray-50 flex items-center justify-between">
+             <div className="text-sm text-gray-700">
+               Mostrando {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredPersonnel.length)} de {filteredPersonnel.length} registros
+             </div>
+             <div className="flex items-center gap-2">
+               <button
+                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                 disabled={currentPage === 1}
+                 className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+               >
+                 Anterior
+               </button>
+               <div className="flex items-center gap-1">
+                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                   if (
+                     page === 1 ||
+                     page === totalPages ||
+                     (page >= currentPage - 1 && page <= currentPage + 1)
+                   ) {
+                     return (
+                       <button
+                         key={page}
+                         onClick={() => setCurrentPage(page)}
+                         className={`px-3 py-1.5 text-sm font-medium rounded-md ${
+                           currentPage === page
+                             ? 'bg-brand-primary text-white'
+                             : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                         }`}
+                       >
+                         {page}
+                       </button>
+                     );
+                   } else if (
+                     page === currentPage - 2 ||
+                     page === currentPage + 2
+                   ) {
+                     return <span key={page} className="px-2 text-gray-500">...</span>;
+                   }
+                   return null;
+                 })}
+               </div>
+               <button
+                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                 disabled={currentPage === totalPages}
+                 className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+               >
+                 Siguiente
+               </button>
+             </div>
+           </div>
+         )}
       </Card>
 
     </div>
