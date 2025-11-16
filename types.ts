@@ -609,12 +609,12 @@ export interface Report {
 // NOTIFICATIONS
 export interface Notification {
   id: string;
-  type: 'commitment_due' | 'log_entry_assigned' | 'communication_assigned';
+  type: 'commitment_due' | 'log_entry_assigned' | 'communication_assigned' | 'mention';
   urgency: 'overdue' | 'due_soon' | 'info';
   message: string;
   sourceDescription: string;
-  relatedView: 'minutes' | 'logbook' | 'communications';
-  relatedItemType: 'acta' | 'logEntry' | 'communication';
+  relatedView: 'minutes' | 'logbook' | 'communications' | 'drawings';
+  relatedItemType: 'acta' | 'logEntry' | 'communication' | 'drawing';
   relatedItemId: string;
   createdAt: string;
   isRead: boolean;

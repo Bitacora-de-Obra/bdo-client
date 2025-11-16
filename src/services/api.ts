@@ -1103,6 +1103,11 @@ export const notificationsApi = {
   getAll: async (): Promise<Notification[]> => {
     return apiFetch("/notifications");
   },
+  markAsRead: async (notificationId: string): Promise<{ success: boolean }> => {
+    return apiFetch(`/notifications/${notificationId}/read`, {
+      method: "PATCH",
+    });
+  },
 };
 
 // API Functions for Chatbot
