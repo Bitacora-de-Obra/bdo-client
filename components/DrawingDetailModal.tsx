@@ -5,6 +5,7 @@ import Button from './ui/Button';
 import DrawingDisciplineBadge from './DrawingDisciplineBadge';
 import { MapIcon, UserCircleIcon, CalendarIcon, DocumentArrowDownIcon } from './icons/Icon';
 import { getUserAvatarUrl } from '../src/utils/avatar';
+import { useAuth } from '../contexts/AuthContext';
 
 interface DrawingDetailModalProps {
   isOpen: boolean;
@@ -18,6 +19,8 @@ interface DrawingDetailModalProps {
 
 const DrawingDetailModal: React.FC<DrawingDetailModalProps> = ({ isOpen, onClose, drawing, onAddVersion, onAddComment, currentUser, readOnly = false }) => {
   const [newComment, setNewComment] = useState('');
+  const { user } = useAuth();
+  const canDownload = user?.canDownload ?? true;
 
   if (!drawing) return null;
 
@@ -75,13 +78,15 @@ const DrawingDetailModal: React.FC<DrawingDetailModalProps> = ({ isOpen, onClose
                 >
                   Abrir en pestaña
                 </a>
-                <a
-                  href={getDownloadUrl(latestVersion.url)}
-                  download
-                  className="text-xs font-semibold text-brand-primary hover:text-brand-secondary"
-                >
-                  Descargar
-                </a>
+                {canDownload && (
+                  <a
+                    href={getDownloadUrl(latestVersion.url)}
+                    download
+                    className="text-xs font-semibold text-brand-primary hover:text-brand-secondary"
+                  >
+                    Descargar
+                  </a>
+                )}
               </div>
             </div>
             <div className="flex-1 bg-gray-50 flex items-center justify-center">
@@ -89,13 +94,21 @@ const DrawingDetailModal: React.FC<DrawingDetailModalProps> = ({ isOpen, onClose
               <img src={ensurePreviewUrl(latestVersion.url)} alt={`Vista previa de ${latestVersion.fileName}`} className="object-contain w-full h-full" />
             ) : isPdf ? (
               <iframe src={ensurePreviewUrl(latestVersion.url)} width="100%" height="100%" title={latestVersion.fileName} className="w-full h-full border-0">
-                <p className="p-4 text-center text-sm text-gray-500">Tu navegador no soporta iframes. <a href={getDownloadUrl(latestVersion.url)} className="text-brand-primary font-semibold">Descarga el archivo</a>.</p>
+                <p className="p-4 text-center text-sm text-gray-500">
+                  Tu navegador no soporta iframes.
+                  {canDownload && <a href={getDownloadUrl(latestVersion.url)} className="text-brand-primary font-semibold"> Descarga el archivo</a>}
+                </p>
               </iframe>
             ) : (
                 <div className="text-center p-4">
                     <MapIcon className="h-16 w-16 text-gray-400 mx-auto" />
                     <p className="mt-2 text-sm text-gray-500">Vista previa no disponible para este tipo de archivo.</p>
-                    <a href={getDownloadUrl(latestVersion.url)} download={latestVersion.fileName} className="mt-2 inline-block text-brand-primary font-semibold text-sm">Descargar archivo</a>
+                    {canDownload && (
+                      <a href={getDownloadUrl(latestVersion.url)} download={latestVersion.fileName} className="mt-2 inline-block text-brand-primary font-semibold text-sm">Descargar archivo</a>
+                    )}
+                    {!canDownload && (
+                      <p className="mt-2 text-xs text-gray-400 italic">Solo previsualización disponible</p>
+                    )}
                 </div>
             )}
             </div>

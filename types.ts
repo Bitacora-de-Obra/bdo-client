@@ -55,6 +55,7 @@ export interface User {
   // Admin fields
   permissions?: Partial<Permission>;
   status: "active" | "inactive";
+  canDownload?: boolean; // Permiso para descargar archivos
   lastLoginAt?: string; // ISO
   emailVerifiedAt?: string | null;
 }

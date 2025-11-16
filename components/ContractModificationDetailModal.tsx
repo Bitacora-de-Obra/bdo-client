@@ -3,6 +3,7 @@ import { ContractModification, ModificationType } from "../types";
 import Modal from "./ui/Modal";
 import Button from "./ui/Button";
 import { DocumentArrowDownIcon } from "./icons/Icon";
+import { useAuth } from "../contexts/AuthContext";
 
 interface ContractModificationDetailModalProps {
   isOpen: boolean;
@@ -31,6 +32,9 @@ const ContractModificationDetailModal: React.FC<ContractModificationDetailModalP
   onClose,
   modification,
 }) => {
+  const { user } = useAuth();
+  const canDownload = user?.canDownload ?? true;
+
   const handleDownload = () => {
     const url = modification.attachment?.downloadUrl || modification.attachment?.url;
     if (url) {
@@ -90,7 +94,7 @@ const ContractModificationDetailModal: React.FC<ContractModificationDetailModalP
                 : "Sin soporte adjunto"}
             </p>
           </div>
-          {attachmentAvailable && (
+          {attachmentAvailable && canDownload && (
             <Button
               type="button"
               onClick={handleDownload}
@@ -98,6 +102,9 @@ const ContractModificationDetailModal: React.FC<ContractModificationDetailModalP
             >
               Descargar
             </Button>
+          )}
+          {attachmentAvailable && !canDownload && (
+            <span className="text-xs text-gray-400 italic">Solo previsualización</span>
           )}
         </div>
       </div>

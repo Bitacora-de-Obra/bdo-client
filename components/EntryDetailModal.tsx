@@ -29,6 +29,8 @@ import SignatureBlock from "./SignatureBlock";
 import SignatureModal from "./SignatureModal";
 import { useToast } from "./ui/ToastProvider";
 import api from "../src/services/api";
+import { useAuth } from "../contexts/AuthContext";
+import { getFullRoleName } from "../src/utils/roleDisplay";
 
 interface EntryDetailModalProps {
   isOpen: boolean;
@@ -121,6 +123,9 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   onRefresh = () => {},
   readOnly = false,
 }) => {
+  const { user: authUser } = useAuth();
+  const canDownload = authUser?.canDownload ?? true;
+  
   const extractSignerIds = (entryData: LogEntry): string[] => {
     const fromTasks = (entryData.signatureTasks || [])
       .map((task) => task.signer?.id)
@@ -1240,13 +1245,21 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       await onRefresh();
 
       if (finalDownloadUrl) {
-        window.open(finalDownloadUrl, "_blank", "noopener,noreferrer");
+        if (canDownload) {
+          window.open(finalDownloadUrl, "_blank", "noopener,noreferrer");
+        } else {
+          // Si no tiene permiso de descarga, abrir en modo previsualización
+          const previewUrl = finalDownloadUrl.replace('/download', '/view');
+          window.open(previewUrl, "_blank", "noopener,noreferrer");
+        }
       }
 
       showToast({
         variant: "success",
         title: "PDF generado",
-        message: "La bitácora diaria se exportó correctamente.",
+        message: canDownload 
+          ? "La bitácora diaria se exportó correctamente." 
+          : "El PDF se generó. Solo puedes previsualizarlo (sin permiso de descarga).",
       });
     } catch (error) {
       const message =
@@ -2717,11 +2730,15 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                         <span className="font-semibold text-gray-900">
                           {user.fullName}
                         </span>
-                        {user.projectRole && (
+                        {user.cargo ? (
                           <span className="block text-xs text-gray-500">
-                            {user.projectRole}
+                            {user.cargo}
                           </span>
-                        )}
+                        ) : user.projectRole ? (
+                          <span className="block text-xs text-gray-500">
+                            {getFullRoleName(user.projectRole, user.entity)}
+                          </span>
+                        ) : null}
                         {isAuthor && (
                           <span className="block text-xs text-green-600 font-medium">
                             Autor de la bitácora
@@ -2862,13 +2879,17 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                               <span className="text-gray-500">
                                 {formatBytes(att.size)}
                               </span>
-                              <a
-                                href={att.url}
-                                download={att.fileName}
-                                className="font-medium text-brand-primary hover:text-brand-secondary"
-                              >
-                                Descargar
-                              </a>
+                              {canDownload ? (
+                                <a
+                                  href={att.url}
+                                  download={att.fileName}
+                                  className="font-medium text-brand-primary hover:text-brand-secondary"
+                                >
+                                  Descargar
+                                </a>
+                              ) : (
+                                <span className="text-gray-400 text-xs italic">Solo previsualización</span>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -3175,9 +3196,10 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                   variant="primary"
                   onClick={handleExportPdf}
                   leftIcon={<DocumentArrowDownIcon className="h-4 w-4" />}
-                  disabled={isGeneratingPdf}
+                  disabled={isGeneratingPdf || !canDownload}
+                  title={!canDownload ? "No tienes permiso para descargar archivos" : undefined}
                 >
-                  {isGeneratingPdf ? "Generando..." : "Exportar PDF"}
+                  {isGeneratingPdf ? "Generando..." : canDownload ? "Exportar PDF" : "Solo previsualización"}
                 </Button>
                 {canEdit && (
                   <Button variant="primary" onClick={() => setIsEditing(true)}>

@@ -1,6 +1,7 @@
 import React from 'react';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -14,6 +15,8 @@ interface ExportModalProps {
 }
 
 const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, onExport, entryCount, filters }) => {
+  const { user } = useAuth();
+  const canDownload = user?.canDownload ?? true;
   const hasDateFilters = filters.startDate || filters.endDate;
 
   return (
@@ -26,8 +29,8 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, onExport, en
           <Button variant="secondary" onClick={onClose}>
             Cancelar
           </Button>
-          <Button onClick={onExport} disabled={entryCount === 0}>
-            Descargar ZIP
+          <Button onClick={onExport} disabled={entryCount === 0 || !canDownload}>
+            {canDownload ? 'Descargar ZIP' : 'Solo previsualización'}
           </Button>
         </>
       }

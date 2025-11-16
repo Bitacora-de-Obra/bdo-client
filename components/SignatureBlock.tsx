@@ -70,6 +70,7 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
       id: string;
       fullName: string;
       projectRole?: string;
+      cargo?: string;
       status: SignatureTask['status'];
       signedAt?: string;
       avatarUrl?: string;
@@ -119,6 +120,7 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
         signedAt: participant.signedAt ?? (existing.status === 'SIGNED' ? existing.signedAt : undefined),
         avatarUrl: participant.avatarUrl ?? existing.avatarUrl,
         projectRole: participant.projectRole ?? existing.projectRole,
+        cargo: participant.cargo ?? existing.cargo,
       });
     };
 
@@ -137,6 +139,7 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
           id: task.signer.id,
           fullName: task.signer.fullName,
           projectRole: task.signer.projectRole,
+          cargo: task.signer.cargo,
           avatarUrl: task.signer.avatarUrl,
           status: task.status,
           signedAt: signedAt,
@@ -164,6 +167,7 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
         id: signature.signer.id,
         fullName: signature.signer.fullName,
         projectRole: signature.signer.projectRole,
+        cargo: signature.signer.cargo,
         avatarUrl: signature.signer.avatarUrl,
         status: status as SignatureTask['status'],
         signedAt: hasSignedAt ? signature.signedAt : undefined,
@@ -193,6 +197,7 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
         id: user.id,
         fullName: user.fullName,
         projectRole: user.projectRole,
+        cargo: user.cargo,
         avatarUrl: user.avatarUrl,
         status: status as SignatureTask['status'],
         signedAt: hasSignedAt ? signatureRecord.signedAt : undefined,
@@ -268,9 +273,11 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
                   <p className="text-sm font-semibold text-gray-900">
                     {participant.fullName}
                   </p>
-                  {participant.projectRole && (
+                  {participant.cargo ? (
+                    <p className="text-xs text-gray-500">{participant.cargo}</p>
+                  ) : participant.projectRole ? (
                     <p className="text-xs text-gray-500">{participant.projectRole}</p>
-                  )}
+                  ) : null}
                 </div>
               </div>
               <div className={`flex items-center gap-1.5 ${statusClass}`}>

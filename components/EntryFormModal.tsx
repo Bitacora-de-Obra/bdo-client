@@ -5,6 +5,7 @@ import Button from "./ui/Button";
 import Input from "./ui/Input";
 import Select from "./ui/Select";
 import { XMarkIcon } from "./icons/Icon";
+import { getFullRoleName } from "../src/utils/roleDisplay";
 
 interface EntryFormModalProps {
   isOpen: boolean;
@@ -1101,11 +1102,15 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                   <span className="font-semibold text-gray-900">
                     {user.fullName}
                   </span>
-                  {user.projectRole && (
+                  {user.cargo ? (
                     <span className="block text-xs text-gray-500">
-                      {user.projectRole}
+                      {user.cargo}
                     </span>
-                  )}
+                  ) : user.projectRole ? (
+                    <span className="block text-xs text-gray-500">
+                      {getFullRoleName(user.projectRole, user.entity)}
+                    </span>
+                  ) : null}
                   {isAuthor && (
                     <span className="block text-xs text-green-600 font-medium">
                       Autor de la bitácora

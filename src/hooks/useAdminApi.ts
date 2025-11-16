@@ -21,6 +21,7 @@ type UpdateUserPayload = Partial<{
   projectRole: string;
   entity: string | null;
   cargo: string | null;
+  canDownload: boolean;
 }>;
 
 export const useAdminApi = () => {

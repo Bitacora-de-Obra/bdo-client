@@ -9,12 +9,15 @@ import { DocumentArrowDownIcon, CheckCircleIcon } from './icons/Icon';
 import JSZip from 'jszip';
 import saveAs from 'file-saver';
 import { API_BASE_URL } from '../src/services/api';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ExportDashboardProps {
   project: ProjectDetails;
 }
 
 const ExportDashboard: React.FC<ExportDashboardProps> = ({ project }) => {
+  const { user } = useAuth();
+  const canDownload = user?.canDownload ?? true;
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgressMessage, setExportProgressMessage] = useState('');
 
@@ -385,8 +388,9 @@ ${report.summary}
                         onClick={handleExportProject}
                         className="w-full md:w-auto"
                         size="lg"
+                        disabled={!canDownload}
                     >
-                        Iniciar Exportación y Descargar Expediente
+                        {canDownload ? 'Iniciar Exportación y Descargar Expediente' : 'Solo previsualización (sin permiso de descarga)'}
                     </Button>
                 )}
             </div>

@@ -55,6 +55,7 @@ type UserAdminPatch = {
   projectRole?: string;
   entity?: string | null;
   cargo?: string | null;
+  canDownload?: boolean;
 };
 
 type UsersViewProps = {
@@ -925,6 +926,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
   const [status, setStatus] = useState<"active" | "inactive">("active");
   const [entity, setEntity] = useState<string>("");
   const [cargo, setCargo] = useState<string>("");
+  const [canDownload, setCanDownload] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -935,6 +937,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       setStatus(user.status as "active" | "inactive");
       setEntity(user.entity || "");
       setCargo(user.cargo || "");
+      setCanDownload(user.canDownload ?? true);
       setError(null);
       setIsSubmitting(false);
     }
@@ -955,6 +958,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
         status,
         entity: entity || null,
         cargo: cargo || null,
+        canDownload,
       });
     } catch (err) {
       const message =
@@ -1031,6 +1035,25 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
           <option value="active">Activo</option>
           <option value="inactive">Inactivo</option>
         </Select>
+        <div className="flex items-center justify-between p-3 border border-gray-200 rounded-md bg-gray-50">
+          <div className="flex-1">
+            <label className="text-sm font-medium text-gray-700">
+              Permiso de Descarga
+            </label>
+            <p className="text-xs text-gray-500 mt-1">
+              Permite al usuario descargar archivos. Si está desactivado, solo podrá previsualizar.
+            </p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={canDownload}
+              onChange={(e) => setCanDownload(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
+          </label>
+        </div>
 
         {error && (
           <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
