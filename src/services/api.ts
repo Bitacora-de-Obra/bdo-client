@@ -933,6 +933,16 @@ export const contractModificationsApi = {
   getAll: async () => {
     return apiFetch("/contract-modifications");
   },
+  summary: async (): Promise<{
+    baseValue: number;
+    cap: number;
+    additionsAffecting: number;
+    additionsNonAffecting: number;
+    usedPercent: number;
+    remainingCap: number;
+  }> => {
+    return apiFetch("/contract-modifications?summary=1");
+  },
   create: async (data: {
     number: string;
     type: ModificationType;
@@ -941,6 +951,7 @@ export const contractModificationsApi = {
     days?: number;
     justification: string;
     attachmentId?: string;
+    affectsFiftyPercent?: boolean;
   }) => {
     return apiFetch("/contract-modifications", {
       method: "POST",

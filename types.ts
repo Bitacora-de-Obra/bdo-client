@@ -71,6 +71,7 @@ export interface KeyPersonnel {
   company: 'Contratista' | 'Interventoría';
   email: string;
   phone: string;
+  dedication?: string | null;
 }
 
 export interface ProjectDetails {
@@ -500,6 +501,7 @@ export interface ContractModification {
     days?: number; // For time extensions
     justification: string;
     attachment?: Attachment;
+    affectsFiftyPercent?: boolean;
 }
 
 

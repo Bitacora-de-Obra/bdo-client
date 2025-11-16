@@ -51,7 +51,14 @@ const ContractModificationDetailModal: React.FC<ContractModificationDetailModalP
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <p className="font-semibold text-gray-900">Tipo</p>
-            <p>{modification.type}</p>
+            <p>
+              {modification.type}
+              {modification.type === ModificationType.ADDITION && (
+                <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${modification.affectsFiftyPercent === false ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                  {modification.affectsFiftyPercent === false ? 'No afecta 50% (Mayores Cantidades)' : 'Afecta 50%'}
+                </span>
+              )}
+            </p>
           </div>
           <div>
             <p className="font-semibold text-gray-900">Fecha</p>

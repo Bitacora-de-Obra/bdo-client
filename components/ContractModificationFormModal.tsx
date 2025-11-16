@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ModificationType } from '../types';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
 import Input from './ui/Input';
 import Select from './ui/Select';
 import { XMarkIcon } from './icons/Icon';
+import api from '../src/services/api';
 
 interface ContractModificationFormModalProps {
   isOpen: boolean;
@@ -36,6 +37,29 @@ const ContractModificationFormModal: React.FC<ContractModificationFormModalProps
   const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [affectsFiftyPercent, setAffectsFiftyPercent] = useState(true);
+  const [summary, setSummary] = useState<{
+    baseValue: number;
+    cap: number;
+    additionsAffecting: number;
+    additionsNonAffecting: number;
+    usedPercent: number;
+    remainingCap: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      api.contractModifications.summary().then(setSummary).catch(() => setSummary(null));
+    }
+  }, [isOpen]);
+
+  const willExceedCap = useMemo(() => {
+    if (!summary) return false;
+    if (type !== ModificationType.ADDITION) return false;
+    const addVal = parseFloat(value || '0') || 0;
+    if (!affectsFiftyPercent || addVal <= 0) return false;
+    return summary.additionsAffecting + addVal > summary.cap;
+  }, [summary, type, value, affectsFiftyPercent]);
 
   const resetForm = () => {
     setNumber('');
@@ -47,6 +71,7 @@ const ContractModificationFormModal: React.FC<ContractModificationFormModalProps
     setFile(null);
     setSubmitError(null);
     setIsSubmitting(false);
+    setAffectsFiftyPercent(true);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -68,6 +93,10 @@ const ContractModificationFormModal: React.FC<ContractModificationFormModalProps
 
     if (type === ModificationType.ADDITION && (!value || parseFloat(value) <= 0)) {
       alert('Para una adición, el valor debe ser un número positivo.');
+      return;
+    }
+    if (type === ModificationType.ADDITION && affectsFiftyPercent && willExceedCap) {
+      alert('Esta adición superaría el tope del 50% del contrato. Activa "Incorporación por mayores cantidades" o ajusta el valor.');
       return;
     }
 
@@ -92,6 +121,8 @@ const ContractModificationFormModal: React.FC<ContractModificationFormModalProps
               ? parseInt(days, 10)
               : undefined,
           justification,
+          // passthrough for API
+          ...(type === ModificationType.ADDITION ? { affectsFiftyPercent } : {}),
         },
         file
       );
@@ -134,6 +165,38 @@ const ContractModificationFormModal: React.FC<ContractModificationFormModalProps
             required
           />
         </div>
+        {type === ModificationType.ADDITION && (
+          <div className="p-3 bg-gray-50 border rounded-md space-y-2">
+            <div className="flex items-center justify-between">
+              <label htmlFor="affects50" className="text-sm font-medium text-gray-800">
+                Afecta tope del 50% (Adición “normal”)
+              </label>
+              <input
+                id="affects50"
+                type="checkbox"
+                className="h-4 w-4"
+                checked={affectsFiftyPercent}
+                onChange={(e) => setAffectsFiftyPercent(e.target.checked)}
+              />
+            </div>
+            <p className="text-xs text-gray-600">
+              Si desactivas, se registrará como “Incorporación por mayores cantidades” y NO contará dentro del 50%.
+            </p>
+            {summary && (
+              <div className={`text-sm ${willExceedCap ? 'text-red-600' : 'text-gray-700'}`}>
+                Tope 50%: <strong>${summary.cap.toLocaleString('es-CO')}</strong> ·
+                Usado: <strong>${summary.additionsAffecting.toLocaleString('es-CO')}</strong> ·
+                Restante: <strong>${Math.max(summary.cap - summary.additionsAffecting, 0).toLocaleString('es-CO')}</strong>
+                {type === ModificationType.ADDITION && affectsFiftyPercent && value && parseFloat(value) > 0 && (
+                  <>
+                    {' '}· Con esta adición: <strong>${(summary.additionsAffecting + (parseFloat(value)||0)).toLocaleString('es-CO')}</strong>
+                  </>
+                )}
+                {willExceedCap && <div className="mt-1">Esta adición superaría el tope permitido.</div>}
+              </div>
+            )}
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Select
             label="Tipo de Modificación"
