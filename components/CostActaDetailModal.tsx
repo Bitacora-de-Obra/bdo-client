@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { CostActa, CostActaStatus, Observation, User } from "../types"; // Ajusta la ruta si es necesario
 import Modal from "./ui/Modal";
 import Button from "./ui/Button";
@@ -36,6 +36,10 @@ const CostActaDetailModal: React.FC<CostActaDetailModalProps> = ({
   const { user } = useAuth(); // Obtén el usuario actual
   const [editedActa, setEditedActa] = useState<CostActa>(acta);
   const [newObservation, setNewObservation] = useState(''); // <-- Estado para nueva observación
+  const [mentionOpen, setMentionOpen] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [isSubmittingObservation, setIsSubmittingObservation] = useState(false); // <-- Estado para feedback
   const [observationError, setObservationError] = useState<string | null>(null); // <-- Estado para errores
 
@@ -51,6 +55,72 @@ const CostActaDetailModal: React.FC<CostActaDetailModalProps> = ({
     setObservationError(null);
     console.log("Acta received by Modal:", acta); // Log para depuración
   }, [acta, isOpen]);
+
+  const filteredUsers = useMemo(() => {
+    const users = (user && user.id) ? [user] : [];
+    const q = mentionQuery.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter(u => u.fullName.toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q));
+  }, [user, mentionQuery]);
+
+  const insertMention = (u: User) => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart ?? newObservation.length;
+    const end = ta.selectionEnd ?? newObservation.length;
+    const before = newObservation.slice(0, start);
+    const after = newObservation.slice(end);
+    const atIndex = before.lastIndexOf('@');
+    if (atIndex === -1) return;
+    const prefix = before.slice(0, atIndex);
+    const display = `@${u.fullName}`;
+    const next = `${prefix}${display} ${after}`;
+    setNewObservation(next);
+    setMentionOpen(false);
+    setMentionQuery('');
+    requestAnimationFrame(() => {
+      if (textareaRef.current) {
+        const pos = (prefix + display + ' ').length;
+        textareaRef.current.selectionStart = pos;
+        textareaRef.current.selectionEnd = pos;
+        textareaRef.current.focus();
+      }
+    });
+  };
+
+  const handleObservationKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!mentionOpen) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); setMentionIndex((i) => Math.min(i + 1, filteredUsers.length - 1)); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setMentionIndex((i) => Math.max(i - 1, 0)); }
+    else if (e.key === 'Enter') { e.preventDefault(); const u = filteredUsers[mentionIndex]; if (u) insertMention(u); }
+    else if (e.key === 'Escape') { e.preventDefault(); setMentionOpen(false); }
+  };
+
+  const handleObservationChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setNewObservation(value);
+    const caret = e.target.selectionStart || value.length;
+    const before = value.slice(0, caret);
+    const atIndex = before.lastIndexOf('@');
+    if (atIndex >= 0) {
+      const prevChar = atIndex > 0 ? before[atIndex - 1] : ' ';
+      const validBoundary = /\s|^/.test(prevChar);
+      if (validBoundary) {
+        const query = before.slice(atIndex + 1).match(/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9_.-]*/)?.[0] || '';
+        setMentionQuery(query);
+        setMentionOpen(true);
+        setMentionIndex(0);
+        return;
+      }
+    }
+    setMentionOpen(false);
+    setMentionQuery('');
+  };
+
+  const highlightMentions = (text: string) => {
+    const parts = text.split(/(\@[A-Za-zÁÉÍÓÚÜÑáéíóúüñ][A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9 ._-]*)/g);
+    return <span>{parts.map((p, i) => p.startsWith('@') ? <span key={i} className="text-brand-primary font-semibold">{p}</span> : <span key={i}>{p}</span>)}</span>;
+  };
 
   const handleStatusChange = (newStatus: CostActaStatus) => {
     setEditedActa((prev) => ({ ...prev, status: newStatus }));
@@ -229,7 +299,7 @@ const CostActaDetailModal: React.FC<CostActaDetailModalProps> = ({
                                         {new Date(obs.timestamp).toLocaleString("es-CO")}
                                     </span>
                                 </div>
-                                <p className="text-sm text-gray-700">{obs.text}</p>
+                                <p className="text-sm text-gray-700">{highlightMentions(obs.text)}</p>
                             </div>
                         </div>
                     ))}
@@ -241,15 +311,34 @@ const CostActaDetailModal: React.FC<CostActaDetailModalProps> = ({
             {/* Formulario para Nueva Observación */}
             <form onSubmit={handleAddObservation} className="mt-4 pt-4 border-t">
                 <label htmlFor="newObservation" className="block text-sm font-medium text-gray-700 mb-1">Añadir Observación</label>
+                <div className="relative">
                 <textarea
                     id="newObservation"
                     rows={2}
                     className="block w-full border border-gray-300 rounded-md shadow-sm p-2"
                     placeholder="Escribe tu observación aquí..."
                     value={newObservation}
-                    onChange={(e) => setNewObservation(e.target.value)}
+                    onChange={handleObservationChange}
+                    onKeyDown={handleObservationKeyDown}
+                    ref={textareaRef}
                     required
                 />
+                {mentionOpen && filteredUsers.length > 0 && (
+                  <div className="absolute z-10 mt-1 w-64 max-h-56 overflow-auto rounded-md border border-gray-200 bg-white shadow-lg">
+                    {filteredUsers.map((u, idx) => (
+                      <button
+                        type="button"
+                        key={u.id}
+                        onMouseDown={(ev) => { ev.preventDefault(); insertMention(u); }}
+                        className={`w-full text-left px-3 py-2 text-sm ${idx === mentionIndex ? 'bg-brand-primary/10' : ''}`}
+                      >
+                        <span className="font-medium text-gray-800">{u.fullName}</span>
+                        <span className="block text-xs text-gray-500">{u.email}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                </div>
                 {observationError && <p className="text-xs text-red-600 mt-1">{observationError}</p>}
                 <div className="mt-2 flex justify-end">
                     <Button type="submit" size="sm" disabled={!newObservation.trim() || isSubmittingObservation}>

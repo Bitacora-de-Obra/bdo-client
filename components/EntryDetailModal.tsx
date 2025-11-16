@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   LogEntry,
   EntryStatus,
@@ -140,6 +140,10 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const [editedEntry, setEditedEntry] = useState<LogEntry>(entry);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [newComment, setNewComment] = useState("");
+  const [mentionOpen, setMentionOpen] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState("");
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [commentFiles, setCommentFiles] = useState<File[]>([]);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
@@ -223,6 +227,110 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   );
 
   const findUserById = (id: string): User | undefined => knownUsers.get(id);
+  const filteredUsersForMentions = useMemo(() => {
+    const q = mentionQuery.trim().toLowerCase();
+    const base = Array.from(knownUsers.values());
+    if (!q) return base.slice(0, 6);
+    return base
+      .filter(
+        (u) =>
+          u.fullName.toLowerCase().includes(q) ||
+          (u.email || "").toLowerCase().includes(q)
+      )
+      .slice(0, 6);
+  }, [knownUsers, mentionQuery]);
+
+  const insertMention = (user: User) => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart ?? newComment.length;
+    const end = ta.selectionEnd ?? newComment.length;
+    const before = newComment.slice(0, start);
+    const after = newComment.slice(end);
+    const atIndex = before.lastIndexOf("@");
+    if (atIndex === -1) return;
+    const prefix = before.slice(0, atIndex);
+    const display = `@${user.fullName}`;
+    const next = `${prefix}${display} ${after}`;
+    setNewComment(next);
+    setMentionOpen(false);
+    setMentionQuery("");
+    requestAnimationFrame(() => {
+      if (textareaRef.current) {
+        const pos = (prefix + display + " ").length;
+        textareaRef.current.selectionStart = pos;
+        textareaRef.current.selectionEnd = pos;
+        textareaRef.current.focus();
+      }
+    });
+  };
+
+  const handleNewCommentKeyDown = (
+    e: React.KeyboardEvent<HTMLTextAreaElement>
+  ) => {
+    if (!mentionOpen) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setMentionIndex((i) =>
+        Math.min(i + 1, filteredUsersForMentions.length - 1)
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setMentionIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const user = filteredUsersForMentions[mentionIndex];
+      if (user) insertMention(user);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setMentionOpen(false);
+    }
+  };
+
+  const handleNewCommentChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>
+  ) => {
+    const value = e.target.value;
+    setNewComment(value);
+    const caret = e.target.selectionStart || value.length;
+    const before = value.slice(0, caret);
+    const atIndex = before.lastIndexOf("@");
+    if (atIndex >= 0) {
+      const prevChar = atIndex > 0 ? before[atIndex - 1] : " ";
+      const validBoundary = /\s|^/.test(prevChar);
+      if (validBoundary) {
+        const query =
+          before
+            .slice(atIndex + 1)
+            .match(/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9_.-]*/)?.[0] || "";
+        setMentionQuery(query);
+        setMentionOpen(true);
+        setMentionIndex(0);
+        return;
+      }
+    }
+    setMentionOpen(false);
+    setMentionQuery("");
+  };
+
+  const renderTextWithMentions = (text: string) => {
+    const parts = text.split(
+      /(\@[A-Za-zÁÉÍÓÚÜÑáéíóúüñ][A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9 ._-]*)/g
+    );
+    return (
+      <span>
+        {parts.map((p, i) =>
+          p.startsWith("@") ? (
+            <span key={i} className="text-brand-primary font-semibold">
+              {p}
+            </span>
+          ) : (
+            <span key={i}>{p}</span>
+          )
+        )}
+      </span>
+    );
+  };
 
   const handleToggleSigner = (userId: string, checked: boolean) => {
     setSelectedSignerIds((prev) => {
@@ -3024,7 +3132,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                         </span>
                       </div>
                       <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded-md whitespace-pre-wrap">
-                        {comment.content}
+                        {renderTextWithMentions(comment.content)}
                       </p>
                       {(comment.attachments || []).length > 0 && (
                         <div className="mt-2 space-y-3">
@@ -3085,14 +3193,40 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                   alt={currentUser.fullName}
                   className="h-8 w-8 rounded-full object-cover"
                 />
-                <div className="flex-1">
+                <div className="flex-1 relative">
                   <textarea
                     rows={2}
                     className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
                     placeholder="Escribe tu comentario aquí..."
                     value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
+                    onChange={handleNewCommentChange}
+                    onKeyDown={handleNewCommentKeyDown}
+                    ref={textareaRef}
                   ></textarea>
+                  {mentionOpen && filteredUsersForMentions.length > 0 && (
+                    <div className="absolute z-10 mt-1 w-64 max-h-56 overflow-auto rounded-md border border-gray-200 bg-white shadow-lg">
+                      {filteredUsersForMentions.map((u, idx) => (
+                        <button
+                          type="button"
+                          key={u.id}
+                          onMouseDown={(ev) => {
+                            ev.preventDefault();
+                            insertMention(u);
+                          }}
+                          className={`w-full text-left px-3 py-2 text-sm ${
+                            idx === mentionIndex ? "bg-brand-primary/10" : ""
+                          }`}
+                        >
+                          <span className="font-medium text-gray-800">
+                            {u.fullName}
+                          </span>
+                          <span className="block text-xs text-gray-500">
+                            {u.email}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   {commentFiles.length > 0 && (
                     <div className="mt-2 space-y-1">
                       {commentFiles.map((file, index) => (
