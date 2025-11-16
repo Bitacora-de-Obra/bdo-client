@@ -850,6 +850,12 @@ export const costActasApi = {
       body: JSON.stringify(data),
     });
   },
+  addAttachment: async (actaId: string, attachmentId: string) => {
+    return apiFetch(`/cost-actas/${actaId}/attachments`, {
+      method: "POST",
+      body: JSON.stringify({ attachmentId }),
+    });
+  },
 };
 
 // API Functions for Work Actas

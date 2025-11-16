@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import {
   ProjectDetails,
   WorkActa,
+  CostActa,
   ContractItem,
   WorkActaStatus,
   ModificationType,
@@ -14,7 +15,9 @@ import { PlusIcon, CalculatorIcon } from "./icons/Icon";
 import EmptyState from "./ui/EmptyState";
 import Card from "./ui/Card";
 import WorkActaStatusBadge from "./WorkActaStatusBadge";
+import CostActaStatusBadge from "./CostActaStatusBadge";
 import WorkActaDetailModal from "./WorkActaDetailModal";
+import CostActaDetailModal from "./CostActaDetailModal";
 import WorkActaFormModal from "./WorkActaFormModal";
 import ContractItemsSummaryTable from "./ContractItemsSummaryTable";
 import ContractModificationFormModal from "./ContractModificationFormModal";
@@ -49,6 +52,7 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
 }) => {
   // --- Estado local para datos reales ---
   const [workActas, setWorkActas] = useState<WorkActa[]>([]);
+  const [costActas, setCostActas] = useState<CostActa[]>([]);
   const [contractItems, setContractItems] = useState<ContractItem[]>([]);
   const [modifications, setModifications] = useState<ContractModification[]>(contractModifications ?? []);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,7 +61,9 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
 
   // State for Work Actas
   const [selectedActa, setSelectedActa] = useState<WorkActa | null>(null);
+  const [selectedCostActa, setSelectedCostActa] = useState<CostActa | null>(null);
   const [isActaDetailModalOpen, setIsActaDetailModalOpen] = useState(false);
+  const [isCostActaDetailModalOpen, setIsCostActaDetailModalOpen] = useState(false);
   const [isActaFormModalOpen, setIsActaFormModalOpen] = useState(false);
   const [isModFormModalOpen, setIsModFormModalOpen] = useState(false);
   const [selectedModification, setSelectedModification] = useState<ContractModification | null>(null);
@@ -72,12 +78,12 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
       try {
         setIsLoading(true);
         setError(null);
-        const [itemsData, actasData] = await Promise.all([
+        const [itemsData, costActasData] = await Promise.all([
           api.contractItems.getAll(),
-          api.workActas.getAll(),
+          api.costActas.getAll(),
         ]);
         setContractItems(itemsData);
-        setWorkActas(actasData);
+        setCostActas(costActasData);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error al cargar datos de avance.");
       } finally {
@@ -114,18 +120,29 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
 
     const updatedContractValue = project.initialValue + totalAdditions;
 
-    const totalExecutedValue = workActas
-      .filter((acta) => acta.status === WorkActaStatus.APPROVED)
-      .reduce((total, acta) => {
-        const actaTotal = acta.items.reduce((actaSum, item) => {
-          const contractItem = contractItemMap.get(item.contractItemId);
-          return (
-            actaSum +
-            (contractItem ? item.quantity * contractItem.unitPrice : 0)
-          );
-        }, 0);
-        return total + actaTotal;
-      }, 0);
+    // Calcular valores ejecutados de actas de cobro, discriminando por fase
+    const preliminarActas = costActas.filter((acta) =>
+      acta.relatedProgress?.toLowerCase().includes('preliminar') ||
+      acta.relatedProgress?.toLowerCase().includes('saldo fase preliminar')
+    );
+    
+    const ejecucionActas = costActas.filter((acta) =>
+      (acta.relatedProgress?.toLowerCase().includes('fase de obra') ||
+      acta.relatedProgress?.toLowerCase().includes('ejecución')) &&
+      !acta.relatedProgress?.toLowerCase().includes('preliminar')
+    );
+
+    const totalPreliminarExecuted = preliminarActas.reduce(
+      (sum, acta) => sum + acta.billedAmount,
+      0
+    );
+    
+    const totalEjecucionExecuted = ejecucionActas.reduce(
+      (sum, acta) => sum + acta.billedAmount,
+      0
+    );
+
+    const totalExecutedValue = totalPreliminarExecuted + totalEjecucionExecuted;
 
     const contractBalance = updatedContractValue - totalExecutedValue;
     const executionPercentage =
@@ -135,11 +152,13 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
 
     return {
       totalExecutedValue,
+      totalPreliminarExecuted,
+      totalEjecucionExecuted,
       contractBalance,
       executionPercentage,
       updatedContractValue,
     };
-  }, [workActas, contractItemMap, modifications, project.initialValue]);
+  }, [costActas, modifications, project.initialValue]);
 
   const itemsSummaryData = useMemo(() => {
     const executedQuantities = new Map<string, number>();
@@ -199,6 +218,16 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
     setIsActaDetailModalOpen(false);
   };
 
+  const handleOpenCostActaDetail = (acta: CostActa) => {
+    setSelectedCostActa(acta);
+    setIsCostActaDetailModalOpen(true);
+  };
+
+  const handleCloseCostActaDetail = () => {
+    setSelectedCostActa(null);
+    setIsCostActaDetailModalOpen(false);
+  };
+
   const handleSaveActa = async (
     newActaData: Omit<WorkActa, "id" | "attachments">,
     files: File[]
@@ -238,6 +267,38 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
   };
 
   // --- Implementaremos estas después ---
+  const handleUpdateCostActa = async (updatedActa: CostActa) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede modificar actas de cobro.",
+        variant: "error",
+      });
+      return;
+    }
+    try {
+      const updatedActaFromServer = await api.costActas.update(updatedActa.id, {
+        status: updatedActa.status,
+        relatedProgress: updatedActa.relatedProgress,
+      });
+
+      setCostActas((prev) =>
+        prev.map((acta) => (acta.id === updatedActaFromServer.id ? updatedActaFromServer : acta))
+      );
+      if (selectedCostActa && selectedCostActa.id === updatedActaFromServer.id) {
+        setSelectedCostActa(updatedActaFromServer);
+      }
+      handleCloseCostActaDetail();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al actualizar el acta de cobro.');
+      showToast({
+        title: "Error",
+        message: err instanceof Error ? err.message : 'Error al actualizar el acta de cobro.',
+        variant: "error",
+      });
+    }
+  };
+
   const handleUpdateActa = async (updatedActa: WorkActa) => {
     if (readOnly) {
       showToast({
@@ -335,6 +396,10 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
   };
 
   const getActaTotalValue = (acta: WorkActa) => {
+    // Si tiene valor bruto, usarlo; sino calcular de los items
+    if (acta.grossValue != null) {
+      return acta.grossValue;
+    }
     return acta.items.reduce((sum, item) => {
       const contractItem = contractItemMap.get(item.contractItemId);
       return sum + (contractItem ? item.quantity * contractItem.unitPrice : 0);
@@ -372,6 +437,16 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
           title="Valor Total Ejecutado"
           value={formatCurrency(financialSummary.totalExecutedValue)}
         >
+          <div className="mt-2 space-y-1 text-xs text-gray-600">
+            <div className="flex justify-between">
+              <span>Fase preliminar:</span>
+              <span className="font-semibold">{formatCurrency(financialSummary.totalPreliminarExecuted)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Fase de ejecución:</span>
+              <span className="font-semibold">{formatCurrency(financialSummary.totalEjecucionExecuted)}</span>
+            </div>
+          </div>
           <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
             <div
               className="bg-idu-cyan h-2.5 rounded-full"
@@ -452,11 +527,11 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
         isLoading={isLoading}
       />
 
-      {/* Work Actas History (Ahora usa datos reales) */}
+      {/* Cost Actas History (Actas de Cobro) */}
       <Card>
         <div className="p-4 border-b flex justify-between items-center">
           <h3 className="text-xl font-semibold text-gray-800">
-            Historial de Actas de Avance
+            Historial de Actas de Cobro
           </h3>
           {canEditContent && (
             <Button
@@ -465,38 +540,40 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
               size="sm"
               variant="secondary"
             >
-              Nueva Acta de Avance
+              Nueva Acta de Cobro
             </Button>
           )}
         </div>
         <div className="overflow-x-auto">
           {isLoading && <div className="p-6 text-center">Cargando actas...</div>}
           {error && <div className="p-6 text-center text-red-500">{error}</div>}
-          {!isLoading && !error && workActas.length > 0 ? (
+          {!isLoading && !error && costActas.length > 0 ? (
             <table className="w-full text-sm text-left text-gray-500">
               <thead className="text-xs text-gray-700 uppercase bg-gray-50">
                 <tr>
                   <th scope="col" className="px-6 py-3">N° Acta</th>
+                  <th scope="col" className="px-6 py-3">Objeto/Descripción</th>
                   <th scope="col" className="px-6 py-3">Periodo</th>
                   <th scope="col" className="px-6 py-3">Fecha</th>
-                  <th scope="col" className="px-6 py-3">Valor del Periodo</th>
+                  <th scope="col" className="px-6 py-3">Valor Bruto</th>
                   <th scope="col" className="px-6 py-3">Estado</th>
                 </tr>
               </thead>
               <tbody>
-                {workActas
-                  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) // Ordenar por fecha más reciente primero
+                {costActas
+                  .sort((a, b) => new Date(b.submissionDate).getTime() - new Date(a.submissionDate).getTime()) // Ordenar por fecha más reciente primero
                   .map((acta) => (
                     <tr
                       key={acta.id}
                       className="bg-white border-b hover:bg-gray-50 cursor-pointer"
-                      onClick={() => handleOpenDetail(acta)}
+                      onClick={() => handleOpenCostActaDetail(acta)}
                     >
                       <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{acta.number}</th>
+                      <td className="px-6 py-4">{acta.relatedProgress || '-'}</td>
                       <td className="px-6 py-4">{acta.period}</td>
-                      <td className="px-6 py-4">{new Date(acta.date).toLocaleDateString("es-CO")}</td>
-                      <td className="px-6 py-4 font-semibold">{formatCurrency(getActaTotalValue(acta))}</td>
-                      <td className="px-6 py-4"><WorkActaStatusBadge status={acta.status} /></td>
+                      <td className="px-6 py-4">{new Date(acta.submissionDate).toLocaleDateString("es-CO")}</td>
+                      <td className="px-6 py-4 font-semibold">{formatCurrency(acta.billedAmount)}</td>
+                      <td className="px-6 py-4"><CostActaStatusBadge status={acta.status} /></td>
                     </tr>
                   ))}
               </tbody>
@@ -506,8 +583,8 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
               <div className="p-6">
                 <EmptyState
                   icon={<CalculatorIcon />}
-                  title="No hay actas de avance registradas"
-                  message="Registra la primera acta de avance para iniciar el seguimiento de cantidades y valores del contrato de obra."
+                  title="No hay actas de cobro registradas"
+                  message="Registra la primera acta de cobro para iniciar el seguimiento de valores del contrato de obra."
                   actionButton={
                     canEditContent ? (
                       <Button
@@ -534,6 +611,15 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
           contractItems={contractItems} // Pasa los ítems reales
           onUpdate={handleUpdateActa} // Conectado al backend
           readOnly={readOnly}
+        />
+      )}
+
+      {selectedCostActa && (
+        <CostActaDetailModal
+          isOpen={isCostActaDetailModalOpen}
+          onClose={handleCloseCostActaDetail}
+          acta={selectedCostActa}
+          onUpdate={handleUpdateCostActa}
         />
       )}
 

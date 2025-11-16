@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Project, CostActa, Attachment, CostActaStatus } from "../types";
 import api from "../src/services/api";
 import Button from "./ui/Button";
@@ -127,6 +127,53 @@ const CostDashboard: React.FC<CostDashboardProps> = ({ project }) => {
     }).format(value);
   };
 
+  // Calcular balance financiero
+  const financialBalance = useMemo(() => {
+    if (costActas.length === 0) {
+      return null;
+    }
+
+    // Obtener valores del contrato (del primer acta o usar valores por defecto)
+    const firstActa = costActas[0];
+    const totalContractValue = firstActa?.totalContractValue || MOCK_TOTAL_CONTRACT_VALUE;
+
+    // Separar actas por fase según su descripción
+    const preliminarActas = costActas.filter((acta) =>
+      acta.relatedProgress?.toLowerCase().includes('preliminar') ||
+      acta.relatedProgress?.toLowerCase().includes('saldo fase preliminar')
+    );
+    const ejecucionActas = costActas.filter((acta) =>
+      (acta.relatedProgress?.toLowerCase().includes('fase de obra') ||
+      acta.relatedProgress?.toLowerCase().includes('ejecución')) &&
+      !acta.relatedProgress?.toLowerCase().includes('preliminar')
+    );
+
+    // Calcular totales facturados
+    const totalPreliminarBilled = preliminarActas.reduce(
+      (sum, acta) => sum + acta.billedAmount,
+      0
+    );
+    const totalEjecucionBilled = ejecucionActas.reduce(
+      (sum, acta) => sum + acta.billedAmount,
+      0
+    );
+
+    // Valores de fases del contrato de obra
+    const preliminaryPhaseValue = 248487308; // $ 248.487.308,00
+    const executionPhaseValue = 9491081407.50; // $ 9.491.081.407,50 (no es total - preliminar, es un valor específico)
+    const saldoPorEjecutar = executionPhaseValue - totalEjecucionBilled;
+
+    return {
+      totalContractValue,
+      preliminaryPhaseValue,
+      executionPhaseValue,
+      totalPreliminarBilled,
+      totalEjecucionBilled,
+      saldoPorEjecutar,
+      totalBilled: totalPreliminarBilled + totalEjecucionBilled,
+    };
+  }, [costActas]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -148,6 +195,71 @@ const CostDashboard: React.FC<CostDashboardProps> = ({ project }) => {
         <div className="text-center p-8">Cargando actas de costos...</div>
       )}
       {error && <div className="text-center p-8 text-red-500">{error}</div>}
+
+      {/* Balance Financiero */}
+      {!isLoading && !error && financialBalance && (
+        <Card>
+          <div className="p-5 border-b">
+            <h3 className="text-lg font-semibold text-gray-800">
+              Control Financiero Contrato de Obra No. {project.contractId}
+            </h3>
+          </div>
+          <div className="p-6">
+            <table className="w-full text-sm text-left text-gray-600">
+              <tbody className="divide-y divide-gray-200">
+                <tr className="hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium text-gray-700 w-1/2">
+                    Valor del contrato de obra
+                  </td>
+                  <td className="px-4 py-3 font-semibold text-gray-900 text-right">
+                    {formatCurrency(financialBalance.totalContractValue)}
+                  </td>
+                </tr>
+                <tr className="hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium text-gray-700">
+                    Valor fase preliminar
+                  </td>
+                  <td className="px-4 py-3 font-semibold text-gray-900 text-right">
+                    {formatCurrency(financialBalance.preliminaryPhaseValue)}
+                  </td>
+                </tr>
+                <tr className="hover:bg-gray-50">
+                  <td className="px-4 py-3 font-medium text-gray-700">
+                    Valor fase de ejecución
+                  </td>
+                  <td className="px-4 py-3 font-semibold text-gray-900 text-right">
+                    {formatCurrency(financialBalance.executionPhaseValue)}
+                  </td>
+                </tr>
+                <tr className="hover:bg-gray-50 bg-blue-50 border-t border-gray-200">
+                  <td className="px-4 py-3 font-medium text-blue-700">
+                    Valor ejecutado fase preliminar
+                  </td>
+                  <td className="px-4 py-3 font-semibold text-blue-900 text-right">
+                    {formatCurrency(financialBalance.totalPreliminarBilled)}
+                  </td>
+                </tr>
+                <tr className="hover:bg-gray-50 bg-green-50">
+                  <td className="px-4 py-3 font-medium text-green-700">
+                    Valor ejecutado fase de ejecución
+                  </td>
+                  <td className="px-4 py-3 font-semibold text-green-900 text-right">
+                    {formatCurrency(financialBalance.totalEjecucionBilled)}
+                  </td>
+                </tr>
+                <tr className="hover:bg-gray-50 bg-amber-50 border-t-2 border-amber-200">
+                  <td className="px-4 py-4 font-bold text-amber-800">
+                    Saldo por ejecutar fase de ejecución
+                  </td>
+                  <td className="px-4 py-4 font-bold text-amber-900 text-right text-lg">
+                    {formatCurrency(financialBalance.saldoPorEjecutar)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       {/* Tabla o EmptyState */}
       {!isLoading && !error && (

@@ -480,6 +480,8 @@ export interface WorkActa {
   period: string;
   date: string; // ISO date string
   status: WorkActaStatus;
+  grossValue?: number | null; // Valor bruto del acta
+  description?: string | null; // Objeto/descripción del acta
   items: WorkActaItem[];
   attachments: Attachment[];
 }
