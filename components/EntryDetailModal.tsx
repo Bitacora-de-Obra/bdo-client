@@ -31,6 +31,7 @@ import { useToast } from "./ui/ToastProvider";
 import api from "../src/services/api";
 import { useAuth } from "../contexts/AuthContext";
 import { getFullRoleName } from "../src/utils/roleDisplay";
+import { getUserAvatarUrl } from "../src/utils/avatar";
 
 interface EntryDetailModalProps {
   isOpen: boolean;
