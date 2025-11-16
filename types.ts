@@ -102,6 +102,7 @@ export interface Attachment {
   downloadPath?: string;
   storagePath?: string;
   createdAt?: string;
+  previewUrl?: string;
 }
 
 export interface Comment {
