@@ -167,10 +167,20 @@ ${acta.attachments.map(a => `- ${a.fileName}`).join('\n') || 'Sin adjuntos.'}
     }
 
     try {
-      const response = await fetch(resolvedUrl, {
+      let urlToFetch = resolvedUrl;
+      let response = await fetch(urlToFetch, {
         headers,
         credentials: "include",
       });
+
+      // Si falla el /view, intenta con /download
+      if (!response.ok && /\/view($|\?)/.test(urlToFetch)) {
+        urlToFetch = urlToFetch.replace("/view", "/download");
+        response = await fetch(urlToFetch, {
+          headers,
+          credentials: "include",
+        });
+      }
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
