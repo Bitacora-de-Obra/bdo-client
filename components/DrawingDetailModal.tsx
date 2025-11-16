@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Drawing, User } from '../types';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
 import DrawingDisciplineBadge from './DrawingDisciplineBadge';
 import { MapIcon, UserCircleIcon, CalendarIcon, DocumentArrowDownIcon } from './icons/Icon';
+import api from '../src/services/api';
 
 interface DrawingDetailModalProps {
   isOpen: boolean;
@@ -17,6 +18,12 @@ interface DrawingDetailModalProps {
 
 const DrawingDetailModal: React.FC<DrawingDetailModalProps> = ({ isOpen, onClose, drawing, onAddVersion, onAddComment, currentUser, readOnly = false }) => {
   const [newComment, setNewComment] = useState('');
+  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [mentionOpen, setMentionOpen] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const mentionListRef = useRef<HTMLDivElement | null>(null);
 
   if (!drawing) return null;
 
@@ -35,6 +42,118 @@ const DrawingDetailModal: React.FC<DrawingDetailModalProps> = ({ isOpen, onClose
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  };
+
+  // Load users for mentions
+  useEffect(() => {
+    let mounted = true;
+    api.users
+      .getAll()
+      .then((users) => {
+        if (mounted && Array.isArray(users)) {
+          setAllUsers(users as unknown as User[]);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const filteredUsers = useMemo(() => {
+    const q = mentionQuery.trim().toLowerCase();
+    if (!q) return allUsers.slice(0, 6);
+    return allUsers
+      .filter(
+        (u) =>
+          u.fullName.toLowerCase().includes(q) ||
+          (u.email || '').toLowerCase().includes(q)
+      )
+      .slice(0, 6);
+  }, [allUsers, mentionQuery]);
+
+  const insertMention = (user: User) => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart ?? newComment.length;
+    const end = ta.selectionEnd ?? newComment.length;
+    // find the word starting with @ before caret
+    const before = newComment.slice(0, start);
+    const after = newComment.slice(end);
+    const atIndex = before.lastIndexOf('@');
+    if (atIndex === -1) return;
+    const prefix = before.slice(0, atIndex);
+    const display = `@${user.fullName}`;
+    const next = `${prefix}${display} ${after}`;
+    setNewComment(next);
+    setMentionOpen(false);
+    setMentionQuery('');
+    // restore caret position after inserted mention
+    requestAnimationFrame(() => {
+      if (textareaRef.current) {
+        const pos = (prefix + display + ' ').length;
+        textareaRef.current.selectionStart = pos;
+        textareaRef.current.selectionEnd = pos;
+        textareaRef.current.focus();
+      }
+    });
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (!mentionOpen) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setMentionIndex((i) => Math.min(i + 1, filteredUsers.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setMentionIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const user = filteredUsers[mentionIndex];
+      if (user) insertMention(user);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setMentionOpen(false);
+    }
+  };
+
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setNewComment(value);
+    // Detect @mention start
+    const caret = e.target.selectionStart || value.length;
+    const before = value.slice(0, caret);
+    const atIndex = before.lastIndexOf('@');
+    if (atIndex >= 0) {
+      // ensure there's a boundary before @ (start or space/newline)
+      const prevChar = atIndex > 0 ? before[atIndex - 1] : ' ';
+      const validBoundary = /\s|^/.test(prevChar);
+      if (validBoundary) {
+        const query = before.slice(atIndex + 1).match(/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9_.-]*/)?.[0] || '';
+        setMentionQuery(query);
+        setMentionOpen(true);
+        setMentionIndex(0);
+        return;
+      }
+    }
+    setMentionOpen(false);
+    setMentionQuery('');
+  };
+
+  const renderCommentContent = (text: string) => {
+    // Simple highlighter for @Display Name sequences
+    const parts = text.split(/(\@[A-Za-zÁÉÍÓÚÜÑáéíóúüñ][A-Za-zÁÉÍÓÚÜÑáéíóúüñ0-9 ._-]*)/g);
+    return (
+      <span>
+        {parts.map((p, i) =>
+          p.startsWith('@') ? (
+            <span key={i} className="text-brand-primary font-semibold">{p}</span>
+          ) : (
+            <span key={i}>{p}</span>
+          )
+        )}
+      </span>
+    );
   };
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
@@ -155,7 +274,9 @@ const DrawingDetailModal: React.FC<DrawingDetailModalProps> = ({ isOpen, onClose
                             <span className="font-semibold text-gray-900">{comment.author.fullName}</span>
                             <span className="text-gray-500 ml-2 text-xs">{new Date(comment.timestamp).toLocaleString('es-CO')}</span>
                         </div>
-                        <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded-md">{comment.content}</p>
+                        <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded-md">
+                          {renderCommentContent(comment.content)}
+                        </p>
                     </div>
                 </div>
             ))}
@@ -170,14 +291,39 @@ const DrawingDetailModal: React.FC<DrawingDetailModalProps> = ({ isOpen, onClose
           <div className="pt-4 border-t">
               <form onSubmit={handleCommentSubmit} className="flex items-start space-x-3">
               <img src={currentUser.avatarUrl} alt={currentUser.fullName} className="h-8 w-8 rounded-full object-cover"/>
-              <div className="flex-1">
+              <div className="flex-1 relative">
                   <textarea
                   rows={2}
                   className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
                   placeholder="Escribe tu comentario aquí..."
                   value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
+                  onChange={handleTextareaChange}
+                  onKeyDown={handleKeyDown}
+                  ref={textareaRef}
                   ></textarea>
+                  {mentionOpen && filteredUsers.length > 0 && (
+                    <div
+                      ref={mentionListRef}
+                      className="absolute z-10 mt-1 w-64 max-h-56 overflow-auto rounded-md border border-gray-200 bg-white shadow-lg"
+                    >
+                      {filteredUsers.map((u, idx) => (
+                        <button
+                          type="button"
+                          key={u.id}
+                          onMouseDown={(ev) => {
+                            ev.preventDefault();
+                            insertMention(u);
+                          }}
+                          className={`w-full text-left px-3 py-2 text-sm ${
+                            idx === mentionIndex ? 'bg-brand-primary/10' : ''
+                          }`}
+                        >
+                          <span className="font-medium text-gray-800">{u.fullName}</span>
+                          <span className="block text-xs text-gray-500">{u.email}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   <div className="mt-2 flex justify-end">
                   <Button type="submit" size="sm" disabled={!newComment.trim()}>
                       Publicar Comentario
