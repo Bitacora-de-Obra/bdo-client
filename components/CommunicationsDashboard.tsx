@@ -54,15 +54,38 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({
   });
 
 
+  const normalizeStatus = (status: string): CommunicationStatus | string => {
+    const s = (status || '').toString().trim().toLowerCase();
+    if (!s) return status;
+    if (s === 'pendiente' || s === 'pending' || s === 'pendiente ' || s === 'pend') {
+      return CommunicationStatus.PENDIENTE;
+    }
+    if (s === 'en trámite' || s === 'en tramite' || s === 'in_review' || s === 'tramite') {
+      return CommunicationStatus.EN_TRAMITE;
+    }
+    if (s === 'resuelto' || s === 'resolved') {
+      return CommunicationStatus.RESUELTO;
+    }
+    return status;
+  };
+
   const filteredCommunications = useMemo(() => {
     if (!communications || !user) return [];
     
     return communications.filter(comm => {
-        const searchTermMatch = comm.subject.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-                              comm.radicado.toLowerCase().includes(filters.searchTerm.toLowerCase());
-        const senderMatch = filters.sender === '' || comm.senderDetails.entity.toLowerCase().includes(filters.sender.toLowerCase());
-        const recipientMatch = filters.recipient === '' || comm.recipientDetails.entity.toLowerCase().includes(filters.recipient.toLowerCase());
-        const statusMatch = filters.status === 'all' || comm.status === filters.status;
+        const subject = (comm.subject || '').toString();
+        const radicado = (comm.radicado || '').toString();
+        const senderEntity = (comm.senderDetails?.entity || '').toString();
+        const recipientEntity = (comm.recipientDetails?.entity || '').toString();
+        const search = (filters.searchTerm || '').toString();
+
+        const searchTermMatch = subject.toLowerCase().includes(search.toLowerCase()) ||
+                              radicado.toLowerCase().includes(search.toLowerCase());
+        const senderMatch = !filters.sender || senderEntity.toLowerCase().includes(filters.sender.toLowerCase());
+        const recipientMatch = !filters.recipient || recipientEntity.toLowerCase().includes(filters.recipient.toLowerCase());
+        const statusMatch =
+          filters.status === 'all' ||
+          normalizeStatus(comm.status) === normalizeStatus(filters.status as any);
 
         const directionValue = comm.direction || CommunicationDirection.RECEIVED;
         const directionMatch =
