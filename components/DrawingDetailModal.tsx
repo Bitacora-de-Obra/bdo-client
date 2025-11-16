@@ -6,6 +6,7 @@ import DrawingDisciplineBadge from './DrawingDisciplineBadge';
 import { MapIcon, UserCircleIcon, CalendarIcon, DocumentArrowDownIcon } from './icons/Icon';
 import { getUserAvatarUrl } from '../src/utils/avatar';
 import { useAuth } from '../contexts/AuthContext';
+import MentionTextarea from './ui/MentionTextarea';
 
 interface DrawingDetailModalProps {
   isOpen: boolean;
@@ -14,10 +15,11 @@ interface DrawingDetailModalProps {
   onAddVersion?: () => void;
   onAddComment?: (drawingId: string, commentText: string) => Promise<void>;
   currentUser: User;
+  availableUsers?: User[];
   readOnly?: boolean;
 }
 
-const DrawingDetailModal: React.FC<DrawingDetailModalProps> = ({ isOpen, onClose, drawing, onAddVersion, onAddComment, currentUser, readOnly = false }) => {
+const DrawingDetailModal: React.FC<DrawingDetailModalProps> = ({ isOpen, onClose, drawing, onAddVersion, onAddComment, currentUser, availableUsers = [], readOnly = false }) => {
   const [newComment, setNewComment] = useState('');
   const { user } = useAuth();
   const canDownload = user?.canDownload ?? true;
@@ -185,13 +187,13 @@ const DrawingDetailModal: React.FC<DrawingDetailModalProps> = ({ isOpen, onClose
               <form onSubmit={handleCommentSubmit} className="flex items-start space-x-3">
               <img src={getUserAvatarUrl(currentUser)} alt={currentUser.fullName} className="h-8 w-8 rounded-full object-cover"/>
               <div className="flex-1">
-                  <textarea
-                  rows={2}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                  placeholder="Escribe tu comentario aquí..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  ></textarea>
+                  <MentionTextarea
+                    rows={2}
+                    placeholder="Escribe tu comentario aquí... (usa @ para mencionar usuarios)"
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    users={availableUsers}
+                  />
                   <div className="mt-2 flex justify-end">
                   <Button type="submit" size="sm" disabled={!newComment.trim()}>
                       Publicar Comentario

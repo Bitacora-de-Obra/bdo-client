@@ -17,6 +17,7 @@ import DrawingDetailModal from "./DrawingDetailModal";
 import DrawingUploadModal from "./DrawingUploadModal";
 import { usePermissions } from "../src/hooks/usePermissions";
 import { useToast } from "./ui/ToastProvider";
+import { useApi } from "../src/hooks/useApi";
 
 interface DrawingsDashboardProps {
   project: Project;
@@ -27,6 +28,7 @@ const DrawingsDashboard: React.FC<DrawingsDashboardProps> = ({ project }) => {
   const { canEditContent } = usePermissions();
   const readOnly = !canEditContent;
   const { showToast } = useToast();
+  const { data: users } = useApi.users();
 
   // --- Estado local para datos reales ---
   const [drawings, setDrawings] = useState<Drawing[]>([]);

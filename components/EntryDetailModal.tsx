@@ -32,6 +32,7 @@ import api from "../src/services/api";
 import { useAuth } from "../contexts/AuthContext";
 import { getFullRoleName } from "../src/utils/roleDisplay";
 import { getUserAvatarUrl } from "../src/utils/avatar";
+import MentionTextarea from "./ui/MentionTextarea";
 
 interface EntryDetailModalProps {
   isOpen: boolean;
@@ -3106,13 +3107,13 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                   className="h-8 w-8 rounded-full object-cover"
                 />
                 <div className="flex-1">
-                  <textarea
+                  <MentionTextarea
                     rows={2}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                    placeholder="Escribe tu comentario aquí..."
+                    placeholder="Escribe tu comentario aquí... (usa @ para mencionar usuarios)"
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
-                  ></textarea>
+                    users={availableUsers}
+                  />
                   {commentFiles.length > 0 && (
                     <div className="mt-2 space-y-1">
                       {commentFiles.map((file, index) => (
