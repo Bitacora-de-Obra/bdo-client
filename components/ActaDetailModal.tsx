@@ -165,6 +165,19 @@ const ActaDetailModal: React.FC<ActaDetailModalProps> = ({
     onClose();
   };
 
+  const normalizeCommitmentStatus = (
+    status: string
+  ): CommitmentStatus | string => {
+    const s = (status || "").toString().trim().toLowerCase();
+    if (s === "completado" || s === "completed" || s === "complete") {
+      return CommitmentStatus.COMPLETED;
+    }
+    if (s === "pendiente" || s === "pending") {
+      return CommitmentStatus.PENDING;
+    }
+    return status;
+  };
+
   const {
     number,
     title,
@@ -236,7 +249,8 @@ const ActaDetailModal: React.FC<ActaDetailModalProps> = ({
                           id={`commitment-${commitment.id}`}
                           className="h-5 w-5 rounded border-gray-300 text-brand-primary focus:ring-brand-primary mt-0.5"
                           checked={
-                            commitment.status === CommitmentStatus.COMPLETED
+                            normalizeCommitmentStatus(commitment.status) ===
+                            CommitmentStatus.COMPLETED
                           }
                           onChange={() => handleCommitmentToggle(commitment.id)}
                           disabled={readOnly}
@@ -247,7 +261,8 @@ const ActaDetailModal: React.FC<ActaDetailModalProps> = ({
                         >
                           <p
                             className={`text-sm text-gray-800 ${
-                              commitment.status === CommitmentStatus.COMPLETED
+                              normalizeCommitmentStatus(commitment.status) ===
+                              CommitmentStatus.COMPLETED
                                 ? "line-through text-gray-500"
                                 : ""
                             }`}
@@ -281,12 +296,13 @@ const ActaDetailModal: React.FC<ActaDetailModalProps> = ({
                         )}
                         <span
                           className={`text-sm font-semibold ${
-                            commitment.status === CommitmentStatus.COMPLETED
+                            normalizeCommitmentStatus(commitment.status) ===
+                            CommitmentStatus.COMPLETED
                               ? "text-green-600"
                               : "text-yellow-600"
                           }`}
                         >
-                          {commitment.status}
+                          {normalizeCommitmentStatus(commitment.status)}
                         </span>
                         <div
                           className={`flex items-center text-xs font-medium ${getDueDateColor(
