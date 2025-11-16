@@ -7,13 +7,15 @@ interface ExportModalProps {
   onClose: () => void;
   onExport: () => void;
   entryCount: number;
+  isExporting?: boolean;
+  progressMessage?: string;
   filters: {
     startDate: string;
     endDate: string;
   };
 }
 
-const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, onExport, entryCount, filters }) => {
+const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, onExport, entryCount, filters, isExporting = false, progressMessage }) => {
   const hasDateFilters = filters.startDate || filters.endDate;
 
   return (
@@ -23,12 +25,24 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, onExport, en
       title="Exportar Anotaciones (ZIP de PDFs)"
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button onClick={onExport} disabled={entryCount === 0}>
-            Descargar ZIP
-          </Button>
+          {isExporting ? (
+            <div className="flex items-center gap-2">
+              <svg className="animate-spin h-5 w-5 text-brand-primary" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+              <span className="text-sm text-gray-700">{progressMessage || "Generando ZIP..."}</span>
+            </div>
+          ) : (
+            <>
+              <Button variant="secondary" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button onClick={onExport} disabled={entryCount === 0}>
+                Descargar ZIP
+              </Button>
+            </>
+          )}
         </>
       }
     >

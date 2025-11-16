@@ -39,6 +39,8 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isExportingEntries, setIsExportingEntries] = useState(false);
+  const [exportEntriesMessage, setExportEntriesMessage] = useState<string | undefined>(undefined);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [newEntryDefaultDate, setNewEntryDefaultDate] = useState<string | null>(
     null
@@ -308,6 +310,8 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
 
   const handleExportEntries = async () => {
     try {
+      setIsExportingEntries(true);
+      setExportEntriesMessage("Generando ZIP de bitácoras...");
       const blob = await api.logEntries.exportZip({
         startDate: filters.startDate || undefined,
         endDate: filters.endDate || undefined,
@@ -328,6 +332,9 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
         title: "Error al exportar",
         message: e?.message || "No fue posible generar el ZIP.",
       });
+    } finally {
+      setIsExportingEntries(false);
+      setExportEntriesMessage(undefined);
     }
   };
 
@@ -480,6 +487,8 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
         onClose={() => setIsExportModalOpen(false)}
         onExport={handleExportEntries}
         entryCount={filteredEntries.length}
+        isExporting={isExportingEntries}
+        progressMessage={exportEntriesMessage}
         filters={filters}
       />
     </div>
