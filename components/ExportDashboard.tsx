@@ -230,8 +230,21 @@ ${acta.attachments.map(a => `- ${a.fileName}`).join('\n') || 'Sin adjuntos.'}
     projectFolder.file('resumen_proyecto.txt', summaryContent);
     await sleep(500);
 
+    // Forzar carga fresca desde API para evitar estados vacíos del hook
+    const freshestLogEntries = await (async () => {
+      try {
+        // @ts-ignore lazy import to avoid circular
+        const { api } = await import("../src/services/api");
+        const list = await api.logEntries.getAll();
+        if (Array.isArray(list) && list.length >= (logEntries?.length || 0)) {
+          return list as unknown as LogEntry[];
+        }
+      } catch {}
+      return (logEntries ?? []) as LogEntry[];
+    })();
+
     // 2. Export Log Entries (PDF + adjuntos originales)
-    const bitacoraEntries = logEntries ?? [];
+    const bitacoraEntries = freshestLogEntries;
     setExportProgressMessage(`Procesando ${bitacoraEntries.length} anotaciones de bitácora...`);
     const bitacoraFolder = projectFolder.folder('1_Bitacora');
     for (let index = 0; index < bitacoraEntries.length; index += 1) {
@@ -280,7 +293,15 @@ ${acta.attachments.map(a => `- ${a.fileName}`).join('\n') || 'Sin adjuntos.'}
     await sleep(1000);
 
     // 3. Export Actas
-    const actasData = actas ?? [];
+    const actasData = await (async () => {
+      try {
+        const { api } = await import("../src/services/api");
+        const list = await api.actas.getAll();
+        return (list as unknown as Acta[]) || [];
+      } catch {
+        return (actas ?? []) as Acta[];
+      }
+    })();
     setExportProgressMessage(`Procesando ${actasData.length} actas de comité...`);
     const actasFolder = projectFolder.folder('2_Actas_de_Comite');
     for (let index = 0; index < actasData.length; index += 1) {
@@ -300,7 +321,15 @@ ${acta.attachments.map(a => `- ${a.fileName}`).join('\n') || 'Sin adjuntos.'}
     }
     await sleep(1000);
     
-    const communicationsData = communications ?? [];
+    const communicationsData = await (async () => {
+      try {
+        const { api } = await import("../src/services/api");
+        const list = await api.communications.getAll();
+        return (list as unknown as Communication[]) || [];
+      } catch {
+        return (communications ?? []) as Communication[];
+      }
+    })();
     const communicationsFolder = projectFolder.folder('3_Comunicaciones');
     for (let index = 0; index < communicationsData.length; index += 1) {
       const comm = communicationsData[index];
@@ -332,7 +361,15 @@ ${comm.description}
       }
     }
 
-    const reportsData = reports ?? [];
+    const reportsData = await (async () => {
+      try {
+        const { api } = await import("../src/services/api");
+        const list = await api.reports.getAll();
+        return (list as unknown as Report[]) || [];
+      } catch {
+        return (reports ?? []) as Report[];
+      }
+    })();
     const reportsFolder = projectFolder.folder('4_Informes');
     for (let index = 0; index < reportsData.length; index += 1) {
       const report = reportsData[index];
