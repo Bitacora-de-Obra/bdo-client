@@ -2916,17 +2916,11 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                       }`}
                     >
                       <div className="flex items-center space-x-3 flex-1">
-                        {reviewer.avatarUrl ? (
-                          <img
-                            src={reviewer.avatarUrl}
-                            alt={reviewer.fullName}
-                            className="h-10 w-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-medium">
-                            {reviewer.fullName.charAt(0).toUpperCase()}
-                          </div>
-                        )}
+                        <img
+                          src={getUserAvatarUrl(reviewer)}
+                          alt={reviewer.fullName}
+                          className="h-10 w-10 rounded-full object-cover"
+                        />
                         <div className="flex-1">
                           <p className="font-medium text-gray-900">
                             {reviewer.fullName}
@@ -3009,7 +3003,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                   <div key={comment.id} className="flex items-start space-x-3">
                     {/* Cambia "user" por "author" en las siguientes 2 líneas */}
                     <img
-                      src={comment.author.avatarUrl}
+                      src={getUserAvatarUrl(comment.author)}
                       alt={comment.author.fullName}
                       className="h-8 w-8 rounded-full object-cover"
                     />
@@ -3081,7 +3075,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                 className="flex items-start space-x-3"
               >
                 <img
-                  src={currentUser.avatarUrl}
+                  src={getUserAvatarUrl(currentUser)}
                   alt={currentUser.fullName}
                   className="h-8 w-8 rounded-full object-cover"
                 />

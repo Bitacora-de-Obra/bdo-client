@@ -8,6 +8,7 @@ import PaymentComplianceAlert from "./PaymentComplianceAlert";
 import AttachmentItem from "./AttachmentItem";
 import api from '../src/services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { getUserAvatarUrl } from '../src/utils/avatar';
 
 interface CostActaDetailModalProps {
   isOpen: boolean;
@@ -365,7 +366,7 @@ const CostActaDetailModal: React.FC<CostActaDetailModalProps> = ({
                             {/* --- COMPROBACIÓN AQUÍ --- */}
                             {obs.author ? (
                                 <img
-                                    src={obs.author.avatarUrl}
+                                    src={getUserAvatarUrl(obs.author)}
                                     alt={obs.author.fullName}
                                     className="h-8 w-8 rounded-full object-cover"
                                 />

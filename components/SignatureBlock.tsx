@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { getUserAvatarUrl } from '../src/utils/avatar';
 import { User, Signature, SignatureTask, SignatureSummary } from '../types';
 import Button from './ui/Button';
 import { CheckCircleIcon, ClockIcon, ExclamationTriangleIcon, PencilSquareIcon } from './icons/Icon';
@@ -258,22 +259,11 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
           return (
             <div key={participant.id} className="flex items-center justify-between gap-3">
               <div className="flex items-center">
-                {participant.avatarUrl ? (
-                  <img
-                    src={participant.avatarUrl}
-                    alt={participant.fullName}
-                    className="h-9 w-9 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="h-9 w-9 rounded-full bg-gray-200 flex items-center justify-center text-sm font-semibold text-gray-600">
-                    {participant.fullName
-                      .split(' ')
-                      .map((chunk) => chunk[0])
-                      .join('')
-                      .substring(0, 2)
-                      .toUpperCase()}
-                  </div>
-                )}
+                <img
+                  src={getUserAvatarUrl(participant)}
+                  alt={participant.fullName}
+                  className="h-9 w-9 rounded-full object-cover"
+                />
                 <div className="ml-3">
                   <p className="text-sm font-semibold text-gray-900">
                     {participant.fullName}

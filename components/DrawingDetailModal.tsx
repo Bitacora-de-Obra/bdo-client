@@ -4,6 +4,7 @@ import Modal from './ui/Modal';
 import Button from './ui/Button';
 import DrawingDisciplineBadge from './DrawingDisciplineBadge';
 import { MapIcon, UserCircleIcon, CalendarIcon, DocumentArrowDownIcon } from './icons/Icon';
+import { getUserAvatarUrl } from '../src/utils/avatar';
 
 interface DrawingDetailModalProps {
   isOpen: boolean;
@@ -148,7 +149,7 @@ const DrawingDetailModal: React.FC<DrawingDetailModalProps> = ({ isOpen, onClose
             {drawing.comments.map(comment => (
                 <div key={comment.id} className="flex items-start space-x-3">
                     {/* --- CORRECCIÓN AQUÍ --- */}
-                    <img src={comment.author.avatarUrl} alt={comment.author.fullName} className="h-8 w-8 rounded-full object-cover"/>
+                    <img src={getUserAvatarUrl(comment.author)} alt={comment.author.fullName} className="h-8 w-8 rounded-full object-cover"/>
                     <div className="flex-1">
                         <div className="text-sm">
                             {/* --- Y CORRECCIÓN AQUÍ --- */}
@@ -169,7 +170,7 @@ const DrawingDetailModal: React.FC<DrawingDetailModalProps> = ({ isOpen, onClose
         {!readOnly && onAddComment && (
           <div className="pt-4 border-t">
               <form onSubmit={handleCommentSubmit} className="flex items-start space-x-3">
-              <img src={currentUser.avatarUrl} alt={currentUser.fullName} className="h-8 w-8 rounded-full object-cover"/>
+              <img src={getUserAvatarUrl(currentUser)} alt={currentUser.fullName} className="h-8 w-8 rounded-full object-cover"/>
               <div className="flex-1">
                   <textarea
                   rows={2}

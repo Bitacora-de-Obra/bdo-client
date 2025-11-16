@@ -10,6 +10,7 @@ import AttachmentItem from './AttachmentItem';
 import CommunicationStatusBadge from './CommunicationStatusBadge';
 import Select from './ui/Select';
 import ComplianceAlert from './ComplianceAlert';
+import { getUserAvatarUrl } from '../src/utils/avatar';
 
 interface CommunicationDetailModalProps {
   isOpen: boolean;
@@ -277,7 +278,7 @@ const CommunicationDetailModal: React.FC<CommunicationDetailModalProps> = ({
                         {communication.statusHistory.slice().reverse().map((change, index) => (
                             <div key={index} className="flex items-start space-x-3">
                                 {/* Fix: Replaced `change.user.name` with `change.user.fullName`. */}
-                                <img src={change.user.avatarUrl} alt={change.user.fullName} className="h-8 w-8 rounded-full object-cover mt-1"/>
+                                <img src={getUserAvatarUrl(change.user)} alt={change.user.fullName} className="h-8 w-8 rounded-full object-cover mt-1"/>
                                 <div>
                                     <p className="text-sm text-gray-800">
                                         {/* Fix: Replaced `change.user.name` with `change.user.fullName`. */}

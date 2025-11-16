@@ -12,6 +12,7 @@ type InvitePayload = {
   email: string;
   appRole: AppRole;
   projectRole?: string;
+  entity?: string | null;
 };
 
 type UpdateUserPayload = Partial<{

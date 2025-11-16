@@ -15,6 +15,7 @@ import ActaAreaBadge from "./ActaAreaBadge";
 import SignatureBlock from "./SignatureBlock";
 import SignatureModal from "./SignatureModal";
 import { useToast } from "./ui/ToastProvider";
+import { getUserAvatarUrl } from "../src/utils/avatar";
 
 const EmailIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg
@@ -257,7 +258,7 @@ const ActaDetailModal: React.FC<ActaDetailModalProps> = ({
                           <div className="flex items-center text-xs text-gray-500 mt-1.5">
                             {/* Fix: Replaced `commitment.responsible.name` with `commitment.responsible.fullName`. */}
                             <img
-                              src={commitment.responsible.avatarUrl}
+                              src={getUserAvatarUrl(commitment.responsible)}
                               alt={commitment.responsible.fullName}
                               className="h-5 w-5 rounded-full mr-2"
                             />

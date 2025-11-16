@@ -422,6 +422,7 @@ export const adminApi = {
     email: string;
     appRole: AppRole;
     projectRole?: string;
+    entity?: string | null;
   }): Promise<{ user: User; temporaryPassword: string }> => {
     return apiFetch("/admin/users/invite", {
       method: "POST",

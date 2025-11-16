@@ -15,14 +15,10 @@ const APP_ROLE_OPTIONS: { value: AppRole; label: string }[] = [
   { value: "admin", label: "Admin" },
 ];
 
-const PROJECT_ROLE_OPTIONS: { value: string; label: string }[] = [
-  { value: "Residente de Obra", label: "Residente de Obra" },
-  { value: "Supervisor", label: "Supervisor" },
-  {
-    value: "Representante Contratista",
-    label: "Representante Contratista",
-  },
-  { value: "Administrador IDU", label: "Administrador IDU" },
+const PROJECT_ROLE_OPTIONS: { value: string; label: string; entity: string }[] = [
+  { value: "IDU", label: "IDU", entity: "IDU" },
+  { value: "Interventoría", label: "Interventoría", entity: "INTERVENTORIA" },
+  { value: "Contratista", label: "Contratista", entity: "CONTRATISTA" },
 ];
 
 // Mapeo de roles para asegurar que siempre se muestre el nombre completo
@@ -72,6 +68,7 @@ type UsersViewProps = {
       email: string;
       appRole: AppRole;
       projectRole?: string;
+      entity?: string | null;
     }
   ) => Promise<{ user: User; temporaryPassword: string }>;
   onRefresh: () => Promise<void>;
@@ -904,6 +901,7 @@ type InviteUserModalProps = {
     email: string;
     appRole: AppRole;
     projectRole?: string;
+    entity?: string | null;
   }) => Promise<{ user: User; temporaryPassword: string }>;
 };
 
@@ -993,7 +991,15 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
         <Select
           label="Rol de Proyecto"
           value={projectRole}
-          onChange={(e) => setProjectRole(e.target.value)}
+          onChange={(e) => {
+            const selectedValue = e.target.value;
+            setProjectRole(selectedValue);
+            // Establecer automáticamente la entidad según el rol seleccionado
+            const selectedOption = PROJECT_ROLE_OPTIONS.find(opt => opt.value === selectedValue);
+            if (selectedOption) {
+              setEntity(selectedOption.entity);
+            }
+          }}
         >
           {PROJECT_ROLE_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
@@ -1056,6 +1062,9 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({
   const [projectRole, setProjectRole] = useState<string>(
     PROJECT_ROLE_OPTIONS[0].value
   );
+  const [entity, setEntity] = useState<string>(
+    PROJECT_ROLE_OPTIONS[0].entity
+  );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1070,6 +1079,7 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({
       setEmail("");
       setAppRole("viewer");
       setProjectRole(PROJECT_ROLE_OPTIONS[0].value);
+      setEntity(PROJECT_ROLE_OPTIONS[0].entity);
       setInviteResult(null);
       setError(null);
       setIsSubmitting(false);
@@ -1087,6 +1097,7 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({
         email,
         appRole,
         projectRole,
+        entity: entity || null,
       });
       setInviteResult(result);
     } catch (err) {
@@ -1161,7 +1172,15 @@ const InviteUserModal: React.FC<InviteUserModalProps> = ({
           <Select
             label="Rol de Proyecto"
             value={projectRole}
-            onChange={(e) => setProjectRole(e.target.value)}
+            onChange={(e) => {
+              const selectedValue = e.target.value;
+              setProjectRole(selectedValue);
+              // Establecer automáticamente la entidad según el rol seleccionado
+              const selectedOption = PROJECT_ROLE_OPTIONS.find(opt => opt.value === selectedValue);
+              if (selectedOption) {
+                setEntity(selectedOption.entity);
+              }
+            }}
           >
             {PROJECT_ROLE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
