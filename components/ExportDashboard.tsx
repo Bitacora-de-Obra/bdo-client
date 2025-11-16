@@ -228,7 +228,11 @@ ${acta.attachments.map(a => `- ${a.fileName}`).join('\n') || 'Sin adjuntos.'}
         const entry = bitacoraEntries[index];
         const entryFolderName = sanitizeFilename(`Folio_${entry.folioNumber}_${entry.title}`);
         const entryFolder = bitacoraFolder?.folder(entryFolderName);
-        // Generar PDF en backend y descargarlo
+        // Siempre guardar un TXT con el detalle
+        const entryText = formatLogEntryAsText(entry);
+        entryFolder?.file('detalle_anotacion.txt', entryText);
+
+        // Intentar además generar y descargar el PDF en backend
         try {
           setExportProgressMessage(`Generando PDF de bitácora (${index + 1}/${bitacoraEntries.length})...`);
           const token = localStorage.getItem("accessToken") || "";
@@ -248,13 +252,10 @@ ${acta.attachments.map(a => `- ${a.fileName}`).join('\n') || 'Sin adjuntos.'}
               entryFolder?.file(safePdfName.endsWith(".pdf") ? safePdfName : `${safePdfName}.pdf`, blob);
             }
           } else {
-            // Fallback: incluir TXT si no se pudo generar PDF
-            const entryText = formatLogEntryAsText(entry);
-            entryFolder?.file('detalle_anotacion.txt', entryText);
+            // Nada, ya quedó el TXT
           }
         } catch {
-          const entryText = formatLogEntryAsText(entry);
-          entryFolder?.file('detalle_anotacion.txt', entryText);
+          // Nada, ya quedó el TXT
         }
         
         if (entry.attachments && entry.attachments.length > 0) {
