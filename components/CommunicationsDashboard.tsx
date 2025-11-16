@@ -60,7 +60,14 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({
     if (s === 'pendiente' || s === 'pending' || s === 'pendiente ' || s === 'pend') {
       return CommunicationStatus.PENDIENTE;
     }
-    if (s === 'en trámite' || s === 'en tramite' || s === 'in_review' || s === 'tramite') {
+    if (
+      s === 'en trámite' ||
+      s === 'en tramite' ||
+      s === 'en_trámite' ||
+      s === 'en_tramite' ||
+      s === 'in_review' ||
+      s === 'tramite'
+    ) {
       return CommunicationStatus.EN_TRAMITE;
     }
     if (s === 'resuelto' || s === 'resolved') {
