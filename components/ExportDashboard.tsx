@@ -220,16 +220,42 @@ ${acta.attachments.map(a => `- ${a.fileName}`).join('\n') || 'Sin adjuntos.'}
     projectFolder.file('resumen_proyecto.txt', summaryContent);
     await sleep(500);
 
-    // 2. Export Log Entries
+    // 2. Export Log Entries (PDF + adjuntos originales)
     const bitacoraEntries = logEntries ?? [];
     setExportProgressMessage(`Procesando ${bitacoraEntries.length} anotaciones de bitácora...`);
     const bitacoraFolder = projectFolder.folder('1_Bitacora');
     for (let index = 0; index < bitacoraEntries.length; index += 1) {
         const entry = bitacoraEntries[index];
-        const entryText = formatLogEntryAsText(entry);
         const entryFolderName = sanitizeFilename(`Folio_${entry.folioNumber}_${entry.title}`);
         const entryFolder = bitacoraFolder?.folder(entryFolderName);
-        entryFolder?.file('detalle_anotacion.txt', entryText);
+        // Generar PDF en backend y descargarlo
+        try {
+          setExportProgressMessage(`Generando PDF de bitácora (${index + 1}/${bitacoraEntries.length})...`);
+          const token = localStorage.getItem("accessToken") || "";
+          const pdfResp = await fetch(`${API_BASE_URL}/api/log-entries/${entry.id}/export-pdf`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: token ? `Bearer ${token}` : "",
+            },
+            credentials: "include",
+          });
+          if (pdfResp.ok) {
+            const { attachment } = await pdfResp.json();
+            if (attachment) {
+              const { fileName, blob } = await fetchAttachmentContent(attachment as Attachment);
+              const safePdfName = sanitizeFilename(fileName || `Folio_${entry.folioNumber}.pdf`);
+              entryFolder?.file(safePdfName.endsWith(".pdf") ? safePdfName : `${safePdfName}.pdf`, blob);
+            }
+          } else {
+            // Fallback: incluir TXT si no se pudo generar PDF
+            const entryText = formatLogEntryAsText(entry);
+            entryFolder?.file('detalle_anotacion.txt', entryText);
+          }
+        } catch {
+          const entryText = formatLogEntryAsText(entry);
+          entryFolder?.file('detalle_anotacion.txt', entryText);
+        }
         
         if (entry.attachments && entry.attachments.length > 0) {
             setExportProgressMessage(`Descargando adjuntos de bitácora (${index + 1}/${bitacoraEntries.length})...`);
