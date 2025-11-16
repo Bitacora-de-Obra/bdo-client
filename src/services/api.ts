@@ -635,6 +635,29 @@ export const logEntriesApi = {
       method: "POST",
     });
   },
+  exportZip: async (filters: {
+    startDate?: string;
+    endDate?: string;
+    type?: string;
+    status?: string;
+    authorId?: string;
+  }) => {
+    const response = await fetch(`${API_URL}/log-entries/export-zip`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("accessToken") || ""}`,
+      },
+      credentials: "include",
+      body: JSON.stringify(filters || {}),
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || "Error al generar ZIP");
+    }
+    const blob = await response.blob();
+    return blob;
+  },
   sendToContractor: async (entryId: string) => {
     return apiFetch(`/log-entries/${entryId}/send-to-contractor`, {
       method: "POST",

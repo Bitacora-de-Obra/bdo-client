@@ -20,21 +20,21 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, onExport, en
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Exportar Anotaciones de Bitácora"
+      title="Exportar Anotaciones (ZIP de PDFs)"
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
             Cancelar
           </Button>
           <Button onClick={onExport} disabled={entryCount === 0}>
-            Descargar Extracto
+            Descargar ZIP
           </Button>
         </>
       }
     >
       <div className="text-sm text-gray-700 space-y-4">
         <p>
-          Se generará un archivo de texto (`.txt`) con el contenido de las 
+          Se descargará un <strong>ZIP</strong> que contiene los PDFs de 
           <strong> {entryCount} anotaciones</strong> que coinciden con los filtros actuales.
         </p>
         
@@ -55,9 +55,7 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, onExport, en
           </div>
         )}
 
-        <p>
-          El archivo incluirá detalles como el folio, título, descripción, autor, fechas, comentarios y lista de adjuntos para cada anotación.
-        </p>
+        <p>Si alguna anotación no tiene PDF, se generará automáticamente.</p>
       </div>
     </Modal>
   );

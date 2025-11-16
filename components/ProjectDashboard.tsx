@@ -306,94 +306,29 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     }
   };
 
-  const handleExportEntries = () => {
-    if (!project || !logEntries) return;
-
-    const header = `Extracto de Bitácora Digital de Obra\nProyecto: ${
-      project.name
-    }\nContrato: ${
-      project.contractId
-    }\nFecha de Exportación: ${new Date().toLocaleString(
-      "es-CO"
-    )}\n\nFiltros Aplicados:\n- Término de Búsqueda: ${
-      filters.searchTerm || "Ninguno"
-    }\n- Estado: ${filters.status}\n- Tipo: ${filters.type}\n- Usuario: ${
-      filters.user === "all"
-        ? "Todos"
-        : logEntries.find(entry => entry.author.id === filters.user)?.author.fullName || "N/A"
-    }\n- Fecha Desde: ${filters.startDate || "N/A"}\n- Fecha Hasta: ${
-      filters.endDate || "N/A"
-    }\n\nTotal de Anotaciones: ${
-      filteredEntries.length
-    }\n\n========================================\n\n`;
-
-    const content = filteredEntries
-      .map((entry) => {
-        const comments = (entry.comments || [])
-          .map(
-            (c) =>
-              `\t- [${new Date(c.timestamp).toLocaleString("es-CO")}] ${
-                c.author.fullName
-              }: ${c.content}`
-          )
-          .join("\n");
-        const attachments = (entry.attachments || [])
-          .map((a) => `\t- ${a.fileName} (${(a.size / 1024).toFixed(2)} KB)`)
-          .join("\n");
-
-        return `
-    Folio: #${entry.folioNumber}
-    Título: ${entry.title}
-    Estado: ${entry.status}
-    Tipo: ${entry.type}
-    Autor: ${entry.author.fullName}
-    Fecha del Diario: ${new Date(entry.entryDate).toLocaleDateString("es-CO")}
-    Fecha de Registro: ${new Date(entry.createdAt).toLocaleString("es-CO")}
-    Confidencial: ${entry.isConfidential ? "Sí" : "No"}
-    
-    Resumen general:
-    ${entry.description}
-
-    Actividades realizadas:
-    ${entry.activitiesPerformed || "Sin registro."}
-
-    Materiales utilizados:
-    ${entry.materialsUsed || "Sin registro."}
-
-    Personal en obra:
-    ${entry.workforce || "Sin registro."}
-
-    Condiciones climáticas:
-    ${entry.weatherConditions || "Sin registro."}
-
-    Observaciones adicionales:
-    ${entry.additionalObservations || "Sin observaciones."}
-    
-    Comentarios (${(entry.comments || []).length}):
-    ${comments || "\t(Sin comentarios)"}
-    
-    Adjuntos (${(entry.attachments || []).length}):
-    ${attachments || "\t(Sin adjuntos)"}
-    
-    ----------------------------------------
-            `;
-      })
-      .join("");
-
-    const fullContent = header + content;
-
-    const blob = new Blob([fullContent], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    const dateStr = new Date().toISOString().slice(0, 10);
-    link.download = `Bitacora_Export_${dateStr}.txt`;
-    document.body.appendChild(link);
-    link.click();
-
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    setIsExportModalOpen(false);
+  const handleExportEntries = async () => {
+    try {
+      const blob = await api.logEntries.exportZip({
+        startDate: filters.startDate || undefined,
+        endDate: filters.endDate || undefined,
+        type: filters.type !== "all" ? filters.type : undefined,
+        status: filters.status !== "all" ? filters.status : undefined,
+        authorId: filters.user !== "all" ? filters.user : undefined,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `bitacoras_${new Date().toISOString().slice(0, 10)}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setIsExportModalOpen(false);
+    } catch (e: any) {
+      showToast({
+        variant: "error",
+        title: "Error al exportar",
+        message: e?.message || "No fue posible generar el ZIP.",
+      });
+    }
   };
 
   if (!user) return null;
