@@ -269,17 +269,19 @@ const LoginScreen: React.FC = () => {
       console.error("LoginScreen: Error durante el login", error);
       // Mejorar mensaje de error para credenciales inválidas
       const errorMessage = error?.message || "";
+      console.log("LoginScreen: Error message:", errorMessage, "Status:", error?.statusCode);
       // Limpiar el contextError para que no sobrescriba nuestro mensaje mejorado
       clearError();
-      if (
+      const finalMessage = (
         errorMessage.toLowerCase().includes("credenciales") ||
         errorMessage.toLowerCase().includes("invalid") ||
         error?.statusCode === 401
-      ) {
-        setFormError("Revisa tus datos de acceso e intenta nuevamente.");
-      } else {
-        setFormError(errorMessage || "Error al iniciar sesión. Intenta nuevamente.");
-      }
+      ) 
+        ? "Revisa tus datos de acceso e intenta nuevamente."
+        : (errorMessage || "Error al iniciar sesión. Intenta nuevamente.");
+      
+      console.log("LoginScreen: Setting formError to:", finalMessage);
+      setFormError(finalMessage);
     }
   };
 
@@ -691,9 +693,9 @@ const LoginScreen: React.FC = () => {
           </div>
         )}
 
-        {(displayError || formError || contextError) && (
+        {displayError && (
           <div className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded">
-            {displayError || formError || contextError}
+            {displayError}
           </div>
         )}
 
