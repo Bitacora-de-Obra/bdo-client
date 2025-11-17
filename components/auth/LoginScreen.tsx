@@ -254,7 +254,17 @@ const LoginScreen: React.FC = () => {
       await login(email, password);
     } catch (error: any) {
       console.error("LoginScreen: Error durante el login", error);
-      setFormError(error?.message || "Credenciales inválidas.");
+      // Mejorar mensaje de error para credenciales inválidas
+      const errorMessage = error?.message || "";
+      if (
+        errorMessage.toLowerCase().includes("credenciales") ||
+        errorMessage.toLowerCase().includes("invalid") ||
+        error?.statusCode === 401
+      ) {
+        setFormError("Revisa tus datos de acceso e intenta nuevamente.");
+      } else {
+        setFormError(errorMessage || "Error al iniciar sesión. Intenta nuevamente.");
+      }
     }
   };
 
@@ -606,20 +616,13 @@ const LoginScreen: React.FC = () => {
     switch (mode) {
       case "login":
         return (
-          <div className="flex justify-between text-sm text-brand-primary">
+          <div className="text-sm text-center text-brand-primary">
             <button
               type="button"
               className="hover:underline"
               onClick={() => switchMode("forgot")}
             >
               ¿Olvidaste tu contraseña?
-            </button>
-            <button
-              type="button"
-              className="hover:underline"
-              onClick={() => switchMode("register")}
-            >
-              Crear cuenta
             </button>
           </div>
         );
