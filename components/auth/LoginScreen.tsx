@@ -208,10 +208,21 @@ const LoginScreen: React.FC = () => {
   }
 
   const displayError = useMemo(() => {
-    if (mode === "login" && contextError) {
-      return contextError;
+    const errorToDisplay = mode === "login" && contextError ? contextError : formError;
+    
+    // Mejorar mensaje de error para credenciales inválidas
+    if (errorToDisplay && mode === "login") {
+      const errorLower = errorToDisplay.toLowerCase();
+      if (
+        errorLower.includes("credenciales") ||
+        errorLower.includes("invalid") ||
+        errorLower.includes("datos de acceso")
+      ) {
+        return "Revisa tus datos de acceso e intenta nuevamente.";
+      }
     }
-    return formError;
+    
+    return errorToDisplay;
   }, [mode, contextError, formError]);
 
   const modeCopy = useMemo(() => {
