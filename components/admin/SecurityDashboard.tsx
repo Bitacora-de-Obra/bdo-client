@@ -114,7 +114,7 @@ const SecurityDashboard: React.FC = () => {
 
   const handleRefresh = async () => {
     await reload();
-    showToast({ message: "Eventos de seguridad actualizados", variant: "success" });
+    showToast("Eventos de seguridad actualizados", "success");
   };
 
   const statsCards = useMemo(() => {
@@ -396,7 +396,7 @@ const SecurityDashboard: React.FC = () => {
           </div>
           <div className="flex gap-2 mt-4">
             <Button onClick={handleApplyFilters}>Aplicar Filtros</Button>
-            <Button variant="secondary" onClick={handleResetFilters}>
+            <Button variant="outline" onClick={handleResetFilters}>
               Limpiar
             </Button>
           </div>

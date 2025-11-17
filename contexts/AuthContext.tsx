@@ -106,25 +106,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
   const loadProfile = useCallback(async () => {
     try {
-      // Solo intentar cargar el perfil si hay un access token en localStorage
-      const accessToken = localStorage.getItem('accessToken');
-      if (!accessToken) {
-        setUser(null);
-        return;
-      }
-
       const profile = await api.auth.getProfile();
       setUser(profile);
       setVerificationEmailSent(false);
-    } catch (profileError: any) {
-      // Si es un error 401, simplemente no hay sesión activa
-      if (profileError?.statusCode === 401) {
-        console.log("AuthProvider: No active session found");
-        setUser(null);
-        localStorage.removeItem('accessToken'); // Limpiar token inválido
-        return;
-      }
-      
+    } catch (profileError) {
       console.error(
         "AuthProvider: Error al obtener el perfil del usuario",
         profileError

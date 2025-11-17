@@ -26,7 +26,7 @@ import ProjectChat from "./components/chat/ProjectChat";
 import api from "./src/services/api";
 import { OfflineIndicator } from "./src/components/offline/OfflineIndicator";
 
-type InitialItemToOpen = { type: "acta" | "logEntry" | "communication" | "drawing"; id: string };
+type InitialItemToOpen = { type: "acta" | "logEntry" | "communication"; id: string };
 
 const MainApp = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
