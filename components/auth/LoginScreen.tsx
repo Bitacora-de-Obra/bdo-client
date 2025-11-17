@@ -208,7 +208,8 @@ const LoginScreen: React.FC = () => {
   }
 
   const displayError = useMemo(() => {
-    const errorToDisplay = mode === "login" && contextError ? contextError : formError;
+    // Priorizar formError sobre contextError para tener control del mensaje
+    const errorToDisplay = formError || (mode === "login" && contextError ? contextError : null);
     
     // Mejorar mensaje de error para credenciales inválidas
     if (errorToDisplay && mode === "login") {
@@ -216,7 +217,8 @@ const LoginScreen: React.FC = () => {
       if (
         errorLower.includes("credenciales") ||
         errorLower.includes("invalid") ||
-        errorLower.includes("datos de acceso")
+        errorLower.includes("datos de acceso") ||
+        errorLower.includes("revisa tus datos")
       ) {
         return "Revisa tus datos de acceso e intenta nuevamente.";
       }
@@ -267,6 +269,8 @@ const LoginScreen: React.FC = () => {
       console.error("LoginScreen: Error durante el login", error);
       // Mejorar mensaje de error para credenciales inválidas
       const errorMessage = error?.message || "";
+      // Limpiar el contextError para que no sobrescriba nuestro mensaje mejorado
+      clearError();
       if (
         errorMessage.toLowerCase().includes("credenciales") ||
         errorMessage.toLowerCase().includes("invalid") ||
