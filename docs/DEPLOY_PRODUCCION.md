@@ -46,3 +46,4 @@ Después de hacer el merge o cambiar la rama:
 2. Verifica que https://bdigitales.com/ ya no muestre "Crear cuenta"
 3. Verifica que el mensaje de error sea "Revisa tus datos de acceso e intenta nuevamente"
 
+

@@ -109,3 +109,4 @@ import('./src/services/offline/sync').then(m => m.syncManager.sync());
 - Revisa la consola para errores de red
 - Verifica que el token de autenticación sea válido
 
+

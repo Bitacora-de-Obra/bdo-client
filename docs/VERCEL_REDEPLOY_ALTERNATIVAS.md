@@ -61,3 +61,4 @@ Antes de hacer redeploy, verifica:
 2. Que Vercel esté conectado al repositorio correcto
 3. Que la rama de producción en Vercel sea `main`
 
+

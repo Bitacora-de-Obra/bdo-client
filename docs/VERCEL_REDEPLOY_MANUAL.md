@@ -68,3 +68,4 @@ Después del redeploy:
 
 El deployment `CFTdGLSZK` que veo es un "Redeploy of B2FcEtyZq", lo que significa que es un redeploy del mismo commit antiguo. Necesitas hacer un redeploy que use el nuevo commit en `main`.
 
+

@@ -60,3 +60,4 @@ El mensaje en Vercel dice: "To update your Production Deployment, push to the ma
 
 Ya hicimos push a `main`, pero Vercel puede tardar unos minutos en detectarlo. Si no se actualiza automáticamente, usa la Opción 1 o 2.
 
+
