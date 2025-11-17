@@ -33,6 +33,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { getFullRoleName } from "../src/utils/roleDisplay";
 import { getUserAvatarUrl } from "../src/utils/avatar";
 import MentionTextarea from "./ui/MentionTextarea";
+import { renderCommentWithMentions } from "../src/utils/mentions";
 
 interface EntryDetailModalProps {
   isOpen: boolean;
@@ -75,6 +76,7 @@ const formatBytes = (bytes: number, decimals = 2) => {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
 };
+
 
 const LEGACY_STATUS_ALIASES: Record<string, EntryStatus> = {
   Radicado: EntryStatus.SUBMITTED,
@@ -3045,7 +3047,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                         </span>
                       </div>
                       <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded-md whitespace-pre-wrap">
-                        {comment.content}
+                        {renderCommentWithMentions(comment.content, availableUsers)}
                       </p>
                       {(comment.attachments || []).length > 0 && (
                         <div className="mt-2 space-y-3">

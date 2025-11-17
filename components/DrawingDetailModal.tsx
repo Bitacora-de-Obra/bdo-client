@@ -7,6 +7,7 @@ import { MapIcon, UserCircleIcon, CalendarIcon, DocumentArrowDownIcon } from './
 import { getUserAvatarUrl } from '../src/utils/avatar';
 import { useAuth } from '../contexts/AuthContext';
 import MentionTextarea from './ui/MentionTextarea';
+import { renderCommentWithMentions } from '../src/utils/mentions';
 
 interface DrawingDetailModalProps {
   isOpen: boolean;
@@ -171,7 +172,9 @@ const DrawingDetailModal: React.FC<DrawingDetailModalProps> = ({ isOpen, onClose
                             <span className="font-semibold text-gray-900">{comment.author.fullName}</span>
                             <span className="text-gray-500 ml-2 text-xs">{new Date(comment.timestamp).toLocaleString('es-CO')}</span>
                         </div>
-                        <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded-md">{comment.content}</p>
+                        <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded-md">
+                          {renderCommentWithMentions(comment.content, availableUsers || [])}
+                        </p>
                     </div>
                 </div>
             ))}
