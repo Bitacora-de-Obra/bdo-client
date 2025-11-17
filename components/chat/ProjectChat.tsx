@@ -98,38 +98,33 @@ const ProjectChat: React.FC = () => {
   );
 
   const renderContent = () => {
-    if (isLoading) {
-      return (
-        <div className="flex h-full items-center justify-center text-sm text-gray-500">
-          Preparando el espacio de chat...
-        </div>
-      );
-    }
-
-    if (!user) {
-      return (
-        <div className="flex h-full items-center justify-center text-sm text-gray-500">
-          Inicia sesión para acceder al chat del proyecto.
-        </div>
-      );
-    }
-
-    if (!isChatReady) {
-      return (
-        <div className="flex h-full items-center justify-center text-sm text-gray-500">
-          Conectando al chat del proyecto...
-        </div>
-      );
-    }
-
+    // Chat temporalmente deshabilitado
     return (
-      <CometChatThemeContext.Provider value={{ theme: chatTheme }}>
-        <div className="h-full">
-          <CometChatConversationsWithMessages
-            conversationsWithMessagesStyle={conversationsStyle}
-          />
+      <div className="flex flex-col h-full items-center justify-center text-center p-8">
+        <div className="max-w-md">
+          <div className="mb-4">
+            <svg
+              className="mx-auto h-16 w-16 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">
+            Chat temporalmente no disponible
+          </h3>
+          <p className="text-sm text-gray-500">
+            El chat del proyecto está en proceso de configuración y estará disponible próximamente.
+          </p>
         </div>
-      </CometChatThemeContext.Provider>
+      </div>
     );
   };
 
