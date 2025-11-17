@@ -8,6 +8,7 @@ import { AppRole, AppSettings, AuditLogEntry, User, UserRole } from "../../types
 import { useAdminApi } from "../../src/hooks/useAdminApi";
 import { ShieldCheckIcon } from "../icons/Icon";
 import { useToast } from "../ui/ToastProvider";
+import SecurityDashboard from "./SecurityDashboard";
 
 const APP_ROLE_OPTIONS: { value: AppRole; label: string }[] = [
   { value: "viewer", label: "Viewer" },
@@ -97,7 +98,7 @@ type SettingsViewProps = {
 };
 
 const AdminDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<"users" | "audit" | "settings">(
+  const [activeTab, setActiveTab] = useState<"users" | "audit" | "settings" | "security">(
     "users"
   );
 
@@ -109,6 +110,7 @@ const AdminDashboard: React.FC = () => {
       { id: "users", label: "Usuarios y Permisos" },
       { id: "audit", label: "Registro de Auditoría" },
       { id: "settings", label: "Configuración" },
+      { id: "security", label: "Seguridad" },
     ],
     []
   );
@@ -143,7 +145,7 @@ const AdminDashboard: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() =>
-                  setActiveTab(tab.id as "users" | "audit" | "settings")
+                  setActiveTab(tab.id as "users" | "audit" | "settings" | "security")
                 }
                 className={`${
                   activeTab === tab.id
@@ -221,6 +223,7 @@ const AdminDashboard: React.FC = () => {
               }
             />
           )}
+          {activeTab === "security" && <SecurityDashboard />}
         </div>
       </div>
     </div>

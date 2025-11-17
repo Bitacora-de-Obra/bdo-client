@@ -454,6 +454,30 @@ export const adminApi = {
       body: JSON.stringify(data),
     });
   },
+  getSecurityEvents: async (filters?: {
+    type?: string;
+    severity?: string;
+    ipAddress?: string;
+    userId?: string;
+    startDate?: string;
+    endDate?: string;
+    limit?: number;
+  }) => {
+    const params = new URLSearchParams();
+    if (filters?.type) params.append("type", filters.type);
+    if (filters?.severity) params.append("severity", filters.severity);
+    if (filters?.ipAddress) params.append("ipAddress", filters.ipAddress);
+    if (filters?.userId) params.append("userId", filters.userId);
+    if (filters?.startDate) params.append("startDate", filters.startDate);
+    if (filters?.endDate) params.append("endDate", filters.endDate);
+    if (filters?.limit) params.append("limit", filters.limit.toString());
+
+    const queryString = params.toString();
+    return apiFetch(`/admin/security/events${queryString ? `?${queryString}` : ""}`);
+  },
+  getSecurityStats: async () => {
+    return apiFetch("/admin/security/stats");
+  },
 };
 
 // API Functions for Log Entries
