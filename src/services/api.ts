@@ -204,21 +204,38 @@ async function apiFetch(
 
   const fetchUrl = `${API_URL}${endpoint}`;
 
-  // Detectar si estamos offline y es una operación mutante
+  // Detectar si estamos offline
   const isOffline = !navigator.onLine;
-  if (isOffline && isMutatingMethod) {
-    // Intentar obtener datos del cache si es una petición GET
-    if (method === "GET") {
-      try {
-        const cached = await offlineDB.getCachedData(`api_${endpoint}`);
-        if (cached) {
-          console.log("[Offline] Returning cached data for:", endpoint);
-          return cached;
-        }
-      } catch (error) {
-        console.warn("[Offline] Error getting cached data:", error);
+  
+  // Si está offline y es una petición GET, intentar obtener del cache
+  if (isOffline && method === "GET") {
+    try {
+      const cached = await offlineDB.getCachedData(`api_${endpoint}`);
+      if (cached) {
+        console.log("[Offline] Returning cached data for:", endpoint);
+        return cached;
       }
+      // Si no hay cache, lanzar error controlado
+      throw handleApiError({
+        statusCode: 503,
+        message: "Sin conexión y no hay datos en cache para esta petición.",
+        code: "OFFLINE_NO_CACHE",
+      });
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      console.warn("[Offline] Error getting cached data:", error);
+      throw handleApiError({
+        statusCode: 503,
+        message: "Sin conexión y error al acceder al cache.",
+        code: "OFFLINE_CACHE_ERROR",
+      });
     }
+  }
+  
+  // Si está offline y es una operación mutante, encolar
+  if (isOffline && isMutatingMethod) {
 
     // Para operaciones mutantes offline, encolar la operación
     try {

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prueba de Modo Offline</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .test-section {
+      background: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .status {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+    .success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    pre {
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 Prueba de Funcionalidad Offline</h1>
+  
+  <div class="test-section">
+    <h2>Estado del Sistema</h2>
+    <div id="connection-status" class="status"></div>
+    <div id="sw-status" class="status"></div>
+    <div id="db-status" class="status"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Pruebas</h2>
+    <button onclick="checkConnection()">Verificar Conexión</button>
+    <button onclick="checkServiceWorker()">Verificar Service Worker</button>
+    <button onclick="checkIndexedDB()">Verificar IndexedDB</button>
+    <button onclick="testQueue()">Probar Cola de Operaciones</button>
+    <button onclick="checkPending()">Ver Operaciones Pendientes</button>
+    <button onclick="runAllTests()">Ejecutar Todas las Pruebas</button>
+  </div>
+
+  <div class="test-section">
+    <h2>Resultados</h2>
+    <div id="results"></div>
+  </div>
+
+  <script type="module">
+    // Importar módulos offline
+    let offlineDB, offlineQueue, syncManager;
+    
+    async function loadModules() {
+      try {
+        const dbModule = await import('./src/services/offline/db.js');
+        const queueModule = await import('./src/services/offline/queue.js');
+        const syncModule = await import('./src/services/offline/sync.js');
+        
+        offlineDB = dbModule.offlineDB;
+        offlineQueue = queueModule.offlineQueue;
+        syncManager = syncModule.syncManager;
+        
+        return true;
+      } catch (error) {
+        console.error('Error cargando módulos:', error);
+        return false;
+      }
+    }
+
+    window.checkConnection = function() {
+      const status = document.getElementById('connection-status');
+      const isOnline = navigator.onLine;
+      status.className = 'status ' + (isOnline ? 'success' : 'error');
+      status.innerHTML = isOnline 
+        ? '🟢 Estado: Online' 
+        : '🔴 Estado: Offline';
+    };
+
+    window.checkServiceWorker = async function() {
+      const status = document.getElementById('sw-status');
+      if ('serviceWorker' in navigator) {
+        try {
+          const registration = await navigator.serviceWorker.getRegistration();
+          if (registration) {
+            status.className = 'status success';
+            status.innerHTML = `✅ Service Worker registrado: ${registration.scope}`;
+          } else {
+            status.className = 'status error';
+            status.innerHTML = '❌ Service Worker no registrado';
+          }
+        } catch (error) {
+          status.className = 'status error';
+          status.innerHTML = `❌ Error: ${error.message}`;
+        }
+      } else {
+        status.className = 'status error';
+        status.innerHTML = '❌ Service Workers no soportados';
+      }
+    };
+
+    window.checkIndexedDB = async function() {
+      const status = document.getElementById('db-status');
+      if (!offlineDB) {
+        const loaded = await loadModules();
+        if (!loaded) {
+          status.className = 'status error';
+          status.innerHTML = '❌ No se pudieron cargar los módulos';
+          return;
+        }
+      }
+
+      try {
+        await offlineDB.init();
+        status.className = 'status success';
+        status.innerHTML = '✅ IndexedDB inicializado correctamente';
+      } catch (error) {
+        status.className = 'status error';
+        status.innerHTML = `❌ Error: ${error.message}`;
+      }
+    };
+
+    window.testQueue = async function() {
+      const results = document.getElementById('results');
+      if (!offlineDB || !offlineQueue) {
+        const loaded = await loadModules();
+        if (!loaded) {
+          results.innerHTML = '<div class="status error">❌ No se pudieron cargar los módulos</div>';
+          return;
+        }
+      }
+
+      try {
+        await offlineDB.init();
+        const operation = await offlineQueue.queueRequest({
+          endpoint: '/test/endpoint',
+          method: 'POST',
+          data: { test: 'data', timestamp: Date.now() },
+          entityType: 'logEntry',
+        });
+        
+        results.innerHTML = `
+          <div class="status success">
+            ✅ Operación encolada exitosamente<br>
+            ID: ${operation.id}<br>
+            Endpoint: ${operation.endpoint}<br>
+            Estado: ${operation.status}
+          </div>
+        `;
+      } catch (error) {
+        results.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+      }
+    };
+
+    window.checkPending = async function() {
+      const results = document.getElementById('results');
+      if (!offlineDB) {
+        const loaded = await loadModules();
+        if (!loaded) {
+          results.innerHTML = '<div class="status error">❌ No se pudieron cargar los módulos</div>';
+          return;
+        }
+      }
+
+      try {
+        await offlineDB.init();
+        const pending = await offlineDB.getPendingOperations();
+        
+        if (pending.length === 0) {
+          results.innerHTML = '<div class="status info">ℹ️ No hay operaciones pendientes</div>';
+        } else {
+          let html = `<div class="status info"><strong>Operaciones pendientes: ${pending.length}</strong><ul>`;
+          pending.forEach((op, index) => {
+            html += `<li>${index + 1}. ${op.type} ${op.entityType} - ${op.endpoint} (${op.status})</li>`;
+          });
+          html += '</ul></div>';
+          results.innerHTML = html;
+        }
+      } catch (error) {
+        results.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+      }
+    };
+
+    window.runAllTests = async function() {
+      const results = document.getElementById('results');
+      results.innerHTML = '<div class="status info">Ejecutando pruebas...</div>';
+      
+      const testResults = [];
+      
+      // Test 1: Conexión
+      checkConnection();
+      testResults.push({ name: 'Conexión', passed: true });
+      
+      // Test 2: Service Worker
+      await checkServiceWorker();
+      const swStatus = document.getElementById('sw-status').innerHTML.includes('✅');
+      testResults.push({ name: 'Service Worker', passed: swStatus });
+      
+      // Test 3: IndexedDB
+      await checkIndexedDB();
+      const dbStatus = document.getElementById('db-status').innerHTML.includes('✅');
+      testResults.push({ name: 'IndexedDB', passed: dbStatus });
+      
+      // Test 4: Cola
+      await testQueue();
+      const queueStatus = results.innerHTML.includes('✅');
+      testResults.push({ name: 'Cola de Operaciones', passed: queueStatus });
+      
+      // Resumen
+      const passed = testResults.filter(t => t.passed).length;
+      const total = testResults.length;
+      
+      let summary = `<div class="status ${passed === total ? 'success' : 'error'}">`;
+      summary += `<strong>Resultados: ${passed}/${total} pruebas pasaron</strong><ul>`;
+      testResults.forEach(test => {
+        summary += `<li>${test.passed ? '✅' : '❌'} ${test.name}</li>`;
+      });
+      summary += '</ul></div>';
+      
+      results.innerHTML = summary + results.innerHTML;
+    };
+
+    // Inicializar al cargar
+    window.addEventListener('load', () => {
+      checkConnection();
+      checkServiceWorker();
+      checkIndexedDB();
+      
+      // Escuchar cambios de conexión
+      window.addEventListener('online', () => {
+        checkConnection();
+        console.log('Conexión restaurada');
+      });
+      
+      window.addEventListener('offline', () => {
+        checkConnection();
+        console.log('Conexión perdida');
+      });
+    });
+  </script>
+</body>
+</html>
+
