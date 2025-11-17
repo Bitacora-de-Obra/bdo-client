@@ -91,9 +91,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, setIsSidebarOpen, curr
             currentView === item.id ? 'text-white' : isChatDisabled ? 'text-gray-500' : 'text-gray-400 group-hover:text-white'
           }`})}
           <span className="ml-3">{item.label}</span>
-          {isChatDisabled && (
-            <span className="ml-auto text-xs text-gray-500">Próximamente</span>
-          )}
         </a>
       </li>
     );
