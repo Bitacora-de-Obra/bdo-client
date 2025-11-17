@@ -7,7 +7,7 @@ import { CameraIcon } from './icons/Icon';
 interface PhotoUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: Omit<PhotoEntry, 'id' | 'author' | 'date'>, file: File) => void;
+  onSave: (data: Omit<PhotoEntry, 'id' | 'author' | 'date'>, file: File) => Promise<void>;
   controlPoint: ControlPoint;
 }
 
@@ -19,6 +19,8 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
   const [cameraAvailable, setCameraAvailable] = useState(false);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string>('');
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -143,6 +145,8 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
         setPreview(null);
         setNotes('');
         setCaptureMode('file');
+        setIsUploading(false);
+        setUploadProgress('');
         stopCamera();
       }, 300);
       return () => clearTimeout(timer);
@@ -200,13 +204,27 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) {
       alert("Por favor, selecciona una foto para subir.");
       return;
     }
-    onSave({ notes, url: '' }, file);
+    
+    setIsUploading(true);
+    setUploadProgress('Preparando foto...');
+    
+    try {
+      setUploadProgress('Subiendo foto al servidor...');
+      await onSave({ notes, url: '' }, file);
+      setUploadProgress('Foto guardada exitosamente');
+      // El modal se cerrará automáticamente desde el componente padre
+    } catch (error) {
+      console.error('Error al guardar foto:', error);
+      setUploadProgress('');
+      setIsUploading(false);
+      // El error se manejará en el componente padre
+    }
   };
 
   return (
@@ -371,12 +389,40 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
           />
         </div>
 
+        {isUploading && (
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+            <div className="flex items-center gap-3">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-blue-800">{uploadProgress}</p>
+                <p className="text-xs text-blue-600 mt-1">Por favor, no cierres esta ventana...</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button 
+            type="button" 
+            variant="secondary" 
+            onClick={onClose}
+            disabled={isUploading}
+          >
             Cancelar
           </Button>
-          <Button type="submit" disabled={!file}>
-            Guardar Foto
+          <Button 
+            type="submit" 
+            disabled={!file || isUploading}
+            className="flex items-center gap-2"
+          >
+            {isUploading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span>Guardando...</span>
+              </>
+            ) : (
+              'Guardar Foto'
+            )}
           </Button>
         </div>
       </form>
