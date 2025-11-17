@@ -48,7 +48,7 @@ const LoginScreen: React.FC = () => {
   const { showToast } = useToast();
 
   const [mode, setMode] = useState<AuthMode>("login");
-  const [sampleUsers, setSampleUsers] = useState<User[]>([]);
+  // const [sampleUsers, setSampleUsers] = useState<User[]>([]); // Deshabilitado - no mostrar accesos de prueba
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -72,26 +72,27 @@ const LoginScreen: React.FC = () => {
   const [verifyStatus, setVerifyStatus] = useState<VerifyStatus>("idle");
   const [verifyMessage, setVerifyMessage] = useState<string>("");
 
-  useEffect(() => {
-    let mounted = true;
-    const loadUsers = async () => {
-      try {
-        const users = await api.users.getAll();
-        if (mounted && Array.isArray(users)) {
-          setSampleUsers(users.filter((u) => u.status === "active"));
-        }
-      } catch (error) {
-        console.error(
-          "LoginScreen: No se pudo obtener la lista de accesos de prueba",
-          error
-        );
-      }
-    };
-    loadUsers();
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  // Carga de usuarios de prueba deshabilitada
+  // useEffect(() => {
+  //   let mounted = true;
+  //   const loadUsers = async () => {
+  //     try {
+  //       const users = await api.users.getAll();
+  //       if (mounted && Array.isArray(users)) {
+  //         setSampleUsers(users.filter((u) => u.status === "active"));
+  //       }
+  //     } catch (error) {
+  //       console.error(
+  //         "LoginScreen: No se pudo obtener la lista de accesos de prueba",
+  //         error
+  //       );
+  //     }
+  //   };
+  //   loadUsers();
+  //   return () => {
+  //     mounted = false;
+  //   };
+  // }, []);
 
   useEffect(() => {
     if (verificationEmailSent) {
@@ -285,10 +286,11 @@ const LoginScreen: React.FC = () => {
     }
   };
 
-  const handleQuickLogin = (userEmail: string) => {
-    setEmail(userEmail);
-    setPassword("password123");
-  };
+  // Función de login rápido deshabilitada (no se muestran accesos de prueba)
+  // const handleQuickLogin = (userEmail: string) => {
+  //   setEmail(userEmail);
+  //   setPassword("password123");
+  // };
 
   const handleForgotSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -703,31 +705,7 @@ const LoginScreen: React.FC = () => {
 
         {renderModeLinks()}
 
-        {mode === "login" && sampleUsers.length > 0 && (
-          <div className="p-4 bg-gray-50 rounded-lg border">
-            <h4 className="text-sm font-semibold text-gray-700">
-              Accesos de Prueba
-            </h4>
-            <p className="text-xs text-gray-500 mb-2">
-              Contraseña por defecto: <code>password123</code>
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {sampleUsers.map((user) => (
-                <button
-                  key={user.id}
-                  type="button"
-                  onClick={() => handleQuickLogin(user.email || "")}
-                  className="text-xs text-left p-2 bg-white border rounded hover:bg-gray-100"
-                >
-                  <p className="font-bold truncate">
-                    {user.fullName.split("(")[0]}
-                  </p>
-                  <p className="text-gray-600">{formatRole(user.projectRole)}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Sección de Accesos de Prueba deshabilitada */}
       </div>
     </div>
   );
