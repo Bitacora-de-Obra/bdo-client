@@ -124,7 +124,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
               onChange={(e) => setNewPassword(e.target.value)}
               required
               disabled={isChanging}
-              helpText="Mínimo 6 caracteres. Si la seguridad está habilitada, debe incluir mayúsculas, minúsculas y números."
+              helperText="Mínimo 6 caracteres. Si la seguridad está habilitada, debe incluir mayúsculas, minúsculas y números."
             />
             <Input
               label="Confirmar Nueva Contraseña"
