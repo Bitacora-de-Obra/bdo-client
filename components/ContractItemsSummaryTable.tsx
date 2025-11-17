@@ -461,7 +461,7 @@ const ContractItemsSummaryTable: React.FC<ContractItemsSummaryTableProps> = ({
                                 const newPkId = e.target.value;
                                 setEditingPkId(newPkId);
                                 // Actualizar el valor mostrado según el PK_ID seleccionado
-                                const currentItem = localItems.find(i => i.id === itemId);
+                                const currentItem = localItems.find(i => i.id === item.id);
                                 if (currentItem) {
                                   const execution = currentItem.executions?.find(exec => exec.pkId === newPkId);
                                   setEditingValue(execution ? execution.quantity.toString() : '0');
