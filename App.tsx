@@ -24,6 +24,7 @@ import { ChatbotWidget } from "./components/chatbot/ChatbotWidget"; // <-- Añad
 import SignatureManagerModal from "./components/account/SignatureManagerModal";
 import ProjectChat from "./components/chat/ProjectChat";
 import api from "./src/services/api";
+import { OfflineIndicator } from "./src/components/offline/OfflineIndicator";
 
 type InitialItemToOpen = { type: "acta" | "logEntry" | "communication"; id: string };
 
@@ -270,6 +271,7 @@ const AppContent = () => {
     <>
       <MainApp />
       <ChatbotWidget />
+      <OfflineIndicator />
     </>
   );
 };

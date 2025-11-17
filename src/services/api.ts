@@ -24,6 +24,8 @@ import {
   Notification,
 } from "../../types";
 import { handleApiError, ApiError } from "../utils/error-handling";
+import { offlineQueue } from "./offline/queue";
+import { offlineDB } from "./offline/db";
 
 const apiUrlFromVite =
   typeof import.meta !== "undefined" && (import.meta as any)?.env?.VITE_API_URL
@@ -72,6 +74,17 @@ const REFRESHABLE_ERROR_CODES = new Set([
   "INVALID_AUTH_HEADER",
   "TOKEN_VERSION_INVALID",
 ]);
+
+// Helper para determinar el tipo de entidad desde el endpoint
+function getEntityTypeFromEndpoint(endpoint: string): 'logEntry' | 'communication' | 'acta' | 'report' | 'comment' | 'attachment' {
+  if (endpoint.includes('/log-entries')) return 'logEntry';
+  if (endpoint.includes('/communications')) return 'communication';
+  if (endpoint.includes('/actas')) return 'acta';
+  if (endpoint.includes('/reports')) return 'report';
+  if (endpoint.includes('/comments')) return 'comment';
+  if (endpoint.includes('/attachments')) return 'attachment';
+  return 'logEntry'; // default
+}
 
 const parseErrorResponse = async (
   response: Response
@@ -154,6 +167,26 @@ async function apiFetch(
       ? options.method.toUpperCase()
       : "GET";
   const isMutatingMethod = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+  
+  // Agregar token CSRF para peticiones mutantes
+  if (isMutatingMethod && typeof document !== "undefined") {
+    // Obtener token CSRF de la cookie
+    const csrfToken = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("XSRF-TOKEN="))
+      ?.split("=")[1];
+    
+    // También intentar obtener del header X-CSRF-Token si está disponible
+    const csrfFromHeader = typeof window !== "undefined" 
+      ? (window as any).__CSRF_TOKEN__ 
+      : null;
+    
+    const tokenToUse = csrfToken || csrfFromHeader;
+    
+    if (tokenToUse) {
+      headers["X-XSRF-TOKEN"] = decodeURIComponent(tokenToUse);
+    }
+  }
   if (
     isMutatingMethod &&
     typeof window !== "undefined" &&
@@ -171,12 +204,73 @@ async function apiFetch(
 
   const fetchUrl = `${API_URL}${endpoint}`;
 
+  // Detectar si estamos offline y es una operación mutante
+  const isOffline = !navigator.onLine;
+  if (isOffline && isMutatingMethod) {
+    // Intentar obtener datos del cache si es una petición GET
+    if (method === "GET") {
+      try {
+        const cached = await offlineDB.getCachedData(`api_${endpoint}`);
+        if (cached) {
+          console.log("[Offline] Returning cached data for:", endpoint);
+          return cached;
+        }
+      } catch (error) {
+        console.warn("[Offline] Error getting cached data:", error);
+      }
+    }
+
+    // Para operaciones mutantes offline, encolar la operación
+    try {
+      const entityType = getEntityTypeFromEndpoint(endpoint);
+      let requestData = undefined;
+      if (options.body) {
+        if (options.body instanceof FormData) {
+          requestData = options.body;
+        } else {
+          try {
+            requestData = JSON.parse(options.body as string);
+          } catch {
+            requestData = options.body;
+          }
+        }
+      }
+      const operation = await offlineQueue.queueRequest({
+        endpoint,
+        method,
+        data: requestData,
+        entityType,
+      });
+
+      // Retornar una respuesta simulada con el ID de la operación
+      return {
+        id: operation.id,
+        offline: true,
+        message: "Operación encolada para sincronización cuando vuelva la conexión",
+        operationId: operation.id,
+      };
+    } catch (error) {
+      console.error("[Offline] Error queueing operation:", error);
+      throw handleApiError({
+        statusCode: 503,
+        message: "Sin conexión. La operación se guardará localmente y se sincronizará cuando vuelva la conexión.",
+        code: "OFFLINE_QUEUED",
+      });
+    }
+  }
+
   try {
     const response = await fetch(fetchUrl, {
       ...options,
       headers,
       credentials: "include",
     });
+
+    // Capturar token CSRF del header de respuesta si está disponible
+    const csrfTokenFromResponse = response.headers.get("X-CSRF-Token");
+    if (csrfTokenFromResponse && typeof window !== "undefined") {
+      (window as any).__CSRF_TOKEN__ = csrfTokenFromResponse;
+    }
 
     if (response.status === 401) {
       const errorData = await parseErrorResponse(response);
@@ -271,11 +365,23 @@ async function apiFetch(
     }
 
     const contentType = response.headers.get("content-type");
+    let result: any;
     if (contentType && contentType.includes("application/json")) {
-      return response.json();
+      result = await response.json();
+    } else {
+      result = await response.text();
     }
 
-    return response.text();
+    // Cachear respuestas GET exitosas para uso offline (TTL de 5 minutos)
+    if (method === "GET" && response.ok && result) {
+      try {
+        await offlineDB.cacheData(`api_${endpoint}`, result, 5 * 60 * 1000);
+      } catch (error) {
+        console.warn("[Offline] Error caching response:", error);
+      }
+    }
+
+    return result;
   } catch (error) {
     console.error(`Error en la petición ${endpoint}:`, error);
     if (error instanceof ApiError) {
@@ -656,9 +762,45 @@ export const logEntriesApi = {
     });
   },
   exportPdf: async (entryId: string) => {
-    return apiFetch(`/log-entries/${entryId}/export-pdf`, {
+    // La exportación de PDF no debe pasar por la cola offline ya que requiere conexión
+    // y devuelve un blob/JSON con información del PDF generado
+    const accessToken = localStorage.getItem("accessToken");
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    if (accessToken) {
+      headers["Authorization"] = `Bearer ${accessToken}`;
+    }
+
+    // Obtener token CSRF si está disponible
+    if (typeof document !== "undefined") {
+      const csrfToken = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("XSRF-TOKEN="))
+        ?.split("=")[1];
+
+      if (csrfToken) {
+        headers["X-XSRF-TOKEN"] = decodeURIComponent(csrfToken);
+      }
+    }
+
+    const response = await fetch(`${API_URL}/log-entries/${entryId}/export-pdf`, {
       method: "POST",
+      headers,
+      credentials: "include",
     });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: "Error al exportar PDF" }));
+      throw handleApiError({
+        statusCode: response.status,
+        message: errorData.error || errorData.message || "Error al exportar PDF",
+        code: errorData.code,
+      });
+    }
+
+    return response.json();
   },
   exportZip: async (filters: {
     startDate?: string;
