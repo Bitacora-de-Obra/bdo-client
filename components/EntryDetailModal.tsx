@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   LogEntry,
   EntryStatus,
@@ -6,6 +6,11 @@ import {
   User,
   UserRole,
   Attachment,
+  LogEntryListItem,
+  WeatherReport,
+  PersonnelEntry,
+  SignatureConsentPayload,
+  ReviewTask,
 } from "../types";
 import Modal from "./ui/Modal";
 import Badge from "./ui/Badge";
@@ -22,6 +27,13 @@ import {
 } from "./icons/Icon";
 import SignatureBlock from "./SignatureBlock";
 import SignatureModal from "./SignatureModal";
+import { useToast } from "./ui/ToastProvider";
+import api from "../src/services/api";
+import { useAuth } from "../contexts/AuthContext";
+import { getFullRoleName } from "../src/utils/roleDisplay";
+import { getUserAvatarUrl } from "../src/utils/avatar";
+import MentionTextarea from "./ui/MentionTextarea";
+import { renderCommentWithMentions } from "../src/utils/mentions";
 
 interface EntryDetailModalProps {
   isOpen: boolean;
@@ -33,8 +45,17 @@ interface EntryDetailModalProps {
     commentText: string,
     files: File[]
   ) => Promise<void>;
-
-onSign: (documentId: string, documentType: 'logEntry', signer: User, password: string) => Promise<{ success: boolean, error?: string }>;
+  onSign: (
+    documentId: string,
+    documentType: "logEntry",
+    signer: User,
+    payload: SignatureConsentPayload
+  ) => Promise<{ success: boolean; error?: string }>;
+  onDelete: (entryId: string) => Promise<void>;
+  currentUser: User;
+  availableUsers: User[];
+  onRefresh?: () => void;
+  readOnly?: boolean;
 }
 
 const DetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({
@@ -56,6 +77,43 @@ const formatBytes = (bytes: number, decimals = 2) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
 };
 
+
+const LEGACY_STATUS_ALIASES: Record<string, EntryStatus> = {
+  Radicado: EntryStatus.SUBMITTED,
+  "En Revisión": EntryStatus.NEEDS_REVIEW,
+  Aprobado: EntryStatus.APPROVED,
+  "Revisión contratista": EntryStatus.SUBMITTED,
+  "Revisión final": EntryStatus.NEEDS_REVIEW,
+  "Listo para firmas": EntryStatus.APPROVED,
+  Firmado: EntryStatus.SIGNED,
+};
+
+const PROJECT_ROLE_ALIASES: Record<string, UserRole> = {
+  resident: UserRole.RESIDENT,
+  "residente de obra": UserRole.RESIDENT,
+  supervisor: UserRole.SUPERVISOR,
+  "contractor_rep": UserRole.CONTRACTOR_REP,
+  contratista: UserRole.CONTRACTOR_REP,
+  "representante contratista": UserRole.CONTRACTOR_REP,
+  "admin": UserRole.ADMIN,
+  "administrador": UserRole.ADMIN,
+  "administrador idu": UserRole.ADMIN,
+};
+
+const normalizeWorkflowStatusValue = (
+  value: string
+): EntryStatus | string => {
+  return LEGACY_STATUS_ALIASES[value] || value;
+};
+
+const normalizeProjectRoleValue = (value?: string | null): UserRole | string => {
+  if (!value) {
+    return value || "";
+  }
+  const key = value.trim().toLowerCase();
+  return PROJECT_ROLE_ALIASES[key] || value;
+};
+
 const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   isOpen,
   onClose,
@@ -65,8 +123,28 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   onSign,
   onDelete,
   currentUser,
-  allUsers,
+  availableUsers,
+  onRefresh = () => {},
+  readOnly = false,
 }) => {
+  const { user: authUser } = useAuth();
+  const canDownload = authUser?.canDownload ?? true;
+  
+  const extractSignerIds = (entryData: LogEntry): string[] => {
+    const fromTasks = (entryData.signatureTasks || [])
+      .map((task) => task.signer?.id)
+      .filter((id): id is string => Boolean(id));
+    const baseIds =
+      fromTasks.length > 0
+        ? fromTasks
+        : (entryData.requiredSignatories || []).map((user) => user.id);
+    const setOfIds = new Set<string>(baseIds);
+    if (entryData.author?.id) {
+      setOfIds.add(entryData.author.id);
+    }
+    return Array.from(setOfIds);
+  };
+
   const [isEditing, setIsEditing] = useState(false);
   const [editedEntry, setEditedEntry] = useState<LogEntry>(entry);
   const [newFiles, setNewFiles] = useState<File[]>([]);
@@ -74,19 +152,291 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const [commentFiles, setCommentFiles] = useState<File[]>([]);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+  const [formEntryDate, setFormEntryDate] = useState<string>("");
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [hasStoredSignature, setHasStoredSignature] = useState(false);
+  const [selectedSignerIds, setSelectedSignerIds] = useState<string[]>(() =>
+    extractSignerIds(entry)
+  );
+  const [weatherSummaryDraft, setWeatherSummaryDraft] = useState<string>("");
+  const [weatherTemperatureDraft, setWeatherTemperatureDraft] =
+    useState<string>("");
+  const [weatherNotesDraft, setWeatherNotesDraft] = useState<string>("");
+  const [rainEventsDraft, setRainEventsDraft] = useState<
+    Array<{ start: string; end: string }>
+  >([{ start: "", end: "" }]);
+  const initialContractorResponses = useMemo(
+    () => ({
+      contractorObservations: entry.contractorObservations || "",
+      safetyContractorResponse: entry.safetyContractorResponse || "",
+      environmentContractorResponse: entry.environmentContractorResponse || "",
+      socialContractorResponse: entry.socialContractorResponse || "",
+    }),
+    [entry.contractorObservations,
+      entry.environmentContractorResponse,
+      entry.safetyContractorResponse,
+      entry.socialContractorResponse]
+  );
+  const [contractorResponsesDraft, setContractorResponsesDraft] = useState(
+    initialContractorResponses
+  );
+  const [isContractorEditingNotes, setIsContractorEditingNotes] =
+    useState(false);
+  const [isSavingContractorNotes, setIsSavingContractorNotes] =
+    useState(false);
+  const [isSendingToContractor, setIsSendingToContractor] = useState(false);
+  const [
+    isCompletingContractorReview,
+    setIsCompletingContractorReview,
+  ] = useState(false);
+  const [isReturningToContractor, setIsReturningToContractor] =
+    useState(false);
+  const [contractorPersonnelDraft, setContractorPersonnelDraft] = useState<
+    Array<{ role: string; quantity: string; notes: string }>
+  >([{ role: "", quantity: "", notes: "" }]);
+  const [interventoriaPersonnelDraft, setInterventoriaPersonnelDraft] = useState<
+    Array<{ role: string; quantity: string; notes: string }>
+  >([{ role: "", quantity: "", notes: "" }]);
+  const [equipmentResourcesDraft, setEquipmentResourcesDraft] = useState<
+    Array<{ name: string; status: string; notes: string }>
+  >([{ name: "", status: "", notes: "" }]);
+  const knownUsers = useMemo(() => {
+    const map = new Map<string, User>();
+    const register = (user?: User | null) => {
+      if (user?.id && !map.has(user.id)) {
+        map.set(user.id, user);
+      }
+    };
+    availableUsers.forEach(register);
+    (entry.requiredSignatories || []).forEach(register);
+    (entry.assignees || []).forEach(register);
+    (entry.signatureTasks || []).forEach((task) => register(task.signer as User | null));
+    (entry.signatures || []).forEach((signature) => register(signature.signer));
+    register(entry.author);
+    (editedEntry.requiredSignatories || []).forEach(register);
+    (editedEntry.assignees || []).forEach(register);
+    (editedEntry.signatureTasks || []).forEach((task) => register(task.signer as User | null));
+    (editedEntry.signatures || []).forEach((signature) => register(signature.signer));
+    return map;
+  }, [availableUsers, entry, editedEntry]);
+
+  const sortedUsers = useMemo(
+    () =>
+      Array.from(knownUsers.values())
+        .filter((user) => user.appRole !== "viewer") // Excluir viewers - no pueden ser firmantes
+        .sort((a, b) =>
+          a.fullName.localeCompare(b.fullName, "es")
+        ),
+    [knownUsers]
+  );
+
+  const findUserById = (id: string): User | undefined => knownUsers.get(id);
+
+  const handleToggleSigner = (userId: string, checked: boolean) => {
+    setSelectedSignerIds((prev) => {
+      const nextSet = new Set(prev);
+      if (checked) {
+        nextSet.add(userId);
+      } else {
+        nextSet.delete(userId);
+      }
+      if (entry.author?.id) {
+        nextSet.add(entry.author.id);
+      }
+      const nextIds = Array.from(nextSet);
+      const resolved = nextIds
+        .map((id) => findUserById(id))
+        .filter((user): user is User => Boolean(user));
+      setEditedEntry((prevEntry) => ({
+        ...prevEntry,
+        requiredSignatories: resolved,
+      }));
+      return nextIds;
+    });
+  };
+
+  const applyEntryState = (entryData: LogEntry) => {
+    setEditedEntry({
+      ...entryData,
+      assignees: entryData.assignees || [],
+      attachments: entryData.attachments || [],
+      comments: entryData.comments || [],
+      history: entryData.history || [],
+      requiredSignatories: entryData.requiredSignatories || [],
+      signatures: entryData.signatures || [],
+      signatureTasks: entryData.signatureTasks || [],
+      signatureSummary: entryData.signatureSummary,
+      contractorPersonnel: entryData.contractorPersonnel || [],
+      interventoriaPersonnel: entryData.interventoriaPersonnel || [],
+      equipmentResources: entryData.equipmentResources || [],
+      executedActivities: entryData.executedActivities || [],
+      executedQuantities: entryData.executedQuantities || [],
+      scheduledActivities: entryData.scheduledActivities || [],
+      qualityControls: entryData.qualityControls || [],
+      materialsReceived: entryData.materialsReceived || [],
+      safetyNotes: entryData.safetyNotes || [],
+      projectIssues: entryData.projectIssues || [],
+      siteVisits: entryData.siteVisits || [],
+      contractorObservations: entryData.contractorObservations || "",
+      interventoriaObservations: entryData.interventoriaObservations || "",
+      safetyFindings: entryData.safetyFindings || "",
+      safetyContractorResponse: entryData.safetyContractorResponse || "",
+      environmentFindings: entryData.environmentFindings || "",
+      environmentContractorResponse: entryData.environmentContractorResponse || "",
+      socialActivities: entryData.socialActivities || [],
+      socialObservations: entryData.socialObservations || "",
+      socialContractorResponse: entryData.socialContractorResponse || "",
+      socialPhotoSummary: entryData.socialPhotoSummary || "",
+      scheduleDay: entryData.scheduleDay || "",
+      locationDetails: entryData.locationDetails || "",
+      weatherReport: entryData.weatherReport || null,
+    });
+
+    const weather = entryData.weatherReport || null;
+    setWeatherSummaryDraft(weather?.summary || "");
+    setWeatherTemperatureDraft(weather?.temperature || "");
+    setWeatherNotesDraft(weather?.notes || "");
+    const normalizedRainEvents =
+      Array.isArray(weather?.rainEvents) && weather?.rainEvents.length
+        ? weather!.rainEvents.map((event) => ({
+            start:
+              typeof event?.start === "string"
+                ? event.start
+                : typeof (event as any)?.start === "number"
+                ? String((event as any).start)
+                : "",
+            end:
+              typeof event?.end === "string"
+                ? event.end
+                : typeof (event as any)?.end === "number"
+                ? String((event as any).end)
+                : "",
+          }))
+        : [];
+    setRainEventsDraft(
+      normalizedRainEvents.length
+        ? normalizedRainEvents
+        : [{ start: "", end: "" }]
+    );
+
+    const toPersonnelDraft = (
+      entries: Array<Partial<PersonnelEntry & { text?: string }>> | undefined
+    ) => {
+      if (!Array.isArray(entries) || !entries.length) {
+        return [{ role: "", quantity: "", notes: "" }];
+      }
+      const mapped = entries
+        .map((item) => {
+          if (!item) return null;
+          const role =
+            typeof item.role === "string" && item.role.trim()
+              ? item.role.trim()
+              : typeof item.text === "string" && item.text.trim()
+              ? item.text.trim()
+              : "";
+          if (!role) return null;
+          const quantityValue =
+            typeof item.quantity === "number"
+              ? item.quantity.toString()
+              : typeof (item as any)?.quantity === "string"
+              ? (item as any).quantity
+              : "";
+          const notesValue =
+            typeof item.notes === "string"
+              ? item.notes
+              : typeof (item as any)?.notes === "string"
+              ? (item as any).notes
+              : "";
+          return {
+            role,
+            quantity: quantityValue,
+            notes: notesValue,
+          };
+        })
+        .filter((item): item is { role: string; quantity: string; notes: string } =>
+          Boolean(item)
+        );
+      return mapped.length ? mapped : [{ role: "", quantity: "", notes: "" }];
+    };
+
+    const toEquipmentDraft = (
+      items:
+        | Array<Partial<{ name?: string; status?: string; notes?: string; text?: string }>>
+        | undefined
+    ) => {
+      if (!Array.isArray(items) || !items.length) {
+        return [{ name: "", status: "", notes: "" }];
+      }
+      const mapped = items
+        .map((item) => {
+          if (!item) return null;
+          const name =
+            typeof item.name === "string" && item.name.trim()
+              ? item.name.trim()
+              : typeof item.text === "string" && item.text.trim()
+              ? item.text.trim()
+              : "";
+          if (!name) return null;
+          const status =
+            typeof item.status === "string"
+              ? item.status
+              : typeof (item as any)?.status === "string"
+              ? (item as any).status
+              : "";
+          const notes =
+            typeof item.notes === "string"
+              ? item.notes
+              : typeof (item as any)?.notes === "string"
+              ? (item as any).notes
+              : "";
+          return { name, status, notes };
+        })
+        .filter(
+          (item): item is { name: string; status: string; notes: string } =>
+            Boolean(item)
+        );
+      return mapped.length ? mapped : [{ name: "", status: "", notes: "" }];
+    };
+
+    setContractorPersonnelDraft(
+      toPersonnelDraft(entryData.contractorPersonnel as any)
+    );
+    setInterventoriaPersonnelDraft(
+      toPersonnelDraft(entryData.interventoriaPersonnel as any)
+    );
+    setEquipmentResourcesDraft(
+      toEquipmentDraft(entryData.equipmentResources as any)
+    );
+    setContractorResponsesDraft({
+      contractorObservations: entryData.contractorObservations || "",
+      safetyContractorResponse: entryData.safetyContractorResponse || "",
+      environmentContractorResponse: entryData.environmentContractorResponse || "",
+      socialContractorResponse: entryData.socialContractorResponse || "",
+    });
+    setIsContractorEditingNotes(false);
+
+    setSelectedSignerIds(extractSignerIds(entryData));
+    if (entryData.entryDate) {
+      setFormEntryDate(entryData.entryDate.substring(0, 10));
+    }
+  };
+  const { showToast } = useToast();
 
   useEffect(() => {
     if (isOpen) {
-      setEditedEntry({
-        ...entry,
-        assignees: entry.assignees || [],
-        attachments: entry.attachments || [],
-        comments: entry.comments || [],
-        history: entry.history || [],
-        requiredSignatories: entry.requiredSignatories || [],
-        signatures: entry.signatures || [],
-      });
+      applyEntryState(entry);
       setValidationError(null);
+      (async () => {
+        try {
+          const response = await api.userSignature.get();
+          setHasStoredSignature(Boolean(response.signature));
+        } catch (error) {
+          console.warn("No se pudo verificar la firma del usuario.", error);
+          setHasStoredSignature(false);
+        }
+      })();
     } else {
       const timer = setTimeout(() => {
         setIsEditing(false);
@@ -94,12 +444,22 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
         setNewComment("");
         setCommentFiles([]);
         setValidationError(null);
+        setFormEntryDate("");
+        setSelectedSignerIds(extractSignerIds(entry));
       }, 300);
       return () => clearTimeout(timer);
     }
   }, [entry, isOpen]);
 
   const handleDelete = async () => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "No tienes permisos para eliminar anotaciones.",
+        variant: "error",
+      });
+      return;
+    }
     if (
       window.confirm(
         "¿Estás seguro de que quieres eliminar esta anotación? Esta acción no se puede deshacer."
@@ -153,25 +513,211 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     setCommentFiles((prev) => prev.filter((file) => file !== fileToRemove));
   };
 
-  const handleAssigneeChange = (user: User, isChecked: boolean) => {
-    setEditedEntry((prev) => {
-      const currentAssignees = prev.assignees || [];
-      if (isChecked) {
-        if (!currentAssignees.some((a) => a.id === user.id)) {
-          return { ...prev, assignees: [...currentAssignees, user] };
-        }
-      } else {
-        return {
-          ...prev,
-          assignees: currentAssignees.filter((a) => a.id !== user.id),
-        };
-      }
-      return prev;
-    });
+  type TextListField =
+    | "executedActivities"
+    | "executedQuantities"
+    | "scheduledActivities"
+    | "qualityControls"
+    | "materialsReceived"
+    | "safetyNotes"
+    | "projectIssues"
+    | "siteVisits"
+    | "socialActivities";
+
+  const listToPlainText = (items?: LogEntryListItem[]) =>
+    (items || []).map((item) => item.text).join("\n");
+
+  const plainTextToList = (value: string): LogEntryListItem[] =>
+    value
+      .replace(/\r/g, "")
+      .split("\n")
+      .map((line) => line)
+      .filter((line) => line.trim().length > 0)
+      .map((text) => ({ text }));
+
+  const handleListChange = (field: TextListField, value: string) => {
+    setEditedEntry((prev) => ({
+      ...prev,
+      [field]: plainTextToList(value),
+    }));
+  };
+
+  type ContractorResponseKey =
+    | "contractorObservations"
+    | "safetyContractorResponse"
+    | "environmentContractorResponse"
+    | "socialContractorResponse";
+
+  const contractorResponseFields: Array<{
+    key: ContractorResponseKey;
+    label: string;
+  }> = [
+    {
+      key: "contractorObservations",
+      label: "Observaciones generales del contratista",
+    },
+    {
+      key: "safetyContractorResponse",
+      label: "Respuesta componente SST",
+    },
+    {
+      key: "environmentContractorResponse",
+      label: "Respuesta componente ambiental",
+    },
+    {
+      key: "socialContractorResponse",
+      label: "Respuesta componente social",
+    },
+  ];
+
+  const handleContractorResponseDraftChange = (
+    field: ContractorResponseKey,
+    value: string
+  ) => {
+    setContractorResponsesDraft((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const addRainEventDraftRow = () =>
+    setRainEventsDraft((prev) => [...prev, { start: "", end: "" }]);
+
+  const updateRainEventDraftRow = (
+    index: number,
+    field: "start" | "end",
+    value: string
+  ) => {
+    setRainEventsDraft((prev) =>
+      prev.map((event, i) =>
+        i === index ? { ...event, [field]: value } : event
+      )
+    );
+  };
+
+  const removeRainEventDraftRow = (index: number) => {
+    setRainEventsDraft((prev) =>
+      prev.length === 1 ? prev : prev.filter((_, i) => i !== index)
+    );
+  };
+
+  const updatePersonnelDraft = (
+    setter: React.Dispatch<
+      React.SetStateAction<Array<{ role: string; quantity: string; notes: string }>>
+    >,
+    index: number,
+    field: "role" | "quantity" | "notes",
+    value: string
+  ) => {
+    setter((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+    );
+  };
+
+  const addPersonnelDraft = (
+    setter: React.Dispatch<
+      React.SetStateAction<Array<{ role: string; quantity: string; notes: string }>>
+    >
+  ) => {
+    setter((prev) => [...prev, { role: "", quantity: "", notes: "" }]);
+  };
+
+  const removePersonnelDraft = (
+    setter: React.Dispatch<
+      React.SetStateAction<Array<{ role: string; quantity: string; notes: string }>>
+    >,
+    index: number
+  ) => {
+    setter((prev) => (prev.length === 1 ? prev : prev.filter((_, i) => i !== index)));
+  };
+
+  const updateEquipmentDraftRow = (
+    index: number,
+    field: "name" | "status" | "notes",
+    value: string
+  ) => {
+    setEquipmentResourcesDraft((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+    );
+  };
+
+  const addEquipmentDraftRow = () => {
+    setEquipmentResourcesDraft((prev) => [
+      ...prev,
+      { name: "", status: "", notes: "" },
+    ]);
+  };
+
+  const removeEquipmentDraftRow = (index: number) => {
+    setEquipmentResourcesDraft((prev) =>
+      prev.length === 1 ? prev : prev.filter((_, i) => i !== index)
+    );
+  };
+
+  const formatPersonnelLine = (item: Partial<PersonnelEntry> & { text?: string }) => {
+    const role =
+      typeof item.role === "string" && item.role.trim()
+        ? item.role.trim()
+        : typeof item.text === "string" && item.text.trim()
+        ? item.text.trim()
+        : "";
+    if (!role) return null;
+    const quantityValue =
+      typeof item.quantity === "number"
+        ? item.quantity
+        : typeof (item as any)?.quantity === "string"
+        ? Number((item as any).quantity)
+        : undefined;
+    const hasQuantity =
+      typeof quantityValue === "number" && !Number.isNaN(quantityValue);
+    const quantityLabel =
+      hasQuantity && quantityValue !== 0 ? `${quantityValue}` : undefined;
+    const base = quantityLabel ? `${quantityLabel} · ${role}` : role;
+    const notesLabel =
+      typeof item.notes === "string" && item.notes.trim()
+        ? item.notes.trim()
+        : undefined;
+    return notesLabel ? `${base} — ${notesLabel}` : base;
+  };
+
+  const formatEquipmentLine = (
+    item: Partial<{ name?: string; status?: string; notes?: string; text?: string }>
+  ) => {
+    const name =
+      typeof item.name === "string" && item.name.trim()
+        ? item.name.trim()
+        : typeof item.text === "string" && item.text.trim()
+        ? item.text.trim()
+        : "";
+    if (!name) return null;
+    const status =
+      typeof item.status === "string" && item.status.trim()
+        ? item.status.trim()
+        : undefined;
+    const notes =
+      typeof item.notes === "string" && item.notes.trim()
+        ? item.notes.trim()
+        : undefined;
+    let label = name;
+    if (status) {
+      label += ` — ${status}`;
+    }
+    if (notes) {
+      label += status ? ` (${notes})` : ` — ${notes}`;
+    }
+    return label;
   };
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "No tienes permisos para agregar comentarios.",
+        variant: "error",
+      });
+      return;
+    }
     if (newComment.trim() || commentFiles.length > 0) {
       await onAddComment(entry.id, newComment.trim(), commentFiles);
       setNewComment("");
@@ -179,19 +725,42 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setValidationError(null);
-
-    if (editedEntry.activityStartDate && editedEntry.activityEndDate) {
-      const start = new Date(editedEntry.activityStartDate);
-      const end = new Date(editedEntry.activityEndDate);
-      if (end < start) {
-        setValidationError(
-          "La fecha de fin de actividad no puede ser anterior a la fecha de inicio."
-        );
-        return;
-      }
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "No tienes permisos para modificar esta anotación.",
+        variant: "error",
+      });
+      return;
     }
+
+    if (!formEntryDate) {
+      setValidationError("Debes indicar la fecha de la bitácora.");
+      return;
+    }
+
+    if (!editedEntry.title.trim()) {
+      setValidationError("El título no puede estar vacío.");
+      return;
+    }
+
+    if (!editedEntry.description.trim()) {
+      setValidationError("El resumen general es obligatorio.");
+      return;
+    }
+
+    const parsedDate = new Date(`${formEntryDate}T00:00:00`);
+    if (isNaN(parsedDate.getTime())) {
+      setValidationError("La fecha del diario no es válida.");
+      return;
+    }
+
+    const normalizedDate = new Date(parsedDate);
+    normalizedDate.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(normalizedDate);
+    endOfDay.setHours(23, 59, 59, 999);
 
     const newAttachments = newFiles.map((file) => ({
       id: `att-${Date.now()}-${file.name}`,
@@ -203,48 +772,601 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
 
     const finalEntry = {
       ...editedEntry,
+      title: editedEntry.title.trim(),
+      description: editedEntry.description.trim(),
+      activitiesPerformed: (editedEntry.activitiesPerformed || "").trim(),
+      materialsUsed: (editedEntry.materialsUsed || "").trim(),
+      workforce: (editedEntry.workforce || "").trim(),
+      weatherConditions: (editedEntry.weatherConditions || "").trim(),
+      additionalObservations: (editedEntry.additionalObservations || "").trim(),
+      entryDate: normalizedDate.toISOString(),
+      activityStartDate: normalizedDate.toISOString(),
+      activityEndDate: endOfDay.toISOString(),
       attachments: [...(editedEntry.attachments || []), ...newAttachments],
-    };
+    } as LogEntry;
 
-    onUpdate(finalEntry);
-    setIsEditing(false);
-    setNewFiles([]);
+    const normalizePersonnelDraftEntries = (
+      entries: Array<{ role: string; quantity: string; notes: string }>
+    ) =>
+      entries
+        .map((entry) => ({
+          role: entry.role.trim(),
+          quantity: entry.quantity.trim(),
+          notes: entry.notes.trim(),
+        }))
+        .filter((entry) => entry.role)
+        .map((entry) => {
+          const parsedQuantity = entry.quantity;
+          const quantity =
+            parsedQuantity && !Number.isNaN(Number(parsedQuantity))
+              ? Number(parsedQuantity)
+              : undefined;
+          return {
+            role: entry.role,
+            quantity,
+            notes: entry.notes || undefined,
+          };
+        });
+
+    const normalizedContractorPersonnel = normalizePersonnelDraftEntries(
+      contractorPersonnelDraft
+    );
+    const normalizedInterventoriaPersonnel = normalizePersonnelDraftEntries(
+      interventoriaPersonnelDraft
+    );
+
+    const normalizedEquipmentResources = equipmentResourcesDraft
+      .map((entry) => ({
+        name: entry.name.trim(),
+        status: entry.status.trim(),
+        notes: entry.notes.trim(),
+      }))
+      .filter((entry) => entry.name)
+      .map((entry) => ({
+        name: entry.name,
+        status: entry.status || undefined,
+        notes: entry.notes || undefined,
+      }));
+
+    const normalizedRainEvents = rainEventsDraft
+      .map((event) => ({
+        start: event.start.trim(),
+        end: event.end.trim(),
+      }))
+      .filter((event) => event.start || event.end);
+
+    const summaryValue = weatherSummaryDraft.trim();
+    const temperatureValue = weatherTemperatureDraft.trim();
+    const notesValue = weatherNotesDraft.trim();
+
+    const normalizedWeatherReport =
+      summaryValue ||
+      temperatureValue ||
+      notesValue ||
+      normalizedRainEvents.length
+        ? {
+            summary: summaryValue || undefined,
+            temperature: temperatureValue || undefined,
+            notes: notesValue || undefined,
+            rainEvents: normalizedRainEvents,
+          }
+        : null;
+
+    finalEntry.contractorPersonnel = normalizedContractorPersonnel;
+    finalEntry.interventoriaPersonnel = normalizedInterventoriaPersonnel;
+    finalEntry.equipmentResources = normalizedEquipmentResources;
+    finalEntry.weatherReport = normalizedWeatherReport;
+    finalEntry.contractorObservations =
+      (editedEntry.contractorObservations || "").trim();
+    finalEntry.interventoriaObservations =
+      (editedEntry.interventoriaObservations || "").trim();
+
+    const signerIds = new Set(selectedSignerIds);
+    if (author?.id) {
+      signerIds.add(author.id);
+    }
+    const requiredSignatories = Array.from(signerIds)
+      .map((id) => findUserById(id))
+      .filter((user): user is User => Boolean(user));
+    finalEntry.requiredSignatories = requiredSignatories;
+
+    setIsUpdating(true);
+    try {
+      await onUpdate(finalEntry);
+      setIsEditing(false);
+      setNewFiles([]);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "No se pudo actualizar la bitácora.";
+      setValidationError(message);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
-const handleConfirmSignature = async (password: string): Promise<{ success: boolean, error?: string }> => {
+  const handleConfirmSignature = async (
+    payload: SignatureConsentPayload
+  ): Promise<{ success: boolean; error?: string }> => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "No tienes permisos para firmar documentos.",
+        variant: "error",
+      });
+      return { success: false, error: "No autorizado" };
+    }
     // Ya no verificamos la contraseña aquí, se la pasamos al backend
-    const result = await onSign(entry.id, 'logEntry', currentUser, password);
+    const result = await onSign(entry.id, "logEntry", currentUser, payload);
     if (result.success) {
-        setIsSignatureModalOpen(false);
+      setIsSignatureModalOpen(false);
     }
     return result; // Devolvemos el resultado al modal para que muestre el error si es necesario
-};
+  };
 
   const handleCancel = () => {
-    setEditedEntry(entry);
+    applyEntryState(entry);
     setIsEditing(false);
     setNewFiles([]);
     setValidationError(null);
   };
 
-  const { folioNumber, author, comments = [] } = entry;
+  const handleSendToContractor = async () => {
+    if (!canSendToContractor) {
+      showToast({
+        variant: "error",
+        title: "Acción no permitida",
+        message: "No puedes enviar esta anotación al contratista.",
+      });
+      return;
+    }
+
+    if (
+      !window.confirm(
+        "¿Enviar esta anotación al contratista para su revisión? Después de hacerlo, no podrás editar el contenido hasta que vuelva."
+      )
+    ) {
+      return;
+    }
+
+    setIsSendingToContractor(true);
+    try {
+      const updatedEntry = await api.logEntries.sendToContractor(entry.id);
+      syncEntryState(updatedEntry);
+      await onRefresh();
+      showToast({
+        variant: "success",
+        title: "Anotación enviada",
+        message:
+          "La anotación fue enviada al contratista para su revisión.",
+      });
+    } catch (error: any) {
+      const message = error?.message || "No se pudo enviar la anotación.";
+      setValidationError(message);
+      showToast({
+        variant: "error",
+        title: "Error al enviar",
+        message,
+      });
+    } finally {
+      setIsSendingToContractor(false);
+    }
+  };
+
+  const handleCompleteContractorReview = async () => {
+    if (!canCompleteContractorReview) {
+      showToast({
+        variant: "error",
+        title: "Acción no permitida",
+        message: "No puedes completar esta etapa.",
+      });
+      return;
+    }
+
+    if (
+      !window.confirm(
+        "¿Confirmas que completaste la revisión del contratista? Notificarás a la interventoría para la revisión final."
+      )
+    ) {
+      return;
+    }
+
+    setIsCompletingContractorReview(true);
+    try {
+      const updatedEntry = await api.logEntries.completeContractorReview(
+        entry.id
+      );
+      syncEntryState(updatedEntry);
+      await onRefresh();
+      showToast({
+        variant: "success",
+        title: "Revisión registrada",
+        message:
+          "Tu revisión quedó registrada. La interventoría continuará con la revisión final.",
+      });
+    } catch (error: any) {
+      const message =
+        error?.message || "No se pudo registrar la revisión.";
+      setValidationError(message);
+      showToast({
+        variant: "error",
+        title: "Error al completar revisión",
+        message,
+      });
+    } finally {
+      setIsCompletingContractorReview(false);
+    }
+  };
+
+  const handleReturnToContractor = async () => {
+    if (!canReturnToContractor) {
+      showToast({
+        variant: "error",
+        title: "Acción no permitida",
+        message: "No puedes devolver esta anotación al contratista.",
+      });
+      return;
+    }
+
+    const reason = window.prompt(
+      "Describe brevemente el motivo de la devolución (opcional):"
+    );
+
+    setIsReturningToContractor(true);
+    try {
+      const payload =
+        reason && reason.trim().length > 0
+          ? { reason: reason.trim() }
+          : undefined;
+      const updatedEntry = await api.logEntries.returnToContractor(
+        entry.id,
+        payload
+      );
+      syncEntryState(updatedEntry);
+      await onRefresh();
+      showToast({
+        variant: "success",
+        title: "Anotación devuelta",
+        message:
+          "La anotación fue devuelta al contratista para una nueva iteración.",
+      });
+    } catch (error: any) {
+      const message =
+        error?.message ||
+        "No se pudo devolver la anotación al contratista.";
+      setValidationError(message);
+      showToast({
+        variant: "error",
+        title: "Error al devolver anotación",
+        message,
+      });
+    } finally {
+      setIsReturningToContractor(false);
+    }
+  };
+
+  const handleSaveContractorNotes = async () => {
+    if (!canEditContractorResponses) {
+      showToast({
+        variant: "error",
+        title: "Acción no permitida",
+        message: "No puedes editar las observaciones del contratista.",
+      });
+      return;
+    }
+
+    setIsSavingContractorNotes(true);
+    try {
+      const payload: Partial<LogEntry> = {
+        contractorObservations:
+          contractorResponsesDraft.contractorObservations.trim(),
+        safetyContractorResponse:
+          contractorResponsesDraft.safetyContractorResponse.trim(),
+        environmentContractorResponse:
+          contractorResponsesDraft.environmentContractorResponse.trim(),
+        socialContractorResponse:
+          contractorResponsesDraft.socialContractorResponse.trim(),
+      };
+      const updatedEntry = await api.logEntries.update(entry.id, payload);
+      syncEntryState(updatedEntry);
+      await onRefresh();
+      showToast({
+        variant: "success",
+        title: "Observaciones guardadas",
+        message: "Tus observaciones fueron registradas correctamente.",
+      });
+      setIsContractorEditingNotes(false);
+    } catch (error: any) {
+      const message =
+        error?.message || "No se pudieron guardar las observaciones.";
+      setValidationError(message);
+      showToast({
+        variant: "error",
+        title: "Error al guardar observaciones",
+        message,
+      });
+    } finally {
+      setIsSavingContractorNotes(false);
+    }
+  };
+
+  const handleCompleteReview = async () => {
+    if (!canCompleteReview) {
+      showToast({
+        variant: "error",
+        title: "Acción no permitida",
+        message: "No tienes permisos para completar la revisión o ya la completaste.",
+      });
+      return;
+    }
+
+    if (
+      !window.confirm(
+        "¿Estás seguro de que deseas marcar tu revisión como completada? Esto indicará que has terminado de revisar y modificar la anotación."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setValidationError(null);
+      const updatedEntry = await api.logEntries.completeReview(entry.id);
+      
+      syncEntryState(updatedEntry);
+      await onRefresh();
+      
+      showToast({
+        variant: "success",
+        title: "Revisión completada",
+        message: "Tu revisión ha sido marcada como completada. El autor podrá aprobar la anotación cuando todas las revisiones estén completadas.",
+      });
+    } catch (error: any) {
+      const message =
+        error?.message || "No se pudo completar la revisión.";
+      setValidationError(message);
+      showToast({
+        variant: "error",
+        title: "Error al completar revisión",
+        message,
+      });
+    }
+  };
+
+  const handleApprove = async () => {
+    // Prevenir doble ejecución
+    if (isApproving) {
+      console.log("DEBUG FRONTEND: Ya se está aprobando, ignorando segundo clic");
+      return;
+    }
+
+    // Verificar que la anotación no esté ya aprobada
+    if (isReadyForSignaturesStatus) {
+      showToast({
+        variant: "error",
+        title: "Anotación ya aprobada",
+        message: "Esta anotación ya está aprobada. No se puede aprobar nuevamente.",
+      });
+      return;
+    }
+
+    if (!canApprove) {
+      showToast({
+        variant: "error",
+        title: "Acción no permitida",
+        message: "No tienes permisos para aprobar esta anotación o la anotación no está en un estado que permita aprobación.",
+      });
+      return;
+    }
+
+    if (
+      !window.confirm(
+        "¿Estás seguro de que deseas aprobar esta anotación? Una vez aprobada, no se podrá editar y se procederá a las firmas."
+      )
+    ) {
+      return;
+    }
+
+    setIsApproving(true);
+    try {
+      setValidationError(null);
+      console.log("DEBUG FRONTEND: Intentando aprobar anotación", {
+        entryId: entry.id,
+        currentStatus: status,
+        entryStatus: entry.status,
+      });
+      
+      const updatedEntry = await api.logEntries.approveForSignature(entry.id);
+      
+      console.log("DEBUG FRONTEND: Anotación aprobada exitosamente", {
+        newStatus: updatedEntry.status,
+      });
+      
+      syncEntryState(updatedEntry);
+      try {
+        await onRefresh();
+      } catch (refreshError) {
+        console.warn("Error al refrescar después de aprobar:", refreshError);
+      }
+      
+      showToast({
+        variant: "success",
+        title: "Anotación aprobada",
+        message: "La anotación ha sido aprobada y quedó lista para firmas.",
+      });
+    } catch (error: any) {
+      console.error("DEBUG FRONTEND: Error al aprobar", error);
+      const message =
+        error?.message || "No se pudo aprobar la anotación.";
+      setValidationError(message);
+      
+      // Si el error es que ya está aprobada, actualizar el estado local
+      if (error?.code === "ALREADY_APPROVED" || message.includes("ya está aprobada")) {
+        // Refrescar para obtener el estado actualizado, pero sin mostrar error
+        if (onRefresh) {
+          try {
+            await onRefresh();
+            // No mostrar error si ya está aprobada (probablemente se aprobó en la primera llamada)
+            return;
+          } catch (refreshError) {
+            console.warn("Error al refrescar después de error de aprobación:", refreshError);
+          }
+        }
+      }
+      
+      showToast({
+        variant: "error",
+        title: "Error al aprobar",
+        message,
+      });
+    } finally {
+      setIsApproving(false);
+    }
+  };
+
+  const handleExportPdf = async () => {
+    setValidationError(null);
+    setIsGeneratingPdf(true);
+    try {
+      const exportResponse = await api.logEntries.exportPdf(entry.id);
+      let latestEntry =
+        exportResponse?.entry && (exportResponse.entry as LogEntry);
+      let generatedAttachment = exportResponse?.attachment as
+        | Attachment
+        | undefined;
+      let finalDownloadUrl =
+        generatedAttachment?.downloadUrl || generatedAttachment?.url || null;
+
+      if (generatedAttachment && !hasStoredSignature) {
+        showToast({
+          variant: "info",
+          title: "Firma no registrada",
+          message:
+            "Puedes descargar el PDF. Registra tu firma manuscrita para firmarlo automáticamente la próxima vez.",
+        });
+      }
+
+      if (latestEntry) {
+        applyEntryState(latestEntry);
+      }
+
+      await onRefresh();
+
+      if (finalDownloadUrl) {
+        if (canDownload) {
+          window.open(finalDownloadUrl, "_blank", "noopener,noreferrer");
+        } else {
+          // Si no tiene permiso de descarga, abrir en modo previsualización
+          const previewUrl = finalDownloadUrl.replace('/download', '/view');
+          window.open(previewUrl, "_blank", "noopener,noreferrer");
+        }
+      }
+
+      showToast({
+        variant: "success",
+        title: "PDF generado",
+        message: canDownload 
+          ? "La bitácora diaria se exportó correctamente." 
+          : "El PDF se generó. Solo puedes previsualizarlo (sin permiso de descarga).",
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "No se pudo generar el PDF.";
+      setValidationError(message);
+      showToast({
+        variant: "error",
+        title: "Error al exportar",
+        message,
+      });
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
+  // Eliminado: handleSignAttachment ya no se usa
+  // El flujo de firma ahora es solo a través de "Firmar anotación" con contraseña
+
+  const { folioNumber, author } = entry;
+  const { comments = [] } = editedEntry;
   const {
     title,
     description,
-    activityStartDate,
-    activityEndDate,
-    location,
-    subject,
+    entryDate: entryDateIso,
+    activitiesPerformed = "",
+    materialsUsed = "",
+    workforce = "",
+    weatherConditions = "",
+    additionalObservations = "",
+    scheduleDay = "",
+    locationDetails = "",
+    weatherReport,
+    contractorPersonnel = [],
+    interventoriaPersonnel = [],
+    equipmentResources = [],
+    executedActivities = [],
+    executedQuantities = [],
+    scheduledActivities = [],
+    qualityControls = [],
+    materialsReceived = [],
+    safetyNotes = [],
+    projectIssues = [],
+    siteVisits = [],
+    contractorObservations = "",
+    interventoriaObservations = "",
+    safetyFindings = "",
+    safetyContractorResponse = "",
+    environmentFindings = "",
+    environmentContractorResponse = "",
+    socialActivities = [],
+    socialObservations = "",
+    socialContractorResponse = "",
+    socialPhotoSummary = "",
     type,
     status,
     isConfidential,
     history = [],
     createdAt,
     attachments = [],
-    assignees = [],
     requiredSignatories = [],
     signatures = [],
+    reviewTasks = [],
   } = editedEntry;
+
+  const workflowStatus = normalizeWorkflowStatusValue(status);
+  const statusLabel = workflowStatus as string;
+  const entryTypeValue = type as EntryType;
+  const showGeneralSections = [
+    EntryType.GENERAL,
+    EntryType.TECHNICAL,
+    EntryType.ADMINISTRATIVE,
+    EntryType.QUALITY,
+  ].includes(entryTypeValue);
+  const showSafetyPanel = entryTypeValue === EntryType.SAFETY;
+  const showEnvironmentalPanel = entryTypeValue === EntryType.ENVIRONMENTAL;
+  const showSocialPanel = entryTypeValue === EntryType.SOCIAL;
+  const syncEntryState = (updatedEntry: LogEntry) => {
+    applyEntryState(updatedEntry);
+    setIsEditing(false);
+    setValidationError(null);
+  };
+
+  const weatherReportData: WeatherReport = weatherReport
+    ? { ...weatherReport, rainEvents: weatherReport.rainEvents || [] }
+    : { rainEvents: [] };
+
+  const contractorPersonnelLines = (contractorPersonnel || [])
+    .map((item) => formatPersonnelLine(item))
+    .filter((line): line is string => Boolean(line));
+
+  const interventoriaPersonnelLines = (interventoriaPersonnel || [])
+    .map((item) => formatPersonnelLine(item))
+    .filter((line): line is string => Boolean(line));
+
+  const equipmentResourceLines = (equipmentResources || [])
+    .map((item) => formatEquipmentLine(item))
+    .filter((line): line is string => Boolean(line));
 
   const toDatetimeLocal = (isoString: string) => {
     if (!isoString) return "";
@@ -257,8 +1379,147 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
     return localISOTime.substring(0, 16);
   };
 
+  // Determinar permisos basados en estado y roles
+  const normalizedCurrentProjectRole = normalizeProjectRoleValue(
+    currentUser.projectRole
+  );
+  const isAuthor = currentUser.id === author?.id;
+  const isAssignee = entry.assignees?.some((a) => a.id === currentUser.id) || false;
+  const isAdmin =
+    normalizedCurrentProjectRole === UserRole.ADMIN ||
+    currentUser.appRole === "admin";
+  const isContractorUser =
+    normalizedCurrentProjectRole === UserRole.CONTRACTOR_REP;
+  const effectiveReadOnly = readOnly && !isContractorUser;
+  const isDraftStatus = workflowStatus === EntryStatus.DRAFT;
+  const isContractorReviewStatus = workflowStatus === EntryStatus.SUBMITTED;
+  const isFinalReviewStatus = workflowStatus === EntryStatus.NEEDS_REVIEW;
+  const isReadyForSignaturesStatus = workflowStatus === EntryStatus.APPROVED;
+  const isSignedStatus = workflowStatus === EntryStatus.SIGNED;
+  const contractorReviewCompleted = !!entry.contractorReviewCompleted;
+  
+  // Verificar si el usuario es un responsable (firmante requerido)
+  const isRequiredSigner = entry.signatureTasks?.some(
+    (task) => task.signer?.id === currentUser.id
+  ) || false;
+  
+  // Verificar si el autor ya ha firmado
+  const authorHasSigned = entry.signatureTasks?.some(
+    (task) => task.signer?.id === author?.id && task.status === "SIGNED"
+  ) || false;
+  
+  // Permitir editar si:
+  // 1. Es el autor (siempre puede editar si el estado lo permite)
+  // 2. Es un asignado y el autor no ha firmado
+  // 3. Es un responsable (firmante) y el autor no ha firmado
+  // 4. Es admin
+  const isStatusEditableForInterventoria =
+    isDraftStatus || isFinalReviewStatus;
+
   const canEdit =
-    currentUser.id === author?.id || currentUser.projectRole === UserRole.ADMIN;
+    !effectiveReadOnly &&
+    (!isContractorUser || isAdmin) &&
+    isStatusEditableForInterventoria &&
+    (isAuthor ||
+      isAdmin ||
+      (isAssignee && !authorHasSigned) ||
+      (isRequiredSigner && !authorHasSigned));
+  
+  const canSendToContractor =
+    !effectiveReadOnly && isDraftStatus && (isAuthor || isAdmin);
+
+  const canCompleteContractorReview =
+    !effectiveReadOnly &&
+    isContractorReviewStatus &&
+    (isContractorUser || isAdmin);
+
+  const canReturnToContractor =
+    !effectiveReadOnly && isFinalReviewStatus && (isAuthor || isAdmin);
+
+  const canApprove =
+    !effectiveReadOnly &&
+    isFinalReviewStatus &&
+    contractorReviewCompleted &&
+    (isAuthor || isAdmin);
+  
+  const isSigningStage = isReadyForSignaturesStatus || isSignedStatus;
+  const signatureBlockReadOnly = readOnly || !isSigningStage;
+  const canSign = !effectiveReadOnly && isSigningStage;
+
+  // Verificar si el usuario actual puede completar su revisión
+  const myReviewTask = reviewTasks.find((task) => task.reviewer?.id === currentUser.id);
+  const canCompleteReview =
+    !effectiveReadOnly &&
+    isFinalReviewStatus &&
+    myReviewTask?.status === "PENDING" &&
+    (isAssignee || isAdmin);
+  const isAssignedContractor = isAssignee || entry.assignees?.some((u) => u.id === currentUser.id);
+  const canEditContractorResponses =
+    isContractorReviewStatus &&
+    (isContractorUser || isAdmin || isAssignedContractor);
+
+  const workflowActionButtons: React.ReactNode[] = [];
+
+  if (canSendToContractor) {
+    workflowActionButtons.push(
+      <Button
+        key="send-to-contractor"
+        variant="primary"
+        onClick={handleSendToContractor}
+        disabled={isSendingToContractor}
+      >
+        {isSendingToContractor ? "Enviando..." : "Enviar a contratista"}
+      </Button>
+    );
+  }
+
+  if (canCompleteContractorReview) {
+    workflowActionButtons.push(
+      <Button
+        key="complete-contractor-review"
+        variant="primary"
+        onClick={handleCompleteContractorReview}
+        disabled={isCompletingContractorReview}
+      >
+        {isCompletingContractorReview
+          ? "Registrando..."
+          : "Marcar revisión completada"}
+      </Button>
+    );
+  }
+
+  if (canReturnToContractor) {
+    workflowActionButtons.push(
+      <Button
+        key="return-to-contractor"
+        variant="secondary"
+        onClick={handleReturnToContractor}
+        disabled={isReturningToContractor}
+      >
+        {isReturningToContractor
+          ? "Devolviendo..."
+          : "Devolver al contratista"}
+      </Button>
+    );
+  }
+
+  if (canApprove) {
+    workflowActionButtons.push(
+      <Button
+        key="approve"
+        variant="primary"
+        onClick={handleApprove}
+        disabled={isApproving}
+        className="bg-green-600 hover:bg-green-700"
+      >
+        {isApproving ? "Aprobando..." : "Aprobar para firmas"}
+      </Button>
+    );
+  }
+
+  const entryDateDisplay = entryDateIso
+    ? new Date(entryDateIso).toLocaleDateString("es-CO", { dateStyle: "long" })
+    : "N/A";
 
   return (
     <>
@@ -289,198 +1550,1215 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
               )}
             </div>
             <div className="mt-2 flex justify-between items-center">
-              {isEditing ? (
-                <Select name="type" value={type} onChange={handleInputChange}>
-                  {Object.values(EntryType).map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </Select>
-              ) : (
-                <p className="text-sm text-gray-500 mt-1">{type}</p>
-              )}
-              {isEditing ? (
-                <Select
-                  name="status"
-                  value={status}
-                  onChange={handleInputChange}
-                >
-                  {Object.values(EntryStatus).map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </Select>
-              ) : (
-                <Badge status={status} />
-              )}
+              <p className="text-sm text-gray-500 mt-1">{type}</p>
+              <div className="flex items-center gap-2">
+                {isEditing ? (
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <Badge status={statusLabel as EntryStatus} />
+                    <span>
+                      El estado cambia mediante las acciones del flujo.
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    <Badge status={statusLabel as EntryStatus} />
+                    {!isStatusEditableForInterventoria && (
+                      <span className="text-xs text-gray-500">
+                        (No editable)
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
+
+          {(showSafetyPanel || showEnvironmentalPanel || showSocialPanel) && (
+          <div className="space-y-6">
+            {showSafetyPanel && (
+            <div className="border border-gray-200 rounded-lg p-4 space-y-3 shadow-sm bg-white">
+              <div className="flex items-center justify-between">
+                <h4 className="text-md font-semibold text-gray-800">
+                  Componente SST (SST y MEV)
+                </h4>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">
+                  Observaciones de la interventoría
+                </p>
+                {isEditing ? (
+                  <textarea
+                    name="safetyFindings"
+                    value={safetyFindings}
+                    onChange={(e) =>
+                      setEditedEntry((prev) => ({
+                        ...prev,
+                        safetyFindings: e.target.value,
+                      }))
+                    }
+                    rows={3}
+                    className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  />
+                ) : (
+                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                    {safetyFindings || "Sin observaciones."}
+                  </p>
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">
+                  Respuesta del contratista
+                </p>
+                <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">
+                  {safetyContractorResponse || "Sin respuesta registrada."}
+                </p>
+              </div>
+            </div>
+            )}
+
+            {showEnvironmentalPanel && (
+            <div className="border border-gray-200 rounded-lg p-4 space-y-3 shadow-sm bg-white">
+              <div className="flex items-center justify-between">
+                <h4 className="text-md font-semibold text-gray-800">
+                  Componente ambiental (ambiental, forestal, fauna)
+                </h4>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">
+                  Observaciones de la interventoría
+                </p>
+                {isEditing ? (
+                  <textarea
+                    name="environmentFindings"
+                    value={environmentFindings}
+                    onChange={(e) =>
+                      setEditedEntry((prev) => ({
+                        ...prev,
+                        environmentFindings: e.target.value,
+                      }))
+                    }
+                    rows={3}
+                    className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  />
+                ) : (
+                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                    {environmentFindings || "Sin observaciones."}
+                  </p>
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">
+                  Respuesta del contratista
+                </p>
+                <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">
+                  {environmentContractorResponse || "Sin respuesta registrada."}
+                </p>
+              </div>
+            </div>
+            )}
+
+            {showSocialPanel && (
+            <div className="border border-gray-200 rounded-lg p-4 space-y-4 shadow-sm bg-white">
+              <div>
+                <h4 className="text-md font-semibold text-gray-800">
+                  Componente social
+                </h4>
+                <p className="text-sm text-gray-500">
+                  Registro diario de actividades, soporte fotográfico y observaciones.
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">
+                  Registro diario de actividades
+                </p>
+                {isEditing ? (
+                  <textarea
+                    value={listToPlainText(socialActivities)}
+                    onChange={(e) =>
+                      handleListChange("socialActivities", e.target.value)
+                    }
+                    rows={4}
+                    className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                    placeholder="Describe cada actividad en una línea."
+                  />
+                ) : socialActivities.length ? (
+                  <ul className="mt-2 list-disc list-inside space-y-1 text-sm text-gray-700">
+                    {socialActivities.map((item, index) => (
+                      <li key={`social-act-${index}`}>{item.text}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-sm text-gray-500">Sin registro.</p>
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">
+                  Registro fotográfico (referencia)
+                </p>
+                {isEditing ? (
+                  <textarea
+                    name="socialPhotoSummary"
+                    value={socialPhotoSummary}
+                    onChange={(e) =>
+                      setEditedEntry((prev) => ({
+                        ...prev,
+                        socialPhotoSummary: e.target.value,
+                      }))
+                    }
+                    rows={2}
+                    className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                    placeholder="Describe o referencia las fotografías relacionadas."
+                  />
+                ) : (
+                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                    {socialPhotoSummary || "Sin registro."}
+                  </p>
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">
+                  Observaciones de la interventoría
+                </p>
+                {isEditing ? (
+                  <textarea
+                    name="socialObservations"
+                    value={socialObservations}
+                    onChange={(e) =>
+                      setEditedEntry((prev) => ({
+                        ...prev,
+                        socialObservations: e.target.value,
+                      }))
+                    }
+                    rows={3}
+                    className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  />
+                ) : (
+                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                    {socialObservations || "Sin observaciones."}
+                  </p>
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">
+                  Respuesta del contratista
+                </p>
+                <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">
+                  {socialContractorResponse || "Sin respuesta registrada."}
+                </p>
+              </div>
+            </div>
+            )}
+          </div>
+          )}
+          
+          {/* Estado y Acciones Permitidas */}
+          {!isEditing && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-blue-900 mb-2">
+                Estado y Acciones Disponibles
+              </h4>
+              <div className="text-sm text-blue-800 space-y-2">
+                {isDraftStatus && (
+                  <>
+                    <p>
+                      📝 <strong>Borrador:</strong> la interventoría puede
+                      ajustar toda la información antes de enviarla al
+                      contratista.
+                    </p>
+                    {canEdit ? (
+                      <p>
+                        ✓ Puedes seguir editando el contenido y agregando
+                        adjuntos.
+                      </p>
+                    ) : (
+                      <p className="text-orange-700">
+                        ⚠ No tienes permisos para editar este borrador.
+                      </p>
+                    )}
+                  </>
+                )}
+                {isContractorReviewStatus && (
+                  <>
+                    <p>
+                      📨 <strong>Revisión contratista:</strong> el contenido
+                      técnico está congelado. Solo se pueden registrar las
+                      observaciones del contratista.
+                    </p>
+                    {canEditContractorResponses ? (
+                      <p>
+                        ✓ Puedes actualizar tus observaciones en el panel
+                        inferior.
+                      </p>
+                    ) : (
+                      <p className="text-orange-700">
+                        ⚠ Solo el contratista asignado puede editar su sección.
+                      </p>
+                    )}
+                  </>
+                )}
+                {isFinalReviewStatus && (
+                  <>
+                    <p>
+                      🔍 <strong>Revisión final:</strong> la interventoría valida
+                      las observaciones antes de aprobar para firmas.
+                    </p>
+                    {contractorReviewCompleted ? (
+                      <p>✓ El contratista ya completó su revisión.</p>
+                    ) : (
+                      <p className="text-orange-700">
+                        ⚠ Falta que el contratista confirme su revisión.
+                      </p>
+                    )}
+                    {canEdit ? (
+                      <p>✓ Puedes realizar ajustes finales antes de aprobar.</p>
+                    ) : (
+                      <p className="text-orange-700">
+                        ⚠ Solo la interventoría puede editar en esta etapa.
+                      </p>
+                    )}
+                  </>
+                )}
+                {isReadyForSignaturesStatus && (
+                  <>
+                    <p>
+                      ✍️ <strong>Listo para firmas:</strong> el contenido está
+                      cerrado y solo resta recolectar firmas.
+                    </p>
+                    {canSign ? (
+                      <p>✓ Puedes firmar si estás en la lista de firmantes.</p>
+                    ) : (
+                      <p className="text-orange-700">
+                        ⚠ Solo los firmantes designados pueden firmar.
+                      </p>
+                    )}
+                  </>
+                )}
+                {isSignedStatus && (
+                  <p>
+                    ✔️ <strong>Firmado:</strong> el documento está cerrado y
+                    disponible únicamente para consulta.
+                  </p>
+                )}
+              </div>
+                {workflowActionButtons.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {workflowActionButtons}
+                  </div>
+                )}
+            </div>
+          )}
+          
           {/* Details Grid */}
           <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-6">
             <DetailRow label="Autor" value={author?.fullName || "N/A"} />
             {isEditing ? (
               <Input
-                label="Fecha de Creación"
-                name="createdAt"
-                type="datetime-local"
-                value={toDatetimeLocal(createdAt)}
-                onChange={handleInputChange}
+                label="Fecha del diario"
+                name="entryDate"
+                type="date"
+                value={formEntryDate}
+                onChange={(e) => setFormEntryDate(e.target.value)}
               />
             ) : (
-              <DetailRow
-                label="Fecha de Creación"
-                value={new Date(createdAt).toLocaleString("es-CO")}
-              />
+              <DetailRow label="Fecha del diario" value={entryDateDisplay} />
             )}
             <DetailRow
-              label="Última Modificación"
-              value={
-                entry.updatedAt
-                  ? new Date(entry.updatedAt).toLocaleString("es-CO")
-                  : "N/A"
-              }
+              label="Fecha de creación"
+              value={new Date(createdAt).toLocaleString("es-CO")}
             />
+          <DetailRow
+            label="Última actualización"
+            value={
+              entry.updatedAt
+                ? new Date(entry.updatedAt).toLocaleString("es-CO")
+                : "N/A"
+            }
+          />
+          {isEditing ? (
+            <Input
+              label="Día del plazo"
+              name="scheduleDay"
+              value={scheduleDay}
+              onChange={handleInputChange}
+            />
+          ) : (
+            <DetailRow
+              label="Día del plazo"
+              value={scheduleDay || "No registrado"}
+            />
+          )}
+          {isEditing ? (
+            <Input
+              label="Localización / Tramo"
+              name="locationDetails"
+              value={locationDetails}
+              onChange={handleInputChange}
+            />
+          ) : (
+            <DetailRow
+              label="Localización / Tramo"
+              value={locationDetails || "No registrado"}
+            />
+          )}
+        </dl>
 
-            {isEditing ? (
-              <>
-                <Input
-                  label="Asunto"
-                  name="subject"
-                  value={subject}
-                  onChange={handleInputChange}
-                />
-                <Input
-                  label="Localización"
-                  name="location"
-                  value={location}
-                  onChange={handleInputChange}
-                />
-                <div></div>
-                <Input
-                  label="Inicio de Actividad"
-                  name="activityStartDate"
-                  type="datetime-local"
-                  value={toDatetimeLocal(activityStartDate)}
-                  onChange={handleInputChange}
-                />
-                <Input
-                  label="Fin de Actividad"
-                  name="activityEndDate"
-                  type="datetime-local"
-                  value={toDatetimeLocal(activityEndDate)}
-                  onChange={handleInputChange}
-                />
-              </>
-            ) : (
-              <>
-                <DetailRow label="Asunto" value={subject} />
-                <DetailRow label="Localización" value={location} />
-                <div></div>
-                <DetailRow
-                  label="Inicio de Actividad"
-                  value={
-                    activityStartDate
-                      ? new Date(activityStartDate).toLocaleString("es-CO")
-                      : ""
-                  }
-                />
-                <DetailRow
-                  label="Fin de Actividad"
-                  value={
-                    activityEndDate
-                      ? new Date(activityEndDate).toLocaleString("es-CO")
-                      : ""
-                  }
-                />
-              </>
-            )}
-          </dl>
-          {/* Description */}
+          {/* Summary */}
           <div>
-            <h4 className="text-md font-semibold text-gray-800">Descripción</h4>
+            <h4 className="text-md font-semibold text-gray-800">
+              Resumen general del día
+            </h4>
             {isEditing ? (
               <textarea
                 name="description"
                 value={description}
                 onChange={handleInputChange}
-                rows={5}
+                rows={4}
                 className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-              ></textarea>
+              />
             ) : (
               <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
-                {description}
+                {description || "Sin resumen registrado."}
               </p>
             )}
           </div>
-          {/* Assignees */}
+
           <div>
-            <h4 className="text-md font-semibold text-gray-800">Asignado a</h4>
+            <h4 className="text-md font-semibold text-gray-800">
+              Condiciones climáticas
+            </h4>
             {isEditing ? (
-              <div className="mt-2 p-3 border rounded-lg bg-gray-50/70 max-h-48 overflow-y-auto">
-                <fieldset>
-                  <legend className="sr-only">Usuarios</legend>
-                  <div className="space-y-3">
-                    {allUsers.map((user) => (
-                      <div key={user.id} className="relative flex items-start">
-                        <div className="flex items-center h-5">
-                          <input
-                            id={`user-${user.id}`}
-                            name="assignees"
-                            type="checkbox"
-                            className="focus:ring-brand-primary h-4 w-4 text-brand-primary border-gray-300 rounded"
-                            checked={assignees.some((a) => a.id === user.id)}
-                            onChange={(e) =>
-                              handleAssigneeChange(user, e.target.checked)
-                            }
-                          />
-                        </div>
-                        <div className="ml-3 text-sm flex items-center">
-                          <label
-                            htmlFor={`user-${user.id}`}
-                            className="font-medium text-gray-700 flex items-center cursor-pointer"
-                          >
-                            <img
-                              src={user.avatarUrl}
-                              alt={user.fullName}
-                              className="h-6 w-6 rounded-full mr-2"
-                            />
-                            {user.fullName}
-                          </label>
-                          <span className="ml-2 text-gray-500">
-                            ({user.projectRole})
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+              <div className="mt-2 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Input
+                    label="Resumen"
+                    value={weatherSummaryDraft}
+                    onChange={(e) => setWeatherSummaryDraft(e.target.value)}
+                    placeholder="Ej. Cielo parcialmente nublado"
+                  />
+                  <Input
+                    label="Temperatura"
+                    value={weatherTemperatureDraft}
+                    onChange={(e) => setWeatherTemperatureDraft(e.target.value)}
+                    placeholder="Ej. 22°C"
+                  />
+                </div>
+                <textarea
+                  value={weatherNotesDraft}
+                  onChange={(e) => setWeatherNotesDraft(e.target.value)}
+                  rows={2}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Observaciones adicionales sobre el clima"
+                />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-gray-700">
+                      Lluvias registradas
+                    </p>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={addRainEventDraftRow}
+                    >
+                      Añadir intervalo
+                    </Button>
                   </div>
-                </fieldset>
+                  {rainEventsDraft.map((event, index) => (
+                    <div
+                      key={`rain-edit-${index}`}
+                      className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end"
+                    >
+                      <Input
+                        label={index === 0 ? "Inicio" : undefined}
+                        type="time"
+                        value={event.start}
+                        onChange={(e) =>
+                          updateRainEventDraftRow(index, "start", e.target.value)
+                        }
+                      />
+                      <Input
+                        label={index === 0 ? "Fin" : undefined}
+                        type="time"
+                        value={event.end}
+                        onChange={(e) =>
+                          updateRainEventDraftRow(index, "end", e.target.value)
+                        }
+                      />
+                      {rainEventsDraft.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeRainEventDraftRow(index)}
+                          className="text-red-500 hover:text-red-700 text-xs font-semibold sm:justify-self-start sm:self-center"
+                        >
+                          <span className="inline-flex items-center gap-1">
+                            <XMarkIcon className="h-4 w-4" /> Quitar
+                          </span>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : (
-              <div className="mt-2 flex flex-wrap gap-3">
-                {assignees.length > 0 ? (
-                  assignees.map((assignee) => (
-                    <div
-                      key={assignee.id}
-                      className="flex items-center space-x-2 bg-gray-100 rounded-full pr-3 py-1 text-sm"
-                    >
-                      <img
-                        src={assignee.avatarUrl}
-                        alt={assignee.fullName}
-                        className="h-7 w-7 rounded-full object-cover"
-                      />
-                      <span className="font-semibold text-gray-900">
-                        {assignee.fullName}
-                      </span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-gray-500">Nadie asignado aún.</p>
+              <div className="mt-2 text-sm text-gray-700 space-y-1">
+                <p>
+                  <span className="font-medium">Resumen: </span>
+                  {weatherReportData.summary || "No registrado"}
+                </p>
+                <p>
+                  <span className="font-medium">Temperatura: </span>
+                  {weatherReportData.temperature || "No registrada"}
+                </p>
+                <div>
+                  <span className="font-medium">Lluvias registradas: </span>
+                  {weatherReportData.rainEvents?.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {weatherReportData.rainEvents.map((event, idx) => (
+                        <li key={`rain-${idx}`}>{event.start || "-"} a {event.end || "-"}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span>No registradas.</span>
+                  )}
+                </div>
+                {weatherReportData.notes && (
+                  <p>
+                    <span className="font-medium">Notas: </span>
+                    {weatherReportData.notes}
+                  </p>
                 )}
               </div>
             )}
           </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <h4 className="text-md font-semibold text-gray-800">
+                Actividades realizadas
+              </h4>
+              {isEditing ? (
+                <textarea
+                  name="activitiesPerformed"
+                  value={activitiesPerformed}
+                  onChange={handleInputChange}
+                  rows={4}
+                  className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                />
+              ) : (
+                <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                  {activitiesPerformed || "Sin registro."}
+                </p>
+              )}
+            </div>
+            <div>
+              <h4 className="text-md font-semibold text-gray-800">
+                Materiales utilizados
+              </h4>
+              {isEditing ? (
+                <textarea
+                  name="materialsUsed"
+                  value={materialsUsed}
+                  onChange={handleInputChange}
+                  rows={4}
+                  className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                />
+              ) : (
+                <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                  {materialsUsed || "Sin registro."}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <h4 className="text-md font-semibold text-gray-800">
+                Personal en obra
+              </h4>
+              {isEditing ? (
+                <textarea
+                  name="workforce"
+                  value={workforce}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                />
+              ) : (
+                <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                  {workforce || "Sin registro."}
+                </p>
+              )}
+            </div>
+            <div>
+              <h4 className="text-md font-semibold text-gray-800">
+                Condiciones climáticas
+              </h4>
+              {isEditing ? (
+                <textarea
+                  name="weatherConditions"
+                  value={weatherConditions}
+                  onChange={handleInputChange}
+                  rows={3}
+                  className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                />
+              ) : (
+                <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                  {weatherConditions || "Sin registro."}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {showGeneralSections && (
+          <div>
+            <h4 className="text-md font-semibold text-gray-800">
+              Recursos del día
+            </h4>
+            {isEditing ? (
+              <div className="mt-2 space-y-5 text-sm text-gray-700">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-gray-800">
+                      Personal del contratista
+                    </p>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => addPersonnelDraft(setContractorPersonnelDraft)}
+                    >
+                      Añadir persona
+                    </Button>
+                  </div>
+                  <div className="mt-2 space-y-3">
+                    {contractorPersonnelDraft.map((person, index) => (
+                      <div
+                        key={`contractor-edit-${index}`}
+                        className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end"
+                      >
+                        <Input
+                          label={index === 0 ? "Cargo" : undefined}
+                          value={person.role}
+                          onChange={(e) =>
+                            updatePersonnelDraft(
+                              setContractorPersonnelDraft,
+                              index,
+                              "role",
+                              e.target.value
+                            )
+                          }
+                        />
+                        <Input
+                          label={index === 0 ? "Cantidad" : undefined}
+                          type="number"
+                          min="0"
+                          value={person.quantity}
+                          onChange={(e) =>
+                            updatePersonnelDraft(
+                              setContractorPersonnelDraft,
+                              index,
+                              "quantity",
+                              e.target.value
+                            )
+                          }
+                        />
+                        <Input
+                          label={index === 0 ? "Notas" : undefined}
+                          value={person.notes}
+                          onChange={(e) =>
+                            updatePersonnelDraft(
+                              setContractorPersonnelDraft,
+                              index,
+                              "notes",
+                              e.target.value
+                            )
+                          }
+                        />
+                        {contractorPersonnelDraft.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              removePersonnelDraft(setContractorPersonnelDraft, index)
+                            }
+                            className="text-red-500 hover:text-red-700 text-xs font-semibold sm:col-span-3 text-left"
+                          >
+                            <span className="inline-flex items-center gap-1">
+                              <XMarkIcon className="h-4 w-4" /> Quitar
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-gray-800">
+                      Personal de la interventoría
+                    </p>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => addPersonnelDraft(setInterventoriaPersonnelDraft)}
+                    >
+                      Añadir persona
+                    </Button>
+                  </div>
+                  <div className="mt-2 space-y-3">
+                    {interventoriaPersonnelDraft.map((person, index) => (
+                      <div
+                        key={`interventoria-edit-${index}`}
+                        className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end"
+                      >
+                        <Input
+                          label={index === 0 ? "Cargo" : undefined}
+                          value={person.role}
+                          onChange={(e) =>
+                            updatePersonnelDraft(
+                              setInterventoriaPersonnelDraft,
+                              index,
+                              "role",
+                              e.target.value
+                            )
+                          }
+                        />
+                        <Input
+                          label={index === 0 ? "Cantidad" : undefined}
+                          type="number"
+                          min="0"
+                          value={person.quantity}
+                          onChange={(e) =>
+                            updatePersonnelDraft(
+                              setInterventoriaPersonnelDraft,
+                              index,
+                              "quantity",
+                              e.target.value
+                            )
+                          }
+                        />
+                        <Input
+                          label={index === 0 ? "Notas" : undefined}
+                          value={person.notes}
+                          onChange={(e) =>
+                            updatePersonnelDraft(
+                              setInterventoriaPersonnelDraft,
+                              index,
+                              "notes",
+                              e.target.value
+                            )
+                          }
+                        />
+                        {interventoriaPersonnelDraft.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              removePersonnelDraft(
+                                setInterventoriaPersonnelDraft,
+                                index
+                              )
+                            }
+                            className="text-red-500 hover:text-red-700 text-xs font-semibold sm:col-span-3 text-left"
+                          >
+                            <span className="inline-flex items-center gap-1">
+                              <XMarkIcon className="h-4 w-4" /> Quitar
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-gray-800">
+                      Maquinaria y equipos
+                    </p>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={addEquipmentDraftRow}
+                    >
+                      Añadir equipo
+                    </Button>
+                  </div>
+                  <div className="mt-2 space-y-3">
+                    {equipmentResourcesDraft.map((item, index) => (
+                      <div
+                        key={`equipment-edit-${index}`}
+                        className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end"
+                      >
+                        <Input
+                          label={index === 0 ? "Equipo" : undefined}
+                          value={item.name}
+                          onChange={(e) =>
+                            updateEquipmentDraftRow(index, "name", e.target.value)
+                          }
+                        />
+                        <Input
+                          label={index === 0 ? "Estado" : undefined}
+                          value={item.status}
+                          onChange={(e) =>
+                            updateEquipmentDraftRow(index, "status", e.target.value)
+                          }
+                          placeholder="Operativa, standby, etc."
+                        />
+                        <Input
+                          label={index === 0 ? "Notas" : undefined}
+                          value={item.notes}
+                          onChange={(e) =>
+                            updateEquipmentDraftRow(index, "notes", e.target.value)
+                          }
+                        />
+                        {equipmentResourcesDraft.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeEquipmentDraftRow(index)}
+                            className="text-red-500 hover:text-red-700 text-xs font-semibold sm:col-span-3 text-left"
+                          >
+                            <span className="inline-flex items-center gap-1">
+                              <XMarkIcon className="h-4 w-4" /> Quitar
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-2 space-y-3 text-sm text-gray-700">
+                <div>
+                  <p className="font-medium">Personal del contratista</p>
+                  {contractorPersonnelLines.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {contractorPersonnelLines.map((line, index) => (
+                        <li key={`cp-${index}`}>{line}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-gray-500">Sin registro.</p>
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium">Personal de la interventoría</p>
+                  {interventoriaPersonnelLines.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {interventoriaPersonnelLines.map((line, index) => (
+                        <li key={`ip-${index}`}>{line}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-gray-500">Sin registro.</p>
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium">Maquinaria y equipos</p>
+                  {equipmentResourceLines.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {equipmentResourceLines.map((line, index) => (
+                        <li key={`eq-${index}`}>{line}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-gray-500">Sin registro.</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          )}
+
+          {showGeneralSections && (
+          <div>
+            <h4 className="text-md font-semibold text-gray-800">
+              Ejecución de actividades
+            </h4>
+            {isEditing ? (
+              <div className="mt-2 space-y-3">
+                <textarea
+                  value={listToPlainText(executedActivities)}
+                  onChange={(e) => handleListChange("executedActivities", e.target.value)}
+                  onKeyDown={(e) => {
+                    // Permitir espacios y todos los caracteres normalmente
+                    e.stopPropagation();
+                  }}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Actividades ejecutadas"
+                />
+                <textarea
+                  value={listToPlainText(executedQuantities)}
+                  onChange={(e) => handleListChange("executedQuantities", e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Cantidades de obra"
+                />
+                <textarea
+                  value={listToPlainText(scheduledActivities)}
+                  onChange={(e) => handleListChange("scheduledActivities", e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Programadas y no ejecutadas"
+                />
+              </div>
+            ) : (
+              <div className="mt-2 space-y-3 text-sm text-gray-700">
+                <div>
+                  <p className="font-medium">Actividades ejecutadas</p>
+                  {executedActivities.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {executedActivities.map((item, index) => (
+                        <li key={`ea-${index}`}>{item.text}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-gray-500">Sin registro.</p>
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium">Cantidades ejecutadas</p>
+                  {executedQuantities.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {executedQuantities.map((item, index) => (
+                        <li key={`eqty-${index}`}>{item.text}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-gray-500">Sin registro.</p>
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium">Programadas y no ejecutadas</p>
+                  {scheduledActivities.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {scheduledActivities.map((item, index) => (
+                        <li key={`sa-${index}`}>{item.text}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-gray-500">Sin registro.</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          )}
+
+          {showGeneralSections && (
+          <div>
+            <h4 className="text-md font-semibold text-gray-800">
+              Control, novedades e incidencias
+            </h4>
+            {isEditing ? (
+              <div className="mt-2 space-y-3">
+                <textarea
+                  value={listToPlainText(qualityControls)}
+                  onChange={(e) => handleListChange("qualityControls", e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Control de calidad"
+                />
+                <textarea
+                  value={listToPlainText(materialsReceived)}
+                  onChange={(e) => handleListChange("materialsReceived", e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Materiales recibidos"
+                />
+                <textarea
+                  value={listToPlainText(safetyNotes)}
+                  onChange={(e) => handleListChange("safetyNotes", e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Gestión HSEQ / SST"
+                />
+                <textarea
+                  value={listToPlainText(projectIssues)}
+                  onChange={(e) => handleListChange("projectIssues", e.target.value)}
+                  onKeyDown={(e) => {
+                    // Permitir espacios y todos los caracteres normalmente
+                    e.stopPropagation();
+                  }}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Novedades y contratiempos"
+                />
+                <textarea
+                  value={listToPlainText(siteVisits)}
+                  onChange={(e) => handleListChange("siteVisits", e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Visitas registradas"
+                />
+              </div>
+            ) : (
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-700">
+                <div>
+                  <p className="font-medium">Control de calidad</p>
+                  {qualityControls.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {qualityControls.map((item, index) => (
+                        <li key={`qc-${index}`}>{item.text}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-gray-500">Sin registro.</p>
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium">Materiales recibidos</p>
+                  {materialsReceived.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {materialsReceived.map((item, index) => (
+                        <li key={`mr-${index}`}>{item.text}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-gray-500">Sin registro.</p>
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium">Gestión HSEQ / SST</p>
+                  {safetyNotes.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {safetyNotes.map((item, index) => (
+                        <li key={`sn-${index}`}>{item.text}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-gray-500">Sin registro.</p>
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium">Novedades / Contratiempos</p>
+                  {projectIssues.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {projectIssues.map((item, index) => (
+                        <li key={`pi-${index}`}>{item.text}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-gray-500">Sin registro.</p>
+                  )}
+                </div>
+                <div className="sm:col-span-2">
+                  <p className="font-medium">Visitas</p>
+                  {siteVisits.length ? (
+                    <ul className="mt-1 list-disc list-inside space-y-1">
+                      {siteVisits.map((item, index) => (
+                        <li key={`sv-${index}`}>{item.text}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-gray-500">Sin registro.</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div>
+              <h4 className="text-md font-semibold text-gray-800">
+                Observaciones del contratista
+              </h4>
+              {isEditing ? (
+                <textarea
+                  value={contractorObservations}
+                  onChange={(e) =>
+                    setEditedEntry((prev) => ({
+                      ...prev,
+                      contractorObservations: e.target.value,
+                    }))
+                  }
+                  rows={3}
+                  className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                />
+              ) : (
+                <>
+                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                    {contractorObservations || "Sin observaciones."}
+                  </p>
+                  {canEditContractorResponses && (
+                    <div className="mt-3 rounded-lg border border-yellow-200 bg-yellow-50 p-3 space-y-3">
+                      <p className="text-xs text-yellow-800">
+                        Solo puedes editar tus respuestas durante la revisión del
+                        contratista.
+                      </p>
+                      {isContractorEditingNotes ? (
+                        <>
+                          <div className="space-y-3">
+                            {contractorResponseFields.map(({ key, label }) => (
+                              <div key={key}>
+                                <label className="text-xs font-semibold text-yellow-900">
+                                  {label}
+                                </label>
+                                <textarea
+                                  value={contractorResponsesDraft[key]}
+                                  onChange={(e) =>
+                                    handleContractorResponseDraftChange(
+                                      key,
+                                      e.target.value
+                                    )
+                                  }
+                                  rows={key === "contractorObservations" ? 3 : 2}
+                                  className="mt-1 block w-full border border-yellow-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm p-2"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              variant="primary"
+                              onClick={handleSaveContractorNotes}
+                              disabled={isSavingContractorNotes}
+                            >
+                              {isSavingContractorNotes
+                                ? "Guardando..."
+                                : "Guardar"}
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              onClick={() => {
+                                setIsContractorEditingNotes(false);
+                                setContractorResponsesDraft({
+                                  contractorObservations:
+                                    contractorObservations || "",
+                                  safetyContractorResponse:
+                                    safetyContractorResponse || "",
+                                  environmentContractorResponse:
+                                    environmentContractorResponse || "",
+                                  socialContractorResponse:
+                                    socialContractorResponse || "",
+                                });
+                              }}
+                              disabled={isSavingContractorNotes}
+                            >
+                              Cancelar
+                            </Button>
+                          </div>
+                        </>
+                      ) : (
+                        <Button
+                          variant="secondary"
+                          onClick={() => {
+                            setContractorResponsesDraft({
+                              contractorObservations:
+                                contractorObservations || "",
+                              safetyContractorResponse:
+                                safetyContractorResponse || "",
+                              environmentContractorResponse:
+                                environmentContractorResponse || "",
+                              socialContractorResponse:
+                                socialContractorResponse || "",
+                            });
+                            setIsContractorEditingNotes(true);
+                          }}
+                        >
+                          Editar respuestas
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            <div>
+              <h4 className="text-md font-semibold text-gray-800">
+                Observaciones de la interventoría
+              </h4>
+              {isEditing ? (
+                <textarea
+                  value={interventoriaObservations}
+                  onChange={(e) =>
+                    setEditedEntry((prev) => ({
+                      ...prev,
+                      interventoriaObservations: e.target.value,
+                    }))
+                  }
+                  rows={3}
+                  className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                />
+              ) : (
+                <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                  {interventoriaObservations || "Sin observaciones."}
+                </p>
+              )}
+            </div>
+          </div>
+
+        <div>
+          <h4 className="text-md font-semibold text-gray-800">
+            Observaciones adicionales
+            </h4>
+            {isEditing ? (
+              <textarea
+                name="additionalObservations"
+                value={additionalObservations}
+                onChange={handleInputChange}
+                rows={3}
+                className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+              />
+            ) : (
+              <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                {additionalObservations || "Sin observaciones."}
+              </p>
+            )}
+          </div>
+          {isEditing && (
+            <div>
+              <h4 className="text-md font-semibold text-gray-800">
+                Firmantes responsables
+              </h4>
+              <p className="mt-1 text-xs text-gray-500">
+                Define quiénes deben firmar esta anotación. El autor está incluido automáticamente.
+              </p>
+              <div className="mt-2 border border-gray-200 rounded-md divide-y max-h-48 overflow-y-auto">
+                {sortedUsers.map((user) => {
+                  const isAuthor = author?.id === user.id;
+                  const isChecked = selectedSignerIds.includes(user.id) || isAuthor;
+                  return (
+                    <label
+                      key={user.id}
+                      className="flex items-start gap-3 px-3 py-2 text-sm text-gray-700"
+                    >
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4 text-brand-primary border-gray-300 rounded focus:ring-brand-primary"
+                        checked={isChecked}
+                        onChange={(event) =>
+                          handleToggleSigner(user.id, event.target.checked)
+                        }
+                        disabled={isAuthor}
+                      />
+                      <span>
+                        <span className="font-semibold text-gray-900">
+                          {user.fullName}
+                        </span>
+                        {user.cargo ? (
+                          <span className="block text-xs text-gray-500">
+                            {user.cargo}
+                          </span>
+                        ) : user.projectRole ? (
+                          <span className="block text-xs text-gray-500">
+                            {getFullRoleName(user.projectRole, user.entity)}
+                          </span>
+                        ) : null}
+                        {isAuthor && (
+                          <span className="block text-xs text-green-600 font-medium">
+                            Autor de la bitácora
+                          </span>
+                        )}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {/* Confidential Checkbox */}
           {isEditing && (
             <div className="flex items-start">
@@ -609,33 +2887,141 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
                               <span className="text-gray-500">
                                 {formatBytes(att.size)}
                               </span>
-                              <a
-                                href={att.url}
-                                download={att.fileName}
-                                className="font-medium text-brand-primary hover:text-brand-secondary"
-                              >
-                                Descargar
-                              </a>
+                              {canDownload ? (
+                                <a
+                                  href={att.url}
+                                  download={att.fileName}
+                                  className="font-medium text-brand-primary hover:text-brand-secondary"
+                                >
+                                  Descargar
+                                </a>
+                              ) : (
+                                <span className="text-gray-400 text-xs italic">Solo previsualización</span>
+                              )}
                             </div>
                           </div>
                         </div>
                       );
                     }
-                    return <AttachmentItem key={att.id} attachment={att} />;
+                    const isPdf =
+                      typeof att.type === "string" &&
+                      att.type.toLowerCase().includes("pdf");
+                    return (
+                      <AttachmentItem
+                        key={att.id}
+                        attachment={att}
+                      />
+                    );
                   })}
                 </div>
               </div>
             )
           )}
+          
+          {/* Review Tasks Block */}
+          {!isEditing && reviewTasks && reviewTasks.length > 0 && (
+            <div className="pt-4 border-t">
+              <h4 className="text-md font-semibold text-gray-800 mb-3">
+                Revisiones del Documento
+              </h4>
+              <div className="mb-2 text-sm text-gray-600">
+                Revisiones completadas: {reviewTasks.filter((t) => t.status === "COMPLETED").length} de {reviewTasks.length}.
+              </div>
+              <div className="space-y-3">
+                {reviewTasks.map((task) => {
+                  const reviewer = task.reviewer;
+                  if (!reviewer) return null;
+                  
+                  const isCompleted = task.status === "COMPLETED";
+                  const isMyReview = reviewer.id === currentUser.id;
+                  
+                  return (
+                    <div
+                      key={task.id}
+                      className={`flex items-center justify-between p-3 rounded-lg border ${
+                        isCompleted
+                          ? "bg-green-50 border-green-200"
+                          : "bg-yellow-50 border-yellow-200"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3 flex-1">
+                        <img
+                          src={getUserAvatarUrl(reviewer)}
+                          alt={reviewer.fullName}
+                          className="h-10 w-10 rounded-full object-cover"
+                        />
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">
+                            {reviewer.fullName}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {reviewer.projectRole || "Sin rol"}
+                          </p>
+                          {isCompleted && task.completedAt && (
+                            <p className="text-xs text-green-700 mt-1">
+                              Completada: {new Date(task.completedAt).toLocaleString("es-CO")}
+                            </p>
+                          )}
+                          {!isCompleted && task.assignedAt && (
+                            <p className="text-xs text-yellow-700 mt-1">
+                              Asignada: {new Date(task.assignedAt).toLocaleString("es-CO")}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          {isCompleted ? (
+                            <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                              ✓ Completada
+                            </span>
+                          ) : (
+                            <span className="px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                              Pendiente
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {canCompleteReview && (
+                <div className="mt-4">
+                  <Button
+                    variant="primary"
+                    onClick={handleCompleteReview}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    Marcar Mi Revisión como Completada
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+          
           {/* Signature Block */}
           {!isEditing && (
-            <SignatureBlock
-              requiredSignatories={requiredSignatories}
-              signatures={signatures}
-              currentUser={currentUser}
-              onSignRequest={() => setIsSignatureModalOpen(true)}
-              documentType="Anotación"
-            />
+            <>
+              <SignatureBlock
+                requiredSignatories={requiredSignatories}
+                signatures={editedEntry.signatures}
+                signatureTasks={editedEntry.signatureTasks}
+                signatureSummary={editedEntry.signatureSummary}
+                currentUser={currentUser}
+                onSignRequest={
+                  signatureBlockReadOnly
+                    ? undefined
+                    : () => setIsSignatureModalOpen(true)
+                }
+                readOnly={signatureBlockReadOnly}
+                documentType="Anotación"
+              />
+              {!isSigningStage && (
+                <p className="mt-2 text-sm text-gray-500">
+                  Las firmas se habilitan cuando la interventoría marca la
+                  anotación como “Listo para firmas”.
+                </p>
+              )}
+            </>
           )}
           {/* Comments */}
           <div>
@@ -646,7 +3032,7 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
                   <div key={comment.id} className="flex items-start space-x-3">
                     {/* Cambia "user" por "author" en las siguientes 2 líneas */}
                     <img
-                      src={comment.author.avatarUrl}
+                      src={getUserAvatarUrl(comment.author)}
                       alt={comment.author.fullName}
                       className="h-8 w-8 rounded-full object-cover"
                     />
@@ -661,7 +3047,7 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
                         </span>
                       </div>
                       <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded-md whitespace-pre-wrap">
-                        {comment.content}
+                        {renderCommentWithMentions(comment.content, availableUsers)}
                       </p>
                       {(comment.attachments || []).length > 0 && (
                         <div className="mt-2 space-y-3">
@@ -711,71 +3097,73 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
             )}
           </div>
           {/* New Comment Form */}
-          <div className="pt-4 border-t">
-            <form
-              onSubmit={handleCommentSubmit}
-              className="flex items-start space-x-3"
-            >
-              <img
-                src={currentUser.avatarUrl}
-                alt={currentUser.fullName}
-                className="h-8 w-8 rounded-full object-cover"
-              />
-              <div className="flex-1">
-                <textarea
-                  rows={2}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                  placeholder="Escribe tu comentario aquí..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                ></textarea>
-                {commentFiles.length > 0 && (
-                  <div className="mt-2 space-y-1">
-                    {commentFiles.map((file, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between py-1 pl-2 pr-1 text-sm bg-blue-50 rounded-md border border-blue-200"
-                      >
-                        <span className="truncate font-medium flex-1 w-0 text-gray-700">
-                          {file.name}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveCommentFile(file)}
-                          className="ml-2 flex-shrink-0 text-red-500 hover:text-red-700"
+          {!readOnly && (
+            <div className="pt-4 border-t" onClick={(e) => e.stopPropagation()}>
+              <form
+                onSubmit={handleCommentSubmit}
+                className="flex items-start space-x-3"
+              >
+                <img
+                  src={getUserAvatarUrl(currentUser)}
+                  alt={currentUser.fullName}
+                  className="h-8 w-8 rounded-full object-cover"
+                />
+                <div className="flex-1">
+                  <MentionTextarea
+                    rows={2}
+                    placeholder="Escribe tu comentario aquí... (usa @ para mencionar usuarios)"
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    users={availableUsers}
+                  />
+                  {commentFiles.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {commentFiles.map((file, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between py-1 pl-2 pr-1 text-sm bg-blue-50 rounded-md border border-blue-200"
                         >
-                          <XMarkIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
+                          <span className="truncate font-medium flex-1 w-0 text-gray-700">
+                            {file.name}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveCommentFile(file)}
+                            className="ml-2 flex-shrink-0 text-red-500 hover:text-red-700"
+                          >
+                            <XMarkIcon className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="mt-2 flex justify-between items-center">
+                    <label
+                      htmlFor="comment-file-upload"
+                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-brand-primary bg-brand-primary/10 hover:bg-brand-primary/20 cursor-pointer"
+                    >
+                      <PaperClipIcon className="h-4 w-4 mr-2" />
+                      <span>Adjuntar</span>
+                      <input
+                        id="comment-file-upload"
+                        type="file"
+                        multiple
+                        onChange={handleCommentFileChange}
+                        className="sr-only"
+                      />
+                    </label>
+                    <Button
+                      type="submit"
+                      size="sm"
+                      disabled={!newComment.trim() && commentFiles.length === 0}
+                    >
+                      Publicar Comentario
+                    </Button>
                   </div>
-                )}
-                <div className="mt-2 flex justify-between items-center">
-                  <label
-                    htmlFor="comment-file-upload"
-                    className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-brand-primary bg-brand-primary/10 hover:bg-brand-primary/20 cursor-pointer"
-                  >
-                    <PaperClipIcon className="h-4 w-4 mr-2" />
-                    <span>Adjuntar</span>
-                    <input
-                      id="comment-file-upload"
-                      type="file"
-                      multiple
-                      onChange={handleCommentFileChange}
-                      className="sr-only"
-                    />
-                  </label>
-                  <Button
-                    type="submit"
-                    size="sm"
-                    disabled={!newComment.trim() && commentFiles.length === 0}
-                  >
-                    Publicar Comentario
-                  </Button>
                 </div>
-              </div>
-            </form>
-          </div>
+              </form>
+            </div>
+          )}
           {/* Change History */}
           <ChangeHistory history={history} />
         </div>
@@ -800,17 +3188,60 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
           <div className="flex gap-2">
             {isEditing ? (
               <>
-                <Button variant="secondary" onClick={handleCancel}>
+                <Button 
+                  variant="secondary" 
+                  onClick={handleCancel}
+                  disabled={isUpdating}
+                >
                   Cancelar
                 </Button>
-                <Button variant="primary" onClick={handleSave}>
-                  Guardar Cambios
+                <Button 
+                  variant="primary" 
+                  onClick={handleSave}
+                  disabled={isUpdating}
+                >
+                  {isUpdating ? (
+                    <>
+                      <svg 
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        fill="none" 
+                        viewBox="0 0 24 24"
+                      >
+                        <circle 
+                          className="opacity-25" 
+                          cx="12" 
+                          cy="12" 
+                          r="10" 
+                          stroke="currentColor" 
+                          strokeWidth="4"
+                        ></circle>
+                        <path 
+                          className="opacity-75" 
+                          fill="currentColor" 
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Guardando...
+                    </>
+                  ) : (
+                    "Guardar Cambios"
+                  )}
                 </Button>
               </>
             ) : (
               <>
                 <Button variant="secondary" onClick={onClose}>
                   Cerrar
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleExportPdf}
+                  leftIcon={<DocumentArrowDownIcon className="h-4 w-4" />}
+                  disabled={isGeneratingPdf || !canDownload}
+                  title={!canDownload ? "No tienes permiso para descargar archivos" : undefined}
+                >
+                  {isGeneratingPdf ? "Generando..." : canDownload ? "Exportar PDF" : "Solo previsualización"}
                 </Button>
                 {canEdit && (
                   <Button variant="primary" onClick={() => setIsEditing(true)}>
@@ -827,6 +3258,7 @@ const handleConfirmSignature = async (password: string): Promise<{ success: bool
         onClose={() => setIsSignatureModalOpen(false)}
         onConfirm={handleConfirmSignature}
         userToSign={currentUser}
+        consentStatement="Autorizo el uso de mi firma manuscrita digital para esta anotación de bitácora."
       />
     </>
   );

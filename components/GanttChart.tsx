@@ -280,6 +280,13 @@ const GanttChart = forwardRef<HTMLDivElement, { tasks: ProcessedProjectTask[], o
                     <button onClick={() => setDayWidth(w => Math.min(60, w + 5))} className="p-1 rounded-md hover:bg-gray-200">+</button>
                 </div>
             </div>
+            <div className="px-4 py-2 bg-gray-50 border-b border-gray-200 text-xs text-gray-600 flex flex-wrap gap-4">
+                <span className="inline-flex items-center gap-2"><span className="w-3 h-3 rounded bg-brand-primary"></span> Avance real</span>
+                <span className="inline-flex items-center gap-2"><span className="w-3 h-3 rounded bg-brand-accent opacity-60"></span> Planificado</span>
+                <span className="inline-flex items-center gap-2"><span className="w-3 h-3 rounded bg-gray-600"></span> Tarea resumen</span>
+                <span className="inline-flex items-center gap-2"><span className="w-3 h-3 rounded bg-gray-200"></span> Fin de semana</span>
+                <span className="inline-flex items-center gap-2"><span className="w-3 h-3 border border-dashed border-red-500"></span> Hoy</span>
+            </div>
             <div className="overflow-auto" style={{ maxHeight: '70vh' }} ref={timelineRef}>
                 <div ref={ref} style={{ display: 'grid', gridTemplateColumns, minWidth: `${TASK_COL_WIDTH + (PROGRESS_COL_WIDTH * 3) + (totalDays * dayWidth)}px`, background: 'white', position: 'relative' }}>
                     {/* --- HEADERS --- */}

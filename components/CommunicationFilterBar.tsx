@@ -14,11 +14,13 @@ interface CommunicationFilterBarProps {
     sender: string;
     recipient: string;
     status: string;
+    direction: 'all' | 'sent' | 'received';
   };
   setFilters: React.Dispatch<React.SetStateAction<any>>;
+  userRole: string;
 }
 
-const CommunicationFilterBar: React.FC<CommunicationFilterBarProps> = ({ filters, setFilters }) => {
+const CommunicationFilterBar: React.FC<CommunicationFilterBarProps> = ({ filters, setFilters, userRole }) => {
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -27,7 +29,7 @@ const CommunicationFilterBar: React.FC<CommunicationFilterBarProps> = ({ filters
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="relative col-span-1 md:col-span-2 lg:col-span-1">
           <Input 
             name="searchTerm"
@@ -40,7 +42,12 @@ const CommunicationFilterBar: React.FC<CommunicationFilterBarProps> = ({ filters
             <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
           </div>
         </div>
-         <Select name="status" value={filters.status} onChange={handleInputChange}>
+        <Select name="direction" value={filters.direction} onChange={handleInputChange}>
+          <option value="all">Todas las comunicaciones</option>
+          <option value="received">Recibidas</option>
+          <option value="sent">Enviadas</option>
+        </Select>
+        <Select name="status" value={filters.status} onChange={handleInputChange}>
           <option value="all">Todos los estados</option>
           {Object.values(CommunicationStatus).map(status => (
             <option key={status} value={status}>{status}</option>

@@ -4,6 +4,7 @@ import Modal from './ui/Modal';
 import Button from './ui/Button';
 import Select from './ui/Select';
 import WorkActaStatusBadge from './WorkActaStatusBadge';
+import AttachmentItem from './AttachmentItem';
 
 interface WorkActaDetailModalProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface WorkActaDetailModalProps {
   acta: WorkActa;
   contractItems: ContractItem[];
   onUpdate: (updatedActa: WorkActa) => void;
+  readOnly?: boolean;
 }
 
 const DetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
@@ -20,7 +22,7 @@ const DetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label,
     </div>
 );
 
-const WorkActaDetailModal: React.FC<WorkActaDetailModalProps> = ({ isOpen, onClose, acta, contractItems, onUpdate }) => {
+const WorkActaDetailModal: React.FC<WorkActaDetailModalProps> = ({ isOpen, onClose, acta, contractItems, onUpdate, readOnly = false }) => {
     const [editedActa, setEditedActa] = useState<WorkActa>(acta);
 
     useEffect(() => {
@@ -32,10 +34,16 @@ const WorkActaDetailModal: React.FC<WorkActaDetailModalProps> = ({ isOpen, onClo
     }, [contractItems]);
 
     const handleStatusChange = (newStatus: WorkActaStatus) => {
+        if (readOnly) {
+            return;
+        }
         setEditedActa(prev => ({ ...prev, status: newStatus }));
     };
 
     const handleSaveChanges = () => {
+        if (readOnly) {
+            return;
+        }
         onUpdate(editedActa);
         onClose();
     };
@@ -102,11 +110,25 @@ const WorkActaDetailModal: React.FC<WorkActaDetailModalProps> = ({ isOpen, onClo
                 </div>
 
                 <div>
+                    <h4 className="text-md font-semibold text-gray-800 mb-2">Documentos Soporte</h4>
+                    {(acta.attachments || []).length > 0 ? (
+                        <ul className="space-y-2">
+                            {(acta.attachments || []).map((attachment) => (
+                                <AttachmentItem key={attachment.id} attachment={attachment} />
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-sm text-gray-500">Este acta no tiene adjuntos cargados.</p>
+                    )}
+                </div>
+
+                <div>
                     <h4 className="text-md font-semibold text-gray-800 mb-2">Actualizar Estado</h4>
                     <Select
                         id="status"
                         value={editedActa.status}
                         onChange={(e) => handleStatusChange(e.target.value as WorkActaStatus)}
+                        disabled={readOnly}
                     >
                         {Object.values(WorkActaStatus).map(s => <option key={s} value={s}>{s}</option>)}
                     </Select>
@@ -114,7 +136,9 @@ const WorkActaDetailModal: React.FC<WorkActaDetailModalProps> = ({ isOpen, onClo
             </div>
             <div className="mt-6 flex flex-col sm:flex-row sm:justify-end gap-2">
                 <Button variant="secondary" onClick={onClose}>Cerrar</Button>
-                <Button variant="primary" onClick={handleSaveChanges}>Guardar Cambios</Button>
+                {!readOnly && (
+                    <Button variant="primary" onClick={handleSaveChanges}>Guardar Cambios</Button>
+                )}
             </div>
         </Modal>
     );

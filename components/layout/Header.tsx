@@ -3,18 +3,29 @@ import { useAuth } from '../../contexts/AuthContext';
 import { ChevronDownIcon, BellIcon, Bars3Icon, ChevronUpIcon } from '../icons/Icon';
 import { Notification } from '../../types';
 import NotificationPanel from '../notifications/NotificationPanel';
+import { getUserAvatarUrl } from '../../src/utils/avatar';
+import UserProfileModal from '../UserProfileModal';
+import { getFullRoleName } from '../../src/utils/roleDisplay';
 
 interface HeaderProps {
   setIsSidebarOpen: (isOpen: boolean) => void;
   notifications: Notification[];
   setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
   onNotificationClick: (notification: Notification) => void;
+  onOpenSignatureManager: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ setIsSidebarOpen, notifications, setNotifications, onNotificationClick }) => {
+const Header: React.FC<HeaderProps> = ({
+  setIsSidebarOpen,
+  notifications,
+  setNotifications,
+  onNotificationClick,
+  onOpenSignatureManager,
+}) => {
   const { user, logout } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationPanelOpen, setIsNotificationPanelOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
   
@@ -91,10 +102,10 @@ const Header: React.FC<HeaderProps> = ({ setIsSidebarOpen, notifications, setNot
             onClick={() => setIsDropdownOpen(prev => !prev)} 
             className="flex items-center space-x-2 focus:outline-none p-1 rounded-md hover:bg-gray-100"
           >
-            <img className="h-9 w-9 rounded-full object-cover" src={user.avatarUrl} alt={user.fullName} />
+            <img className="h-9 w-9 rounded-full object-cover" src={getUserAvatarUrl(user)} alt={user.fullName} />
             <div className='hidden sm:block text-left'>
                 <div className="font-semibold text-sm text-gray-700">{user.fullName}</div>
-                <div className="text-xs text-gray-500">{user.projectRole}</div>
+                <div className="text-xs text-gray-500">{getFullRoleName(user.projectRole, user.entity)}</div>
             </div>
             {isDropdownOpen 
               ? <ChevronUpIcon className="h-5 w-5 text-gray-400 hidden sm:block"/> 
@@ -104,7 +115,24 @@ const Header: React.FC<HeaderProps> = ({ setIsSidebarOpen, notifications, setNot
           
           {isDropdownOpen && (
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5 z-20">
-              <a href="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mi Perfil</a>
+              <button
+                onClick={() => {
+                  setIsDropdownOpen(false);
+                  setIsProfileModalOpen(true);
+                }}
+                className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                Mi Perfil
+              </button>
+              <button
+                onClick={() => {
+                  setIsDropdownOpen(false);
+                  onOpenSignatureManager();
+                }}
+                className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                Mi firma manuscrita
+              </button>
               <button
                 onClick={logout}
                 className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -115,6 +143,11 @@ const Header: React.FC<HeaderProps> = ({ setIsSidebarOpen, notifications, setNot
           )}
         </div>
       </div>
+
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+      />
     </header>
   );
 };

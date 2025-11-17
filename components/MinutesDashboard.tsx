@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Project, Acta, User } from "../types";
-// Se elimina la importación de useMockApi
+import { Project, Acta, User, SignatureConsentPayload } from "../types";
 import Button from "./ui/Button";
 import { PlusIcon, ClipboardDocumentListIcon } from "./icons/Icon";
 import ActaCard from "./ActaCard";
@@ -9,7 +8,10 @@ import ActaFormModal from "./ActaFormModal";
 import EmptyState from "./ui/EmptyState";
 import ActaFilterBar from "./ActaFilterBar";
 import { useAuth } from "../contexts/AuthContext";
-import { MOCK_PROJECT, MOCK_USERS } from "../services/mockData"; // Aún usamos MOCK_PROJECT
+import { useApi } from "../src/hooks/useApi";
+import api from "../src/services/api";
+import { usePermissions } from "../src/hooks/usePermissions";
+import { useToast } from "./ui/ToastProvider";
 
 interface MinutesDashboardProps {
   // project: Project; // Ya no se recibe por props
@@ -22,12 +24,12 @@ const MinutesDashboard: React.FC<MinutesDashboardProps> = ({
   clearInitialItem,
 }) => {
   const { user } = useAuth();
-  const project = MOCK_PROJECT; // Usamos el de prueba por ahora
-
-  // --- ¡NUEVO ESTADO PARA DATOS REALES! ---
-  const [actas, setActas] = useState<Acta[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: project, isLoading: isProjectLoading } = useApi.projectDetails();
+  const { data: actas, isLoading: isActasLoading, error, retry: refetchActas } = useApi.actas();
+  const { data: users, isLoading: isUsersLoading } = useApi.users();
+  const { canEditContent } = usePermissions();
+  const readOnly = !canEditContent;
+  const { showToast } = useToast();
 
   const [selectedActa, setSelectedActa] = useState<Acta | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -40,31 +42,15 @@ const MinutesDashboard: React.FC<MinutesDashboardProps> = ({
     endDate: "",
   });
 
-  // --- useEffect PARA OBTENER DATOS DEL BACKEND ---
   useEffect(() => {
-    const fetchActas = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const response = await fetch("http://localhost:4000/api/actas");
-        if (!response.ok) {
-          throw new Error(
-            "La respuesta del servidor para obtener actas no fue exitosa."
-          );
-        }
-        const data = await response.json();
-        setActas(data);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Ocurrió un error desconocido."
-        );
-      } finally {
-        setIsLoading(false);
+    if (initialItemToOpen && initialItemToOpen.type === "acta" && actas) {
+      const actaToOpen = actas.find((a) => a.id === initialItemToOpen.id);
+      if (actaToOpen) {
+        handleOpenDetail(actaToOpen);
       }
-    };
-
-    fetchActas();
-  }, []);
+      clearInitialItem();
+    }
+  }, [initialItemToOpen, actas, clearInitialItem]);
 
   const handleOpenDetail = (acta: Acta) => {
     setSelectedActa(acta);
@@ -82,7 +68,7 @@ const MinutesDashboard: React.FC<MinutesDashboardProps> = ({
   }, [initialItemToOpen, actas, clearInitialItem]);
 
   const filteredActas = useMemo(() => {
-    // ... (lógica de filtrado se queda igual) ...
+    if (!actas) return [];
     return actas.filter((acta) => {
       const searchTermMatch =
         acta.title.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
@@ -114,6 +100,15 @@ const MinutesDashboard: React.FC<MinutesDashboardProps> = ({
   };
 
   const handleOpenForm = () => {
+    if (readOnly) {
+      showToast({
+        title: "Acceso restringido",
+        message: "El rol Viewer solo puede consultar actas existentes.",
+        variant: "warning",
+      });
+      setIsFormModalOpen(false);
+      return;
+    }
     setIsFormModalOpen(true);
   };
 
@@ -121,89 +116,140 @@ const MinutesDashboard: React.FC<MinutesDashboardProps> = ({
     setIsFormModalOpen(false);
   };
 
-  // --- ¡CONECTAMOS LA FUNCIÓN DE GUARDADO! ---
   const handleSaveActa = async (newActaData: Omit<Acta, "id">) => {
-    try {
-      const response = await fetch("http://localhost:4000/api/actas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newActaData),
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede registrar actas de comité.",
+        variant: "error",
       });
-
-      if (!response.ok) {
-        throw new Error("Falló la creación del acta.");
-      }
-
-      const createdActa = await response.json();
-      setActas((prevActas) => [createdActa, ...prevActas]);
+      throw new Error("El perfil Viewer no puede registrar actas.");
+    }
+    try {
+      await api.actas.create(newActaData);
+      refetchActas();
       handleCloseForm();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Error al guardar el acta."
-      );
+      throw err instanceof Error ? err : new Error("Error al guardar el acta.");
     }
   };
 
-  // Dejamos estas funciones vacías por ahora, las implementaremos después
- const handleUpdateActa = async (updatedActa: Acta) => {
-  // La lógica principal será actualizar los compromisos que hayan cambiado
-  const originalActa = actas.find(a => a.id === updatedActa.id);
-  if (!originalActa) return;
+  const handleUpdateActa = async (updatedActa: Acta) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede modificar actas de comité.",
+        variant: "error",
+      });
+      return;
+    }
+    try {
+      // Actualizar el acta
+      await api.actas.update(updatedActa.id, updatedActa);
 
-  // Comparamos los compromisos para ver cuáles cambiaron de estado
-  for (const updatedCommitment of updatedActa.commitments) {
-    const originalCommitment = originalActa.commitments.find(c => c.id === updatedCommitment.id);
-    if (originalCommitment && originalCommitment.status !== updatedCommitment.status) {
-      // Si el estado cambió, llamamos a la API para actualizarlo
-      try {
-        await fetch(`http://localhost:4000/api/commitments/${updatedCommitment.id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: updatedCommitment.status }),
-        });
-      } catch (err) {
-        console.error("Falló al actualizar el compromiso:", updatedCommitment.id);
-        // Podríamos añadir un manejo de error más visible aquí
+      // Actualizar los compromisos que hayan cambiado
+      if (actas) {
+        const originalActa = actas.find((a) => a.id === updatedActa.id);
+        if (originalActa) {
+          for (const updatedCommitment of updatedActa.commitments) {
+            const originalCommitment = originalActa.commitments.find(
+              (c) => c.id === updatedCommitment.id
+            );
+            if (
+              originalCommitment &&
+              originalCommitment.status !== updatedCommitment.status
+            ) {
+      await api.actas.updateCommitment(updatedActa.id, updatedCommitment.id, {
+                status: updatedCommitment.status,
+              });
+            }
+          }
+        }
       }
+
+      // Refrescar los datos
+      refetchActas();
+      const updatedActaData = await api.actas.getById(updatedActa.id);
+      setSelectedActa(updatedActaData);
+    } catch (err) {
+      throw err instanceof Error ? err : new Error("Error al actualizar el acta.");
     }
-  }
-
-  // Actualizamos el estado local para que la UI se refleje inmediatamente
-  setActas(prev => prev.map(a => a.id === updatedActa.id ? updatedActa : a));
-  setSelectedActa(updatedActa);
-
-    // Actualizamos el estado local para que la UI se refleje inmediatamente
-    setActas((prev) =>
-      prev.map((a) => (a.id === updatedActa.id ? updatedActa : a))
-    );
-    setSelectedActa(updatedActa);
   };
 
-  const sendCommitmentReminderEmail = async (commitment: any, acta: Acta) => {};
+  const sendCommitmentReminderEmail = async (commitment: any, acta: Acta) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede enviar recordatorios de compromisos.",
+        variant: "error",
+      });
+      return;
+    }
+    try {
+      await api.actas.sendCommitmentReminder(acta.id, commitment.id);
+    } catch (err) {
+      throw err instanceof Error ? err : new Error("Error al enviar el recordatorio.");
+    }
+  };
+
   const addSignature = async (
     documentId: string,
     documentType: "acta",
-    signer: User
-  ) => {};
+    signer: User,
+    payload: SignatureConsentPayload
+  ) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede firmar actas.",
+        variant: "error",
+      });
+      return { success: false, error: "No autorizado" };
+    }
+    try {
+      const updatedActa = await api.actas.addSignature(documentId, {
+        signerId: signer.id,
+        password: payload.password,
+        consent: payload.consent,
+        consentStatement: payload.consentStatement,
+      });
+      setSelectedActa(updatedActa);
+      refetchActas();
+      return { success: true, updated: updatedActa };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Error al firmar el acta.";
+      return { success: false, error: errorMessage };
+    }
+  };
 
   if (!user) return null;
+
+  const isLoading = isProjectLoading || isActasLoading || isUsersLoading;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Actas de Comité</h2>
-          <p className="text-sm text-gray-500">Proyecto: {project.name}</p>
+          <p className="text-sm text-gray-500">
+            Proyecto: {project ? project.name : "Cargando..."}
+          </p>
         </div>
-        <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
-          Registrar Acta
-        </Button>
+        {canEditContent && (
+          <Button
+            onClick={handleOpenForm}
+            leftIcon={<PlusIcon />}
+            disabled={!users || users.length === 0}
+          >
+            Registrar Acta
+          </Button>
+        )}
       </div>
 
       <ActaFilterBar filters={filters} setFilters={setFilters} />
 
-      {isLoading && <div className="text-center p-8">Cargando actas...</div>}
-      {error && <div className="text-center p-8 text-red-500">{error}</div>}
+      {isLoading && <div className="text-center p-8">Cargando información...</div>}
+      {error && <div className="text-center p-8 text-red-500">{error.message}</div>}
 
       {!isLoading && !error && (
         <div>
@@ -223,9 +269,11 @@ const MinutesDashboard: React.FC<MinutesDashboardProps> = ({
               title="No se encontraron actas"
               message="No hay actas que coincidan con los filtros seleccionados o aún no se ha registrado ninguna. ¡Crea la primera!"
               actionButton={
-                <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
-                  Registrar Primera Acta
-                </Button>
+                canEditContent ? (
+                  <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
+                    Registrar Primera Acta
+                  </Button>
+                ) : undefined
               }
             />
           )}
@@ -241,14 +289,17 @@ const MinutesDashboard: React.FC<MinutesDashboardProps> = ({
           onSendReminder={sendCommitmentReminderEmail}
           onSign={addSignature}
           currentUser={user}
+          readOnly={readOnly}
         />
       )}
-
-      <ActaFormModal
-        isOpen={isFormModalOpen}
-        onClose={handleCloseForm}
-        onSave={handleSaveActa}
-      />
+      {canEditContent && (
+        <ActaFormModal
+          isOpen={isFormModalOpen}
+          onClose={handleCloseForm}
+          onSave={handleSaveActa}
+          users={users || []}
+        />
+      )}
     </div>
   );
 };

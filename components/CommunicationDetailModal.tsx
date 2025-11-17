@@ -1,22 +1,26 @@
 
 
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 // Fix: Corrected import path for types
-import { Communication, CommunicationStatus } from '../types';
+import { Communication, CommunicationStatus, CommunicationDirection, User } from '../types';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
 import AttachmentItem from './AttachmentItem';
 import CommunicationStatusBadge from './CommunicationStatusBadge';
 import Select from './ui/Select';
 import ComplianceAlert from './ComplianceAlert';
+import { getUserAvatarUrl } from '../src/utils/avatar';
 
 interface CommunicationDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   communication: Communication;
   allCommunications: Communication[];
-  onStatusChange: (commId: string, newStatus: CommunicationStatus) => void;
+  onStatusChange: (commId: string, newStatus: CommunicationStatus) => Promise<void> | void;
+  onAssign: (commId: string, assigneeId: string | null) => Promise<void>;
+  users: User[];
+  readOnly?: boolean;
 }
 
 const DetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
@@ -73,19 +77,68 @@ const findRootAndThread = (
 };
 
 
-const CommunicationDetailModal: React.FC<CommunicationDetailModalProps> = ({ isOpen, onClose, communication, allCommunications, onStatusChange }) => {
+const CommunicationDetailModal: React.FC<CommunicationDetailModalProps> = ({
+  isOpen,
+  onClose,
+  communication,
+  allCommunications,
+  onStatusChange,
+  onAssign,
+  users,
+  readOnly = false,
+}) => {
   const [currentStatus, setCurrentStatus] = useState<CommunicationStatus>(communication.status);
+  const [selectedAssigneeId, setSelectedAssigneeId] = useState<string>(communication.assignee?.id ?? '');
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const conversationThread = useMemo(
     () => findRootAndThread(communication, allCommunications),
     [communication, allCommunications]
   );
 
-  const handleSave = () => {
-    if (currentStatus !== communication.status) {
-      onStatusChange(communication.id, currentStatus);
+  useEffect(() => {
+    if (isOpen) {
+      setCurrentStatus(communication.status);
+      setSelectedAssigneeId(communication.assignee?.id ?? '');
+      setSaveError(null);
+      setIsSaving(false);
     }
-    onClose();
+  }, [communication, isOpen]);
+
+  const handleSave = async () => {
+    if (readOnly) {
+      return;
+    }
+    const updates: Promise<void | unknown>[] = [];
+    setSaveError(null);
+
+    if (currentStatus !== communication.status) {
+      updates.push(Promise.resolve(onStatusChange(communication.id, currentStatus)));
+    }
+
+    if (selectedAssigneeId !== (communication.assignee?.id ?? '')) {
+      updates.push(onAssign(communication.id, selectedAssigneeId || null));
+    }
+
+    if (updates.length === 0) {
+      onClose();
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      await Promise.all(updates);
+      onClose();
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'No se pudieron guardar los cambios. Intenta nuevamente.';
+      setSaveError(message);
+    } finally {
+      setIsSaving(false);
+    }
   };
   
   return (
@@ -124,6 +177,20 @@ const CommunicationDetailModal: React.FC<CommunicationDetailModalProps> = ({ isO
                 <DetailRow label="Fecha de Envío" value={new Date(communication.sentDate).toLocaleDateString('es-CO', {dateStyle: 'long'})} />
                 <DetailRow label="Medio de Envío" value={communication.deliveryMethod} />
                 <DetailRow label="Firmado por" value={communication.signerName} />
+                <DetailRow label="Dirección" value={communication.direction === CommunicationDirection.SENT ? 'Enviada' : 'Recibida'} />
+                <DetailRow
+                  label="Requiere Respuesta"
+                  value={communication.requiresResponse ? (
+                    <span>
+                      Sí
+                      {communication.responseDueDate && (
+                        <span className="block text-xs text-gray-500">
+                          Vence: {new Date(communication.responseDueDate).toLocaleDateString('es-CO', { dateStyle: 'medium' })}
+                        </span>
+                      )}
+                    </span>
+                  ) : 'No'}
+                />
             </dl>
 
              <div>
@@ -149,14 +216,61 @@ const CommunicationDetailModal: React.FC<CommunicationDetailModalProps> = ({ isO
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                 <div>
+                    <h4 className="text-md font-semibold text-gray-800 mb-2">Responsable Asignado</h4>
+                    <div className="p-3 rounded-lg border bg-gray-50">
+                      {communication.assignee ? (
+                        <>
+                          <p className="text-sm font-medium text-gray-800">{communication.assignee.fullName}</p>
+                          <p className="text-xs text-gray-500">{communication.assignee.projectRole}</p>
+                          {communication.assignedAt && (
+                            <p className="text-xs text-gray-400 mt-1">
+                              Asignado el {new Date(communication.assignedAt).toLocaleDateString('es-CO', { dateStyle: 'medium' })}
+                            </p>
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-sm text-gray-600">Sin responsable asignado.</p>
+                      )}
+                    </div>
+                </div>
+                <div>
                     <h4 className="text-md font-semibold text-gray-800 mb-2">Actualizar Estado</h4>
-                     <Select 
-                        id="status" 
-                        value={currentStatus} 
-                        onChange={(e) => setCurrentStatus(e.target.value as CommunicationStatus)}
-                     >
-                        {Object.values(CommunicationStatus).map(s => <option key={s} value={s}>{s}</option>)}
+                    <Select
+                      id="status"
+                      value={currentStatus}
+                      onChange={(e) => setCurrentStatus(e.target.value as CommunicationStatus)}
+                      disabled={isSaving || readOnly}
+                    >
+                      {Object.values(CommunicationStatus).map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
                     </Select>
+                </div>
+                 <div>
+                    <h4 className="text-md font-semibold text-gray-800 mb-2">Reasignar Responsable</h4>
+                    <Select
+                      id="assignee"
+                      value={selectedAssigneeId}
+                      onChange={(e) => setSelectedAssigneeId(e.target.value)}
+                      disabled={isSaving || users.length === 0 || readOnly}
+                    >
+                      <option value="">Sin asignar</option>
+                      {users
+                        .slice()
+                        .sort((a, b) => a.fullName.localeCompare(b.fullName))
+                        .map((userOption) => (
+                          <option key={userOption.id} value={userOption.id}>
+                            {userOption.fullName} · {userOption.projectRole}
+                          </option>
+                        ))}
+                    </Select>
+                    {users.length === 0 && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Aún no hay usuarios disponibles para asignar.
+                      </p>
+                    )}
                 </div>
                  <div>
                     <h4 className="text-md font-semibold text-gray-800 mb-2">Historial de Estados</h4>
@@ -164,7 +278,7 @@ const CommunicationDetailModal: React.FC<CommunicationDetailModalProps> = ({ isO
                         {communication.statusHistory.slice().reverse().map((change, index) => (
                             <div key={index} className="flex items-start space-x-3">
                                 {/* Fix: Replaced `change.user.name` with `change.user.fullName`. */}
-                                <img src={change.user.avatarUrl} alt={change.user.fullName} className="h-8 w-8 rounded-full object-cover mt-1"/>
+                                <img src={getUserAvatarUrl(change.user)} alt={change.user.fullName} className="h-8 w-8 rounded-full object-cover mt-1"/>
                                 <div>
                                     <p className="text-sm text-gray-800">
                                         {/* Fix: Replaced `change.user.name` with `change.user.fullName`. */}
@@ -179,6 +293,12 @@ const CommunicationDetailModal: React.FC<CommunicationDetailModalProps> = ({ isO
                     </div>
                 </div>
             </div>
+
+            {saveError && (
+              <div className="p-3 bg-red-50 text-red-700 border border-red-200 rounded-md text-sm">
+                {saveError}
+              </div>
+            )}
 
             {conversationThread.length > 1 && (
                 <div>
@@ -204,8 +324,12 @@ const CommunicationDetailModal: React.FC<CommunicationDetailModalProps> = ({ isO
             )}
         </div>
         <div className="mt-6 flex flex-col sm:flex-row sm:justify-end gap-2">
-             <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-             <Button variant="primary" onClick={handleSave}>Guardar Cambios</Button>
+             <Button variant="secondary" onClick={onClose} disabled={isSaving}>Cancelar</Button>
+             {!readOnly && (
+               <Button variant="primary" onClick={handleSave} disabled={isSaving}>
+                 {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+               </Button>
+             )}
         </div>
     </Modal>
   );

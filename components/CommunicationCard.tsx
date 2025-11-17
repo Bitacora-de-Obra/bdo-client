@@ -3,7 +3,7 @@
 
 import React from 'react';
 // Fix: Corrected import path for types
-import { Communication, CommunicationStatus } from '../types';
+import { Communication, CommunicationStatus, CommunicationDirection } from '../types';
 import Card from './ui/Card';
 import AttachmentItem from './AttachmentItem';
 import CommunicationStatusBadge from './CommunicationStatusBadge';
@@ -35,12 +35,19 @@ const getAlertLevel = (dueDateStr?: string, status?: CommunicationStatus): 'gree
 
 const CommunicationCard: React.FC<CommunicationCardProps> = ({ communication, allCommunications, onSelect }) => {
   const sentDate = new Date(communication.sentDate).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' });
+  const responseDueDate = communication.responseDueDate
+    ? new Date(communication.responseDueDate).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' })
+    : null;
+  const uploaderName = communication.uploader?.fullName ?? 'Sin registrar';
+  const assigneeName = communication.assignee?.fullName ?? 'Sin asignar';
   
   const parentCommunication = communication.parentId 
     ? allCommunications.find(c => c.id === communication.parentId) 
     : null;
   
-  const alertLevel = getAlertLevel(communication.dueDate, communication.status);
+  const alertLevel = communication.requiresResponse
+    ? getAlertLevel(communication.responseDueDate, communication.status)
+    : null;
 
   const alertIconColorMap = {
       green: 'text-green-500',
@@ -55,6 +62,9 @@ const CommunicationCard: React.FC<CommunicationCardProps> = ({ communication, al
             <div className="flex-1">
                 <div className="flex items-center gap-3">
                     <p className="text-sm font-semibold text-brand-primary">Radicado #{communication.radicado}</p>
+                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                      {communication.direction === CommunicationDirection.SENT ? 'Enviada' : 'Recibida'}
+                    </span>
                     {alertLevel && (
                        <span title="Alerta de cumplimiento">
                          <ClockIcon className={`h-4 w-4 ${alertIconColorMap[alertLevel]}`} />
@@ -94,7 +104,18 @@ const CommunicationCard: React.FC<CommunicationCardProps> = ({ communication, al
             <div className="flex items-center">
                 <UserCircleIcon className="mr-1.5 text-gray-400" />
                 {/* Fix: Replaced `uploader.name` with `uploader.fullName`. */}
-                <span>Registrado por: {communication.uploader.fullName}</span>
+                <span>Registrado por: {uploaderName}</span>
+            </div>
+            <div className="flex items-center">
+                <UserCircleIcon className="mr-1.5 text-gray-400" />
+                <span>Responsable: {assigneeName}</span>
+            </div>
+            <div className="flex items-center">
+                <UserCircleIcon className="mr-1.5 text-gray-400" />
+                <span>
+                  {communication.requiresResponse ? 'Requiere respuesta' : 'Sin respuesta requerida'}
+                  {responseDueDate ? ` · Vence: ${responseDueDate}` : ''}
+                </span>
             </div>
              <div className="flex items-center">
                 <CalendarIcon className="mr-1.5 text-gray-400" />

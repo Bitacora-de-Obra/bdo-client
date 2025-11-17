@@ -30,6 +30,7 @@ const navItems = [
     { id: 'logbook', label: 'Bitácora de Obra', icon: <ClipboardDocumentListIcon />, section: 'Registros' },
     { id: 'drawings', label: 'Planos de Obra', icon: <MapIcon />, section: 'Registros' },
     { id: 'communications', label: 'Comunicaciones', icon: <ChatBubbleLeftRightIcon />, section: 'Registros' },
+    { id: 'chat', label: 'Chat del Proyecto', icon: <ChatBubbleLeftRightIcon />, section: 'Herramientas' },
     { id: 'minutes', label: 'Actas de Comité', icon: <ClipboardDocumentListIcon />, section: 'Registros' },
     { id: 'work_progress', label: 'Avance de Obra', icon: <ChartPieIcon />, section: 'Seguimiento' },
     { id: 'photographic_progress', label: 'Avance Fotográfico', icon: <CameraIcon />, section: 'Seguimiento' },
@@ -38,7 +39,7 @@ const navItems = [
     { id: 'weekly_reports', label: 'Informes Semanales', icon: <DocumentChartBarIcon />, section: 'Reportes' },
     { id: 'monthly_reports_obra', label: 'Informes Mensuales (Obra)', icon: <DocumentChartBarIcon />, section: 'Reportes' },
     { id: 'monthly_reports_interventoria', label: 'Informes Mensuales (Interv.)', icon: <DocumentChartBarIcon />, section: 'Reportes', roles: [UserRole.SUPERVISOR, UserRole.ADMIN] },
-    { id: 'export_project', label: 'Exportar Expediente', icon: <DocumentArrowDownIcon />, section: 'Herramientas' },
+    { id: 'export_project', label: 'Exportar Expediente', icon: <DocumentArrowDownIcon />, section: 'Herramientas', appRoles: ['admin'] },
     { id: 'admin', label: 'Administración', icon: <ShieldCheckIcon />, section: 'Herramientas', appRoles: ['admin'] },
 ];
 
@@ -46,6 +47,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, setIsSidebarOpen, curr
   const { user } = useAuth();
   
   const handleNavClick = (view: string) => {
+    // Deshabilitar acceso al chat temporalmente
+    if (view === 'chat') {
+      return; // No hacer nada, mantener la vista actual
+    }
     setCurrentView(view);
     if (window.innerWidth < 1024) { // lg breakpoint
         setIsSidebarOpen(false);
@@ -61,27 +66,35 @@ const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, setIsSidebarOpen, curr
     });
   }, [user]);
 
-  const NavLink: React.FC<{ item: typeof navItems[0] }> = ({ item }) => (
-    <li>
-      <a
-        href="#"
-        onClick={(e) => {
-          e.preventDefault();
-          handleNavClick(item.id);
-        }}
-        className={`flex items-center p-2 text-base font-normal rounded-lg transition duration-75 group ${
-          currentView === item.id
-            ? 'bg-brand-primary text-white'
-            : 'text-gray-200 hover:bg-gray-700'
-        }`}
-      >
-        {React.cloneElement(item.icon, { className: `w-6 h-6 transition duration-75 ${
-          currentView === item.id ? 'text-white' : 'text-gray-400 group-hover:text-white'
-        }`})}
-        <span className="ml-3">{item.label}</span>
-      </a>
-    </li>
-  );
+  const NavLink: React.FC<{ item: typeof navItems[0] }> = ({ item }) => {
+    const isChatDisabled = item.id === 'chat';
+    return (
+      <li>
+        <a
+          href="#"
+          onClick={(e) => {
+            e.preventDefault();
+            if (!isChatDisabled) {
+              handleNavClick(item.id);
+            }
+          }}
+          className={`flex items-center p-2 text-base font-normal rounded-lg transition duration-75 group ${
+            currentView === item.id
+              ? 'bg-brand-primary text-white'
+              : isChatDisabled
+              ? 'text-gray-500 cursor-not-allowed opacity-60'
+              : 'text-gray-200 hover:bg-gray-700'
+          }`}
+          title={isChatDisabled ? 'Chat temporalmente no disponible' : undefined}
+        >
+          {React.cloneElement(item.icon, { className: `w-6 h-6 transition duration-75 ${
+            currentView === item.id ? 'text-white' : isChatDisabled ? 'text-gray-500' : 'text-gray-400 group-hover:text-white'
+          }`})}
+          <span className="ml-3">{item.label}</span>
+        </a>
+      </li>
+    );
+  };
 
   const sections = [...new Set(visibleNavItems.map(item => item.section))];
 
@@ -100,8 +113,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, setIsSidebarOpen, curr
             <div className="h-full px-3 py-4 overflow-y-auto">
                 <div className="flex items-center justify-between mb-5">
                     <a href="#" className="flex items-center pl-2.5">
-                        <img src="https://www.idu.gov.co/sites/default/files/2022-10/logo-bogota.png" className="h-8 mr-3" alt="Bogota Logo" />
-                        <span className="self-center text-xl font-semibold whitespace-nowrap text-white">IDU</span>
+                        <div className="h-8 w-8 mr-3 rounded-full bg-white text-gray-800 font-bold flex items-center justify-center">
+                          ID
+                        </div>
+                        <span className="self-center text-xl font-semibold whitespace-nowrap text-white">Bitácora IDU</span>
                     </a>
                      <button 
                         onClick={() => setIsSidebarOpen(false)}

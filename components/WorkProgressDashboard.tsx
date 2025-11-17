@@ -1,102 +1,195 @@
-import React, { useState, useMemo } from 'react';
-import { Project, WorkActa, ContractItem, WorkActaStatus, ModificationType, ContractModification } from '../types';
-import { useMockApi } from '../hooks/useMockApi';
-import Button from './ui/Button';
-import { PlusIcon, CalculatorIcon } from './icons/Icon';
-import EmptyState from './ui/EmptyState';
-import Card from './ui/Card';
-import WorkActaStatusBadge from './WorkActaStatusBadge';
-import { MOCK_MAIN_CONTRACT_VALUE } from '../services/mockData';
-import WorkActaDetailModal from './WorkActaDetailModal';
-import WorkActaFormModal from './WorkActaFormModal';
-import ContractItemsSummaryTable from './ContractItemsSummaryTable';
-import ContractModificationFormModal from './ContractModificationFormModal';
-
+import React, { useState, useMemo, useEffect } from "react";
+import {
+  ProjectDetails,
+  WorkActa,
+  CostActa,
+  ContractItem,
+  WorkActaStatus,
+  ModificationType,
+  ContractModification,
+  Attachment,
+} from "../types";
+import api from "../src/services/api";
+import Button from "./ui/Button";
+import { PlusIcon, CalculatorIcon } from "./icons/Icon";
+import EmptyState from "./ui/EmptyState";
+import Card from "./ui/Card";
+import WorkActaStatusBadge from "./WorkActaStatusBadge";
+import CostActaStatusBadge from "./CostActaStatusBadge";
+import WorkActaDetailModal from "./WorkActaDetailModal";
+import CostActaDetailModal from "./CostActaDetailModal";
+import WorkActaFormModal from "./WorkActaFormModal";
+import ContractItemsSummaryTable from "./ContractItemsSummaryTable";
+import ContractModificationFormModal from "./ContractModificationFormModal";
+import ContractModificationDetailModal from "./ContractModificationDetailModal";
+import { usePermissions } from "../src/hooks/usePermissions";
+import { useToast } from "./ui/ToastProvider";
 
 interface WorkProgressDashboardProps {
-  project: Project;
-  api: ReturnType<typeof useMockApi>;
+  project: ProjectDetails;
+  contractModifications: ContractModification[];
+  onContractModificationsRefresh?: () => Promise<void>;
+  contractModificationsLoading?: boolean;
 }
 
-const KPICard: React.FC<{ title: string; value: string; children?: React.ReactNode }> = ({ title, value, children }) => (
-    <Card className="p-5">
-        <h3 className="text-sm font-medium text-gray-500 truncate">{title}</h3>
-        <p className="mt-1 text-2xl font-bold text-gray-900">{value}</p>
-        {children}
-    </Card>
+const KPICard: React.FC<{
+  title: string;
+  value: string;
+  children?: React.ReactNode;
+}> = ({ title, value, children }) => (
+  <Card className="p-5">
+    <h3 className="text-sm font-medium text-gray-500 truncate">{title}</h3>
+    <p className="mt-1 text-2xl font-bold text-gray-900">{value}</p>
+    {children}
+  </Card>
 );
 
-const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({ project, api }) => {
-  const { workActas, contractItems, contractModifications, isLoading, error, addWorkActa, updateWorkActa, addContractModification } = api;
-  
+const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
+  project,
+  contractModifications,
+  onContractModificationsRefresh,
+  contractModificationsLoading = false,
+}) => {
+  // --- Estado local para datos reales ---
+  const [workActas, setWorkActas] = useState<WorkActa[]>([]);
+  const [costActas, setCostActas] = useState<CostActa[]>([]);
+  const [contractItems, setContractItems] = useState<ContractItem[]>([]);
+  const [modifications, setModifications] = useState<ContractModification[]>(contractModifications ?? []);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  // ------------------------------------
+
   // State for Work Actas
   const [selectedActa, setSelectedActa] = useState<WorkActa | null>(null);
+  const [selectedCostActa, setSelectedCostActa] = useState<CostActa | null>(null);
   const [isActaDetailModalOpen, setIsActaDetailModalOpen] = useState(false);
+  const [isCostActaDetailModalOpen, setIsCostActaDetailModalOpen] = useState(false);
   const [isActaFormModalOpen, setIsActaFormModalOpen] = useState(false);
   const [isModFormModalOpen, setIsModFormModalOpen] = useState(false);
+  const [selectedModification, setSelectedModification] = useState<ContractModification | null>(null);
+  const [isModificationDetailOpen, setIsModificationDetailOpen] = useState(false);
+  const { canEditContent } = usePermissions();
+  const readOnly = !canEditContent;
+  const { showToast } = useToast();
+
+  // --- useEffect para cargar datos ---
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const [itemsData, costActasData] = await Promise.all([
+          api.contractItems.getAll(),
+          api.costActas.getAll(),
+        ]);
+        setContractItems(itemsData);
+        setCostActas(costActasData);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Error al cargar datos de avance.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []); // El array vacío asegura que esto se ejecute solo una vez al montar el componente
+  // ---------------------------------
+
+  useEffect(() => {
+    setModifications(contractModifications ?? []);
+  }, [contractModifications]);
+
+  useEffect(() => {
+    if (!selectedModification) return;
+    const fresh = (contractModifications || []).find((mod) => mod.id === selectedModification.id);
+    if (!fresh) {
+      setSelectedModification(null);
+      setIsModificationDetailOpen(false);
+    } else {
+      setSelectedModification(fresh);
+    }
+  }, [contractModifications, selectedModification]);
 
   const contractItemMap = useMemo(() => {
-    return new Map(contractItems.map(item => [item.id, item]));
+    return new Map(contractItems.map((item) => [item.id, item]));
   }, [contractItems]);
 
   const financialSummary = useMemo(() => {
-    const totalAdditions = contractModifications
-        .filter(mod => mod.type === ModificationType.ADDITION && mod.value)
-        .reduce((sum, mod) => sum + (mod.value || 0), 0);
-    
-    const updatedContractValue = MOCK_MAIN_CONTRACT_VALUE + totalAdditions;
+    const totalAdditions = modifications
+      .filter((mod) => mod.type === ModificationType.ADDITION && mod.value)
+      .reduce((sum, mod) => sum + (mod.value || 0), 0);
 
-    const totalExecutedValue = workActas
-        .filter(acta => acta.status === WorkActaStatus.APPROVED)
-        .reduce((total, acta) => {
-            const actaTotal = acta.items.reduce((actaSum, item) => {
-                const contractItem = contractItemMap.get(item.contractItemId);
-                return actaSum + (contractItem ? item.quantity * contractItem.unitPrice : 0);
-            }, 0);
-            return total + actaTotal;
-        }, 0);
+    const updatedContractValue = project.initialValue + totalAdditions;
+
+    // Calcular valores ejecutados de actas de cobro, discriminando por fase
+    const preliminarActas = costActas.filter((acta) =>
+      acta.relatedProgress?.toLowerCase().includes('preliminar') ||
+      acta.relatedProgress?.toLowerCase().includes('saldo fase preliminar')
+    );
+    
+    const ejecucionActas = costActas.filter((acta) =>
+      (acta.relatedProgress?.toLowerCase().includes('fase de obra') ||
+      acta.relatedProgress?.toLowerCase().includes('ejecución')) &&
+      !acta.relatedProgress?.toLowerCase().includes('preliminar')
+    );
+
+    const totalPreliminarExecuted = preliminarActas.reduce(
+      (sum, acta) => sum + acta.billedAmount,
+      0
+    );
+    
+    const totalEjecucionExecuted = ejecucionActas.reduce(
+      (sum, acta) => sum + acta.billedAmount,
+      0
+    );
+
+    const totalExecutedValue = totalPreliminarExecuted + totalEjecucionExecuted;
 
     const contractBalance = updatedContractValue - totalExecutedValue;
-    const executionPercentage = updatedContractValue > 0 ? (totalExecutedValue / updatedContractValue) * 100 : 0;
+    const executionPercentage =
+      updatedContractValue > 0
+        ? (totalExecutedValue / updatedContractValue) * 100
+        : 0;
 
-    return { totalExecutedValue, contractBalance, executionPercentage, updatedContractValue };
-  }, [workActas, contractItemMap, contractModifications]);
-  
+    return {
+      totalExecutedValue,
+      totalPreliminarExecuted,
+      totalEjecucionExecuted,
+      contractBalance,
+      executionPercentage,
+      updatedContractValue,
+    };
+  }, [costActas, modifications, project.initialValue]);
+
   const itemsSummaryData = useMemo(() => {
-    const executedQuantities = new Map<string, number>();
-
-    workActas
-      .filter(acta => acta.status === WorkActaStatus.APPROVED)
-      .forEach(acta => {
-        acta.items.forEach(item => {
-          const currentQuantity = executedQuantities.get(item.contractItemId) || 0;
-          executedQuantities.set(item.contractItemId, currentQuantity + item.quantity);
-        });
-      });
-
-    return contractItems.map(item => {
-      const executedQuantity = executedQuantities.get(item.id) || 0;
+    return contractItems.map((item) => {
+      const executedQuantity = item.executedQuantity || 0;
       const balance = item.contractQuantity - executedQuantity;
-      const executionPercentage = item.contractQuantity > 0 ? (executedQuantity / item.contractQuantity) * 100 : 0;
+      const executionPercentage =
+        item.contractQuantity > 0
+          ? (executedQuantity / item.contractQuantity) * 100
+          : 0;
       return {
         ...item,
         executedQuantity,
         balance,
-        executionPercentage
+        executionPercentage,
       };
     });
-  }, [workActas, contractItems]);
+  }, [contractItems]);
 
   const nextActaNumber = useMemo(() => {
     if (workActas.length === 0) {
-      return 'Acta de Avance de Obra No. 01';
+      return "Acta de Avance de Obra No. 01";
     }
     const highestNumber = workActas.reduce((max, acta) => {
       const match = acta.number.match(/\d+$/);
       const num = match ? parseInt(match[0], 10) : 0;
       return Math.max(max, num);
     }, 0);
-    return `Acta de Avance de Obra No. ${String(highestNumber + 1).padStart(2, '0')}`;
+    return `Acta de Avance de Obra No. ${String(highestNumber + 1).padStart(
+      2,
+      "0"
+    )}`;
   }, [workActas]);
 
   // Handlers for Work Actas
@@ -110,34 +203,196 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({ project, 
     setIsActaDetailModalOpen(false);
   };
 
-  const handleSaveActa = async (newActaData: Omit<WorkActa, 'id'>) => {
-    await addWorkActa(newActaData);
-    setIsActaFormModalOpen(false);
+  const handleOpenCostActaDetail = (acta: CostActa) => {
+    setSelectedCostActa(acta);
+    setIsCostActaDetailModalOpen(true);
+  };
+
+  const handleCloseCostActaDetail = () => {
+    setSelectedCostActa(null);
+    setIsCostActaDetailModalOpen(false);
+  };
+
+  const handleSaveActa = async (
+    newActaData: Omit<WorkActa, "id" | "attachments">,
+    files: File[]
+  ) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede registrar actas de avance.",
+        variant: "error",
+      });
+      throw new Error("El perfil Viewer no puede registrar actas de avance.");
+    }
+    try {
+      setError(null);
+      let uploadedAttachments: Attachment[] = [];
+      if (files.length > 0) {
+        const uploadResults = await Promise.all(
+          files.map((file) => api.upload.uploadFile(file, "document"))
+        );
+        uploadedAttachments = uploadResults;
+      }
+
+      const createdActa = await api.workActas.create({
+        ...newActaData,
+        attachments: uploadedAttachments,
+      });
+
+      setWorkActas((prev) => [createdActa, ...prev]);
+      setIsActaFormModalOpen(false);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Error al guardar el acta de avance."
+      );
+    }
+  };
+
+  // --- Implementaremos estas después ---
+  const handleUpdateCostActa = async (updatedActa: CostActa) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede modificar actas de cobro.",
+        variant: "error",
+      });
+      return;
+    }
+    try {
+      const updatedActaFromServer = await api.costActas.update(updatedActa.id, {
+        status: updatedActa.status,
+        relatedProgress: updatedActa.relatedProgress,
+        periodValue: updatedActa.periodValue,
+        advancePaymentPercentage: updatedActa.advancePaymentPercentage,
+      });
+
+      setCostActas((prev) =>
+        prev.map((acta) => (acta.id === updatedActaFromServer.id ? updatedActaFromServer : acta))
+      );
+      if (selectedCostActa && selectedCostActa.id === updatedActaFromServer.id) {
+        setSelectedCostActa(updatedActaFromServer);
+      }
+      handleCloseCostActaDetail();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al actualizar el acta de cobro.');
+      showToast({
+        title: "Error",
+        message: err instanceof Error ? err.message : 'Error al actualizar el acta de cobro.',
+        variant: "error",
+      });
+    }
   };
 
   const handleUpdateActa = async (updatedActa: WorkActa) => {
-    await updateWorkActa(updatedActa);
-    const refreshedActa = workActas.find(a => a.id === updatedActa.id);
-    setSelectedActa(refreshedActa || updatedActa);
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede modificar actas de avance.",
+        variant: "error",
+      });
+      return;
+    }
+    try {
+      // Llamamos al endpoint PUT con los datos actualizados (principalmente el estado)
+      const updatedActaFromServer = await api(`/work-actas/${updatedActa.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          status: updatedActa.status, /*, items: updatedActa.items */
+        }), // Podríamos enviar 'items' si permitimos editar cantidades
+      });
+
+      // Actualizamos el estado local
+      setWorkActas((prev) =>
+        prev.map((acta) =>
+          acta.id === updatedActaFromServer.id ? updatedActaFromServer : acta
+        )
+      );
+      // Si el modal está abierto, actualizamos también la data seleccionada
+      if (selectedActa && selectedActa.id === updatedActaFromServer.id) {
+        setSelectedActa(updatedActaFromServer);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Error al actualizar el acta de avance."
+      );
+    }
   };
 
-  const handleSaveModification = async (newModData: Omit<ContractModification, 'id'>) => {
-    await addContractModification(newModData);
-    setIsModFormModalOpen(false);
-  };
+  const handleSaveModification = async (
+    newModData: {
+      number: string;
+      type: ModificationType;
+      date: string;
+      value?: number;
+      days?: number;
+      justification: string;
+    },
+    file: File | null
+  ) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede registrar modificaciones contractuales.",
+        variant: "error",
+      });
+      throw new Error("El perfil Viewer no puede registrar modificaciones.");
+    }
+    try {
+      let attachmentId: string | undefined;
+      if (file) {
+        const uploadedAttachment = await api.upload.uploadFile(file, "document");
+        attachmentId = uploadedAttachment.id;
+      }
 
+      const createdModification = await api.contractModifications.create({
+        ...newModData,
+        attachmentId,
+      });
+
+      setModifications((prev) => {
+        const withoutDuplicate = prev.filter((mod) => mod.id !== createdModification.id);
+        return [createdModification, ...withoutDuplicate].sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+      });
+
+      if (onContractModificationsRefresh) {
+        await onContractModificationsRefresh();
+      }
+
+      setIsModFormModalOpen(false);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Error al guardar la modificación contractual.";
+      throw new Error(message);
+    }
+  };
+  // ------------------------------------
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(value);
+    return new Intl.NumberFormat("es-CO", {
+      style: "currency",
+      currency: "COP",
+      minimumFractionDigits: 0,
+    }).format(value);
   };
 
   const getActaTotalValue = (acta: WorkActa) => {
-      return acta.items.reduce((sum, item) => {
-          const contractItem = contractItemMap.get(item.contractItemId);
-          return sum + (contractItem ? item.quantity * contractItem.unitPrice : 0);
-      }, 0);
-  }
-  
+    // Si tiene valor bruto, usarlo; sino calcular de los items
+    if (acta.grossValue != null) {
+      return acta.grossValue;
+    }
+    return acta.items.reduce((sum, item) => {
+      const contractItem = contractItemMap.get(item.contractItemId);
+      return sum + (contractItem ? item.quantity * contractItem.unitPrice : 0);
+    }, 0);
+  };
+
   const getValueOrDays = (mod: ContractModification) => {
     if (mod.type === ModificationType.ADDITION) {
       return formatCurrency(mod.value || 0);
@@ -145,146 +400,279 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({ project, 
     if (mod.type === ModificationType.TIME_EXTENSION) {
       return `${mod.days || 0} días`;
     }
-    return '—'; // Return em-dash for other types
+    return "—"; // Return em-dash for other types
   };
-
 
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900">Control de Avance de Obra</h2>
-        <p className="text-sm text-gray-500">Contrato de Obra: {project.contractId}</p>
+        <h2 className="text-2xl font-bold text-gray-900">
+          Control de Avance de Obra
+        </h2>
+        <p className="text-sm text-gray-500">
+          Contrato de Obra: {project.contractId}
+        </p>
       </div>
 
-       {/* Financial KPIs */}
+      {/* Financial KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <KPICard title="Valor Total del Contrato" value={formatCurrency(financialSummary.updatedContractValue)} />
-        <KPICard title="Valor Total Ejecutado" value={formatCurrency(financialSummary.totalExecutedValue)}>
-            <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                <div className="bg-idu-cyan h-2.5 rounded-full" style={{ width: `${financialSummary.executionPercentage.toFixed(2)}%` }}></div>
+        <KPICard
+          title="Valor Total del Contrato"
+          value={formatCurrency(financialSummary.updatedContractValue)}
+        />
+        <KPICard
+          title="Valor Total Ejecutado"
+          value={formatCurrency(financialSummary.totalExecutedValue)}
+        >
+          <div className="mt-2 space-y-1 text-xs text-gray-600">
+            <div className="flex justify-between">
+              <span>Fase preliminar:</span>
+              <span className="font-semibold">{formatCurrency(financialSummary.totalPreliminarExecuted)}</span>
             </div>
-             <p className="text-xs text-right text-gray-500 mt-1">{financialSummary.executionPercentage.toFixed(2)}% Ejecutado</p>
+            <div className="flex justify-between">
+              <span>Fase de ejecución:</span>
+              <span className="font-semibold">{formatCurrency(financialSummary.totalEjecucionExecuted)}</span>
+            </div>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+            <div
+              className="bg-idu-cyan h-2.5 rounded-full"
+              style={{
+                width: `${financialSummary.executionPercentage.toFixed(2)}%`,
+              }}
+            ></div>
+          </div>
+          <p className="text-xs text-right text-gray-500 mt-1">
+            {financialSummary.executionPercentage.toFixed(2)}% Ejecutado
+          </p>
         </KPICard>
-        <KPICard title="Saldo del Contrato" value={formatCurrency(financialSummary.contractBalance)} />
+        <KPICard
+          title="Saldo del Contrato"
+          value={formatCurrency(financialSummary.contractBalance)}
+        />
       </div>
 
-      {/* Contract Modifications History */}
+      {/* Contract Modifications History (Aún usa MOCK) */}
       <Card>
         <div className="p-4 border-b flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-800">Historial de Modificaciones al Contrato</h3>
-            <Button onClick={() => setIsModFormModalOpen(true)} leftIcon={<PlusIcon />} size="sm" variant="secondary">
+          <h3 className="text-lg font-semibold text-gray-800">
+            Historial de Modificaciones al Contrato
+          </h3>
+          {canEditContent && (
+            <Button
+              onClick={() => setIsModFormModalOpen(true)}
+              leftIcon={<PlusIcon />}
+              size="sm"
+              variant="secondary"
+            >
               Registrar Modificación
             </Button>
-        </div>
-        <div className="overflow-x-auto">
-          {contractModifications.length > 0 ? (
-            <table className="w-full text-sm text-left text-gray-500">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                    <tr>
-                        <th scope="col" className="px-6 py-3">N° Modificatorio</th>
-                        <th scope="col" className="px-6 py-3">Tipo</th>
-                        <th scope="col" className="px-6 py-3">Fecha</th>
-                        <th scope="col" className="px-6 py-3 text-right">Valor / Días</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {contractModifications.map(mod => (
-                        <tr key={mod.id} className="bg-white border-b">
-                            <th scope="row" className="px-6 py-4 font-medium text-gray-900">{mod.number}</th>
-                            <td className="px-6 py-4">{mod.type}</td>
-                            <td className="px-6 py-4">{new Date(mod.date).toLocaleDateString('es-CO')}</td>
-                            <td className="px-6 py-4 font-semibold text-right">
-                                {getValueOrDays(mod)}
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-          ) : (
-            <div className="p-6 text-center text-gray-500">No se han registrado modificaciones al contrato.</div>
           )}
         </div>
-      </Card>
-
-
-      {/* Contract Items Summary Table */}
-      <ContractItemsSummaryTable items={itemsSummaryData} isLoading={isLoading} />
-      
-      {/* Work Actas History */}
-      <Card>
-        <div className="p-4 border-b flex justify-between items-center">
-            <h3 className="text-xl font-semibold text-gray-800">Historial de Actas de Avance</h3>
-            <Button onClick={() => setIsActaFormModalOpen(true)} leftIcon={<PlusIcon />} size="sm" variant="secondary">
-              Nueva Acta de Avance
-            </Button>
-        </div>
         <div className="overflow-x-auto">
-          {workActas.length > 0 ? (
+          {contractModificationsLoading ? (
+            <div className="p-6 text-center">Cargando modificaciones...</div>
+          ) : modifications.length > 0 ? (
             <table className="w-full text-sm text-left text-gray-500">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                    <tr>
-                        <th scope="col" className="px-6 py-3">N° Acta</th>
-                        <th scope="col" className="px-6 py-3">Periodo</th>
-                        <th scope="col" className="px-6 py-3">Fecha</th>
-                        <th scope="col" className="px-6 py-3">Valor del Periodo</th>
-                        <th scope="col" className="px-6 py-3">Estado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {workActas.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map(acta => (
-                        <tr key={acta.id} className="bg-white border-b hover:bg-gray-50 cursor-pointer" onClick={() => handleOpenDetail(acta)}>
-                            <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{acta.number}</th>
-                            <td className="px-6 py-4">{acta.period}</td>
-                            <td className="px-6 py-4">{new Date(acta.date).toLocaleDateString('es-CO')}</td>
-                            <td className="px-6 py-4 font-semibold">{formatCurrency(getActaTotalValue(acta))}</td>
-                            <td className="px-6 py-4"><WorkActaStatusBadge status={acta.status} /></td>
-                        </tr>
-                    ))}
-                </tbody>
+              <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-6 py-3">N° Modificatorio</th>
+                  <th scope="col" className="px-6 py-3">Tipo</th>
+                  <th scope="col" className="px-6 py-3">Fecha</th>
+                  <th scope="col" className="px-6 py-3 text-right">Valor / Días</th>
+                </tr>
+              </thead>
+              <tbody>
+                {modifications.map((mod) => (
+                  <tr
+                    key={mod.id}
+                    className="bg-white border-b hover:bg-gray-50 cursor-pointer"
+                    onClick={() => {
+                      setSelectedModification(mod);
+                      setIsModificationDetailOpen(true);
+                    }}
+                  >
+                    <th scope="row" className="px-6 py-4 font-medium text-gray-900">{mod.number}</th>
+                    <td className="px-6 py-4">{mod.type}</td>
+                    <td className="px-6 py-4">{new Date(mod.date).toLocaleDateString("es-CO")}</td>
+                    <td className="px-6 py-4 font-semibold text-right">{getValueOrDays(mod)}</td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
           ) : (
-            <div className="p-6">
-                <EmptyState
-                icon={<CalculatorIcon />}
-                title="No hay actas de avance registradas"
-                message="Registra la primera acta de avance para iniciar el seguimiento de cantidades y valores del contrato de obra."
-                actionButton={
-                    <Button onClick={() => setIsActaFormModalOpen(true)} leftIcon={<PlusIcon />}>
-                    Registrar Primera Acta
-                    </Button>
-                }
-                />
+            <div className="p-6 text-center text-gray-500">
+              No se han registrado modificaciones al contrato.
             </div>
           )}
         </div>
       </Card>
-      
 
+      {/* Contract Items Summary Table (Ahora usa datos reales) */}
+      <ContractItemsSummaryTable
+        items={itemsSummaryData}
+        isLoading={isLoading}
+        onUpdateQuantity={async (itemId, newQuantity, pkId) => {
+          if (readOnly) {
+            showToast({
+              title: "Acción no permitida",
+              message: "El perfil Viewer no puede modificar cantidades ejecutadas.",
+              variant: "error",
+            });
+            return;
+          }
+          try {
+            await api.contractItems.updateExecutedQuantity(itemId, newQuantity, pkId);
+            // Refrescar los items en segundo plano sin bloquear la UI
+            api.contractItems.getAll().then(updatedItems => {
+              setContractItems(updatedItems);
+            }).catch(err => {
+              console.error('Error al refrescar items:', err);
+            });
+            // No mostrar toast aquí, el componente hijo ya muestra feedback visual
+          } catch (err) {
+            showToast({
+              title: "Error",
+              message: err instanceof Error ? err.message : "Error al actualizar la cantidad ejecutada.",
+              variant: "error",
+            });
+            throw err; // Re-lanzar el error para que el componente hijo pueda manejarlo
+          }
+        }}
+        canEdit={canEditContent}
+        corredorVialElements={project.corredorVialElements || []}
+      />
+
+      {/* Cost Actas History (Actas de Cobro) */}
+      <Card>
+        <div className="p-4 border-b flex justify-between items-center">
+          <h3 className="text-xl font-semibold text-gray-800">
+            Historial de Actas de Cobro
+          </h3>
+          {canEditContent && (
+            <Button
+              onClick={() => setIsActaFormModalOpen(true)}
+              leftIcon={<PlusIcon />}
+              size="sm"
+              variant="secondary"
+            >
+              Nueva Acta de Cobro
+            </Button>
+          )}
+        </div>
+        <div className="overflow-x-auto">
+          {isLoading && <div className="p-6 text-center">Cargando actas...</div>}
+          {error && <div className="p-6 text-center text-red-500">{error}</div>}
+          {!isLoading && !error && costActas.length > 0 ? (
+            <table className="w-full text-sm text-left text-gray-500">
+              <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                <tr>
+                  <th scope="col" className="px-6 py-3">N° Acta</th>
+                  <th scope="col" className="px-6 py-3">Periodo</th>
+                  <th scope="col" className="px-6 py-3">Fecha</th>
+                  <th scope="col" className="px-6 py-3 text-right">Valor del Periodo</th>
+                  <th scope="col" className="px-6 py-3 text-right">% Anticipo Amortizado</th>
+                  <th scope="col" className="px-6 py-3">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {costActas
+                  .sort((a, b) => new Date(b.submissionDate).getTime() - new Date(a.submissionDate).getTime()) // Ordenar por fecha más reciente primero
+                  .map((acta) => (
+                    <tr
+                      key={acta.id}
+                      className="bg-white border-b hover:bg-gray-50 cursor-pointer"
+                      onClick={() => handleOpenCostActaDetail(acta)}
+                    >
+                      <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{acta.number}</th>
+                      <td className="px-6 py-4">{acta.period}</td>
+                      <td className="px-6 py-4">{new Date(acta.submissionDate).toLocaleDateString("es-CO")}</td>
+                      <td className="px-6 py-4 text-right font-semibold">
+                        {acta.periodValue ? formatCurrency(acta.periodValue) : '-'}
+                      </td>
+                      <td className="px-6 py-4 text-right font-semibold">
+                        {acta.advancePaymentPercentage !== null && acta.advancePaymentPercentage !== undefined 
+                          ? `${acta.advancePaymentPercentage.toFixed(2)}%` 
+                          : '-'}
+                      </td>
+                      <td className="px-6 py-4"><CostActaStatusBadge status={acta.status} /></td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          ) : (
+            !isLoading && !error && ( // Muestra el EmptyState solo si no está cargando y no hay error
+              <div className="p-6">
+                <EmptyState
+                  icon={<CalculatorIcon />}
+                  title="No hay actas de cobro registradas"
+                  message="Registra la primera acta de cobro para iniciar el seguimiento de valores del contrato de obra."
+                  actionButton={
+                    canEditContent ? (
+                      <Button
+                        onClick={() => setIsActaFormModalOpen(true)}
+                        leftIcon={<PlusIcon />}
+                      >
+                        Registrar Primera Acta
+                      </Button>
+                    ) : undefined
+                  }
+                />
+              </div>
+            )
+          )}
+        </div>
+      </Card>
+
+      {/* Modals */}
       {selectedActa && (
         <WorkActaDetailModal
           isOpen={isActaDetailModalOpen}
           onClose={handleCloseDetail}
           acta={selectedActa}
-          contractItems={contractItems}
-          onUpdate={handleUpdateActa}
+          contractItems={contractItems} // Pasa los ítems reales
+          onUpdate={handleUpdateActa} // Conectado al backend
+          readOnly={readOnly}
         />
       )}
 
-      <WorkActaFormModal
-        isOpen={isActaFormModalOpen}
-        onClose={() => setIsActaFormModalOpen(false)}
-        onSave={handleSaveActa}
-        contractItems={contractItems}
-        suggestedNumber={nextActaNumber}
-        itemsSummary={itemsSummaryData}
-      />
-      
-      <ContractModificationFormModal
-        isOpen={isModFormModalOpen}
-        onClose={() => setIsModFormModalOpen(false)}
-        onSave={handleSaveModification}
-      />
+      {selectedCostActa && (
+        <CostActaDetailModal
+          isOpen={isCostActaDetailModalOpen}
+          onClose={handleCloseCostActaDetail}
+          acta={selectedCostActa}
+          onUpdate={handleUpdateCostActa}
+        />
+      )}
 
+      {canEditContent && (
+        <WorkActaFormModal
+          isOpen={isActaFormModalOpen}
+          onClose={() => setIsActaFormModalOpen(false)}
+          onSave={handleSaveActa} // Conectado al backend
+          contractItems={contractItems} // Pasa los ítems reales
+          suggestedNumber={nextActaNumber}
+          itemsSummary={itemsSummaryData} // Pasa el resumen calculado
+        />
+      )}
+
+      {canEditContent && (
+        <ContractModificationFormModal
+          isOpen={isModFormModalOpen}
+          onClose={() => setIsModFormModalOpen(false)}
+          onSave={handleSaveModification} // Conectado al backend
+        />
+      )}
+      {selectedModification && (
+        <ContractModificationDetailModal
+          isOpen={isModificationDetailOpen}
+          onClose={() => {
+            setIsModificationDetailOpen(false);
+            setSelectedModification(null);
+          }}
+          modification={selectedModification}
+        />
+      )}
     </div>
   );
 };

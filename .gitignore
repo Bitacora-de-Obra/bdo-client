@@ -1,24 +1,108 @@
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-.env
-node_modules
-dist
-dist-ssr
+
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build output
+dist/
+dist-ssr/
+build/
+out/
 *.local
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env*.local
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+!.vscode/settings.json
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Vite
+.vite/
+vite.config.*.timestamp-*
+
+# Testing
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+*.lcov
+.jest/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+.uploads/
+
+# Cache directories
+.cache/
+.parcel-cache/
+.eslintcache
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# OS generated files
+*.swp
+*.swo
+*~
+
+# Generated or processed files
+*.generated.*
+*.map
+
+# Local storage and uploads
+local-storage/
+uploads/
+
+# Storybook (if used)
+storybook-static/
+
+# Lock files (optional - some teams prefer to commit them)
+# Uncomment if you want to ignore lock files
+# package-lock.json
+# yarn.lock
+
+# Secrets and API keys (should never be committed)
+secrets/
+*.pem
+*.key

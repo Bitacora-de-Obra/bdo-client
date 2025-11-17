@@ -11,12 +11,17 @@ interface PendingTasksCalendarViewProps {
 }
 
 const getUrgency = (dueDateStr: string): 'overdue' | 'dueSoon' | 'upcoming' => {
+    const dueDateRaw = new Date(dueDateStr);
+    if (Number.isNaN(dueDateRaw.getTime())) {
+        return 'upcoming';
+    }
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const sevenDaysFromNow = new Date(today);
     sevenDaysFromNow.setDate(today.getDate() + 7);
     
-    const dueDate = new Date(new Date(dueDateStr).valueOf() + new Date().getTimezoneOffset() * 60 * 1000);
+    const dueDate = new Date(dueDateRaw.valueOf() + new Date().getTimezoneOffset() * 60 * 1000);
     dueDate.setHours(0, 0, 0, 0);
 
     if (dueDate < today) return 'overdue';
@@ -33,12 +38,18 @@ const urgencyColorMap = {
 
 const PendingTasksCalendarView: React.FC<PendingTasksCalendarViewProps> = ({ tasks, onTaskSelect }) => {
   const calendarEvents = useMemo(() => {
-    return tasks.map(task => {
+    return tasks
+      .map(task => {
       const urgency = getUrgency(task.dueDate);
+      const parsedDate = new Date(task.dueDate);
+      if (Number.isNaN(parsedDate.getTime())) {
+        return null;
+      }
+      const isoDate = parsedDate.toISOString().substring(0, 10);
       return {
         id: task.id,
         title: task.description,
-        start: task.dueDate.substring(0, 10), // Use YYYY-MM-DD format for allday events
+        start: isoDate, // Use YYYY-MM-DD format for allday events
         allDay: true,
         backgroundColor: urgencyColorMap[urgency],
         borderColor: urgencyColorMap[urgency],
@@ -47,7 +58,8 @@ const PendingTasksCalendarView: React.FC<PendingTasksCalendarViewProps> = ({ tas
         },
         className: 'cursor-pointer'
       };
-    });
+    })
+    .filter((event): event is NonNullable<typeof event> => Boolean(event));
   }, [tasks]);
 
   const handleEventClick = (clickInfo: any) => {

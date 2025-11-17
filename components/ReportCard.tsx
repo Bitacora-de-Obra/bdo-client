@@ -20,6 +20,10 @@ const ReportCard: React.FC<ReportCardProps> = ({ report, onSelect }) => {
             <div className="flex-1">
                 <p className="text-sm font-semibold text-brand-primary">{report.number}</p>
                 <h3 className="text-lg font-bold text-gray-800 mt-1">{report.period}</h3>
+                <span className="inline-flex items-center gap-1 mt-2 text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-brand-primary"></span>
+                  Versión {report.version}
+                </span>
             </div>
             <div className="flex-shrink-0 pt-1">
                 <ReportStatusBadge status={report.status} />

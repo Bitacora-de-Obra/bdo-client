@@ -15,6 +15,6 @@ View your app in AI Studio: https://ai.studio/apps/drive/17AWp8SAkJCgrtibNO58geu
 
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key. If habilitating chat, también define `VITE_COMETCHAT_APP_ID` y `VITE_COMETCHAT_REGION` con los valores de tu instancia CometChat.
 3. Run the app:
    `npm run dev`

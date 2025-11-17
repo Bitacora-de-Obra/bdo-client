@@ -1,15 +1,8 @@
 import React from 'react';
 import Card from './ui/Card';
 import Button from './ui/Button';
-import { ClockIcon, ClipboardDocumentListIcon, Squares2X2Icon } from './icons/Icon';
-
-type PendingTask = {
-    type: 'commitment' | 'logEntry';
-    id: string;
-    description: string;
-    dueDate: string;
-    source: string;
-};
+import { ClockIcon, ClipboardDocumentListIcon, Squares2X2Icon, ChatBubbleLeftRightIcon } from './icons/Icon';
+import type { PendingTask } from './PendingTasksDashboard';
 
 type Urgency = 'overdue' | 'dueSoon' | 'upcoming';
 
@@ -40,10 +33,14 @@ const urgencyStyles: Record<Urgency, { border: string, icon: React.ReactNode, te
 const taskTypeIcons: Record<PendingTask['type'], React.ReactNode> = {
     commitment: <ClipboardDocumentListIcon className="h-4 w-4 text-gray-500" />,
     logEntry: <Squares2X2Icon className="h-4 w-4 text-gray-500" />,
+    communication: <ChatBubbleLeftRightIcon className="h-4 w-4 text-gray-500" />,
 };
 
 const getDueDateMessage = (dueDateStr: string, urgency: Urgency): string => {
     const dueDate = new Date(dueDateStr);
+    if (Number.isNaN(dueDate.getTime())) {
+        return 'Sin fecha límite';
+    }
     const today = new Date();
     today.setHours(0,0,0,0);
     
@@ -71,7 +68,15 @@ const PendingTaskCard: React.FC<PendingTaskCardProps> = ({ task, urgency, onSele
             <p className="mt-1 text-base text-gray-800 font-medium">{task.description}</p>
             <div className={`mt-2 flex items-center text-sm font-semibold ${styles.textColor}`}>
                 {styles.icon}
-                <span className="ml-1.5">{getDueDateMessage(task.dueDate, urgency)} - {new Date(task.dueDate).toLocaleDateString('es-CO')}</span>
+                <span className="ml-1.5">
+                    {getDueDateMessage(task.dueDate, urgency)}
+                    {(() => {
+                        const parsed = new Date(task.dueDate);
+                        return Number.isNaN(parsed.getTime())
+                            ? ''
+                            : ` · ${parsed.toLocaleDateString('es-CO')}`;
+                    })()}
+                </span>
             </div>
         </div>
         <div className="flex-shrink-0 self-center">

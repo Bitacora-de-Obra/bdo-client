@@ -1,94 +1,91 @@
-import React, { useState, useEffect } from 'react';
-import Header from './components/layout/Header';
-import Sidebar from './components/layout/Sidebar';
-import ProjectDashboard from './components/ProjectDashboard';
-import CommunicationsDashboard from './components/CommunicationsDashboard';
-import MinutesDashboard from './components/MinutesDashboard';
-import CostDashboard from './components/CostDashboard';
-import WorkProgressDashboard from './components/WorkProgressDashboard';
-import PhotographicProgressDashboard from './components/PhotographicProgressDashboard';
-import PlanningDashboard from './components/PlanningDashboard';
-import { MOCK_PROJECT } from './services/mockData';
-import ProjectSummaryDashboard from './components/ProjectSummaryDashboard';
-import { useMockApi } from './hooks/useMockApi';
-import WeeklyReportsDashboard from './components/WeeklyReportsDashboard';
-import MonthlyReportsDashboard from './components/MonthlyReportsDashboard';
-import PendingTasksDashboard from './components/PendingTasksDashboard';
-import ExportDashboard from './components/ExportDashboard';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import LoginScreen from './components/auth/LoginScreen';
-import { ReportScope, Notification, CommitmentStatus, User } from './types';
-import AdminDashboard from './components/admin/AdminDashboard';
-import DrawingsDashboard from './components/DrawingsDashboard';
+import React, { useState, useEffect, useCallback } from "react";
+import Header from "./components/layout/Header";
+import Sidebar from "./components/layout/Sidebar";
+import ProjectDashboard from "./components/ProjectDashboard";
+import CommunicationsDashboard from "./components/CommunicationsDashboard";
+import MinutesDashboard from "./components/MinutesDashboard";
+import CostDashboard from "./components/CostDashboard";
+import WorkProgressDashboard from "./components/WorkProgressDashboard";
+import PhotographicProgressDashboard from "./components/PhotographicProgressDashboard";
+import PlanningDashboard from "./components/PlanningDashboard";
+import ProjectSummaryDashboard from "./components/ProjectSummaryDashboard";
+import { useApi } from "./src/hooks/useApi";
+import WeeklyReportsDashboard from "./components/WeeklyReportsDashboard";
+import MonthlyReportsDashboard from "./components/MonthlyReportsDashboard";
+import PendingTasksDashboard from "./components/PendingTasksDashboard";
+import ExportDashboard from "./components/ExportDashboard";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ToastProvider } from "./components/ui/ToastProvider";
+import LoginScreen from "./components/auth/LoginScreen";
+import { ReportScope, Notification, User } from "./types";
+import AdminDashboard from "./components/admin/AdminDashboard";
+import DrawingsDashboard from "./components/DrawingsDashboard";
+import { ChatbotWidget } from "./components/chatbot/ChatbotWidget"; // <-- Añade esta línea
+import SignatureManagerModal from "./components/account/SignatureManagerModal";
+import ProjectChat from "./components/chat/ProjectChat";
+import api from "./src/services/api";
+import { OfflineIndicator } from "./src/components/offline/OfflineIndicator";
 
-type InitialItemToOpen = { type: 'acta' | 'logEntry'; id: string };
+type InitialItemToOpen = { type: "acta" | "logEntry" | "communication"; id: string };
 
 const MainApp = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [currentView, setCurrentView] = useState('summary');
-  const [initialItemToOpen, setInitialItemToOpen] = useState<InitialItemToOpen | null>(null);
+  const [currentView, setCurrentView] = useState("summary");
+  const [initialItemToOpen, setInitialItemToOpen] =
+    useState<InitialItemToOpen | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  
-  const api = useMockApi();
+  const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+
   const { user } = useAuth();
-  const { projectDetails, contractModifications, isLoading, actas: apiActas } = api;
+  const { data: projectDetails, isLoading: isProjectLoading } =
+    useApi.projectDetails();
+  const {
+    data: contractModifications,
+    isLoading: isModificationsLoading,
+    retry: refetchContractModifications,
+  } = useApi.contractModifications();
+
+  const isLoading =
+    isProjectLoading || (isModificationsLoading && !contractModifications);
+
+  const refreshNotifications = useCallback(async () => {
+    if (!user) {
+      setNotifications([]);
+      return;
+    }
+
+    try {
+      const incoming = (await api.notifications.getAll()) as Notification[];
+      setNotifications((previous) => {
+        const readStatus = new Map(previous.map((item) => [item.id, item.isRead]));
+        return incoming.map((item) => ({
+          ...item,
+          isRead: readStatus.get(item.id) ?? item.isRead ?? false,
+        }));
+      });
+    } catch (error) {
+      console.error("Error al cargar las notificaciones:", error);
+    }
+  }, [user]);
 
   useEffect(() => {
-    if (!apiActas || !user) return;
+    let intervalId: number | undefined;
 
-    const generatedNotifications: Notification[] = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    if (user) {
+      refreshNotifications();
+      intervalId = window.setInterval(() => {
+        refreshNotifications();
+      }, 60000);
+    } else {
+      setNotifications([]);
+    }
 
-    apiActas.forEach(acta => {
-        acta.commitments.forEach(commitment => {
-            if (commitment.responsible.id === user.id && commitment.status === CommitmentStatus.PENDING) {
-                const dueDate = new Date(commitment.dueDate);
-                const localDueDate = new Date(dueDate.valueOf() + dueDate.getTimezoneOffset() * 60 * 1000);
-                localDueDate.setHours(0,0,0,0);
-
-                const timeDiff = localDueDate.getTime() - today.getTime();
-                const daysUntilDue = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-
-                let notification: Notification | null = null;
-
-                if (daysUntilDue < 0) {
-                    notification = {
-                        id: `notif-${commitment.id}`,
-                        type: 'commitment_due',
-                        urgency: 'overdue',
-                        message: `El compromiso "${commitment.description}" está vencido.`,
-                        sourceDescription: `Acta: ${acta.number}`,
-                        relatedView: 'minutes',
-                        relatedItemType: 'acta',
-                        relatedItemId: acta.id,
-                        createdAt: new Date().toISOString(),
-                        isRead: false,
-                    };
-                } else if (daysUntilDue <= 3) {
-                     notification = {
-                        id: `notif-${commitment.id}`,
-                        type: 'commitment_due',
-                        urgency: 'due_soon',
-                        message: `El compromiso "${commitment.description}" vence ${daysUntilDue === 0 ? 'hoy' : `en ${daysUntilDue} día(s)`}.`,
-                        sourceDescription: `Acta: ${acta.number}`,
-                        relatedView: 'minutes',
-                        relatedItemType: 'acta',
-                        relatedItemId: acta.id,
-                        createdAt: new Date().toISOString(),
-                        isRead: false,
-                    };
-                }
-
-                if (notification) {
-                    generatedNotifications.push(notification);
-                }
-            }
-        });
-    });
-    setNotifications(generatedNotifications);
-  }, [apiActas, user]);
-
+    return () => {
+      if (intervalId) {
+        window.clearInterval(intervalId);
+      }
+    };
+  }, [user, refreshNotifications]);
 
   const handleNavigateAndOpen = (view: string, item: InitialItemToOpen) => {
     setInitialItemToOpen(item);
@@ -101,50 +98,120 @@ const MainApp = () => {
 
   const renderContent = () => {
     if (isLoading || !projectDetails) {
-        return <div className="text-center p-8">Cargando datos del proyecto...</div>;
+      return (
+        <div className="text-center p-8">Cargando datos del proyecto...</div>
+      );
     }
 
-    if (currentView === 'admin' && user?.appRole !== 'admin') {
-      // In a real app with routing, this would be a redirect.
-      // Here, we prevent rendering and switch back to a safe view.
+    if (currentView === "admin" && user?.appRole !== "admin") {
       console.warn("Acceso no autorizado a la vista de administrador.");
-      setCurrentView('summary');
-      return <ProjectSummaryDashboard project={projectDetails} contractModifications={contractModifications} />;
+      setCurrentView("summary");
+      return (
+        <ProjectSummaryDashboard
+          project={projectDetails}
+          contractModifications={contractModifications || []}
+        />
+      );
+    }
+
+    if (currentView === "export_project" && user?.appRole !== "admin") {
+      console.warn("Acceso no autorizado a la exportación de expediente.");
+      setCurrentView("summary");
+      return (
+        <ProjectSummaryDashboard
+          project={projectDetails}
+          contractModifications={contractModifications || []}
+        />
+      );
     }
 
     switch (currentView) {
-      case 'summary':
-        return <ProjectSummaryDashboard project={projectDetails} contractModifications={contractModifications} />;
-      case 'pending_tasks':
-        return <PendingTasksDashboard api={api} onNavigate={handleNavigateAndOpen} />;
-      case 'logbook':
-    return <ProjectDashboard initialItemToOpen={initialItemToOpen} clearInitialItem={clearInitialItem} />;
-      case 'drawings':
-        return <DrawingsDashboard project={MOCK_PROJECT} api={api} />;
-      case 'work_progress':
-        return <WorkProgressDashboard project={MOCK_PROJECT} api={api} />;
-      case 'photographic_progress':
-        return <PhotographicProgressDashboard project={MOCK_PROJECT} api={api} />;
-      case 'planning':
-        return <PlanningDashboard project={MOCK_PROJECT} api={api} />;
-      case 'communications':
-        return <CommunicationsDashboard project={MOCK_PROJECT} api={api} />;
-      case 'minutes':
-        return <MinutesDashboard initialItemToOpen={initialItemToOpen} clearInitialItem={clearInitialItem} />;
-      case 'costs':
-        return <CostDashboard project={MOCK_PROJECT} api={api} />;
-      case 'weekly_reports':
-        return <WeeklyReportsDashboard project={projectDetails} api={api} />;
-      case 'monthly_reports_obra':
-        return <MonthlyReportsDashboard project={MOCK_PROJECT} api={api} reportScope={ReportScope.OBRA} />;
-      case 'monthly_reports_interventoria':
-        return <MonthlyReportsDashboard project={MOCK_PROJECT} api={api} reportScope={ReportScope.INTERVENTORIA} />;
-      case 'export_project':
-        return <ExportDashboard project={projectDetails} api={api} />;
-      case 'admin':
+      case "summary":
+        return (
+          <ProjectSummaryDashboard
+            project={projectDetails}
+            contractModifications={contractModifications || []}
+          />
+        );
+      case "pending_tasks":
+        return <PendingTasksDashboard onNavigate={handleNavigateAndOpen} />;
+      case "logbook":
+        return (
+          <ProjectDashboard
+            initialItemToOpen={initialItemToOpen}
+            clearInitialItem={clearInitialItem}
+          />
+        );
+      case "drawings":
+        return <DrawingsDashboard project={projectDetails} />;
+      case "work_progress":
+        return (
+          <WorkProgressDashboard
+            project={projectDetails}
+            contractModifications={contractModifications || []}
+            onContractModificationsRefresh={refetchContractModifications}
+            contractModificationsLoading={isModificationsLoading}
+          />
+        );
+      case "photographic_progress":
+        return <PhotographicProgressDashboard project={projectDetails} />;
+      case "chat":
+        return <ProjectChat />;
+      case "planning":
+        return <PlanningDashboard project={projectDetails} />;
+      case "communications":
+        return (
+          <CommunicationsDashboard
+            project={projectDetails}
+            initialCommunicationId={
+              initialItemToOpen?.type === "communication"
+                ? initialItemToOpen.id
+                : null
+            }
+            onClearInitialCommunication={clearInitialItem}
+          />
+        );
+      case "minutes":
+        return (
+          <MinutesDashboard
+            initialItemToOpen={initialItemToOpen}
+            clearInitialItem={clearInitialItem}
+          />
+        );
+      case "costs":
+        return <CostDashboard project={projectDetails} />;
+      case "weekly_reports":
+        return (
+          <WeeklyReportsDashboard
+            project={projectDetails}
+            reportScope={ReportScope.INTERVENTORIA}
+          />
+        );
+      case "monthly_reports_obra":
+        return (
+          <MonthlyReportsDashboard
+            project={projectDetails}
+            reportScope={ReportScope.OBRA}
+          />
+        );
+      case "monthly_reports_interventoria":
+        return (
+          <MonthlyReportsDashboard
+            project={projectDetails}
+            reportScope={ReportScope.INTERVENTORIA}
+          />
+        );
+      case "export_project":
+        return <ExportDashboard project={projectDetails} />;
+      case "admin":
         return <AdminDashboard />;
       default:
-        return <ProjectSummaryDashboard project={projectDetails} contractModifications={contractModifications} />;
+        return (
+          <ProjectSummaryDashboard
+            project={projectDetails}
+            contractModifications={contractModifications || []}
+          />
+        );
     }
   };
 
@@ -157,26 +224,36 @@ const MainApp = () => {
         setCurrentView={setCurrentView}
       />
       <div className="flex-1 flex flex-col overflow-hidden lg:ml-64">
-        <Header 
+        <Header
           setIsSidebarOpen={setIsSidebarOpen}
           notifications={notifications}
           setNotifications={setNotifications}
-          onNotificationClick={(notification: Notification) => handleNavigateAndOpen(notification.relatedView, { type: notification.relatedItemType, id: notification.relatedItemId })}
+          onNotificationClick={(notification: Notification) =>
+            handleNavigateAndOpen(notification.relatedView, {
+              type: notification.relatedItemType,
+              id: notification.relatedItemId,
+            })
+          }
+          onOpenSignatureManager={() => setIsSignatureModalOpen(true)}
         />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
-          <div className="container mx-auto px-6 py-8">
-            {renderContent()}
-          </div>
+          <div className="container mx-auto px-6 py-8">{renderContent()}</div>
         </main>
+        <SignatureManagerModal
+          isOpen={isSignatureModalOpen}
+          onClose={() => setIsSignatureModalOpen(false)}
+        />
       </div>
     </div>
   );
-}
+};
 
 const AppContent = () => {
-  const { token, isLoading } = useAuth();
+  console.log("AppContent: Rendering...");
+  const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
+    console.log("AppContent: Showing Loading...");
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-xl font-semibold">Cargando...</div>
@@ -184,17 +261,28 @@ const AppContent = () => {
     );
   }
 
-  if (!token) {
+  if (!isAuthenticated) {
+    console.log("AppContent: Not authenticated, showing LoginScreen...");
     return <LoginScreen />;
   }
 
-  return <MainApp />;
-}
+  console.log("AppContent: Authenticated, showing MainApp...");
+  return (
+    <>
+      <MainApp />
+      <ChatbotWidget />
+      <OfflineIndicator />
+    </>
+  );
+};
 
 function App() {
+  console.log("App: Rendering AuthProvider...");
   return (
     <AuthProvider>
-      <AppContent />
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
     </AuthProvider>
   );
 }

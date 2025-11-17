@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { Project, LogEntry, User } from "../types";
+import { ProjectDetails, LogEntry, User, SignatureConsentPayload, UserRole } from "../types";
+import api from "../src/services/api";
 import FilterBar from "./FilterBar";
 import EntryCard from "./EntryCard";
 import EntryDetailModal from "./EntryDetailModal";
@@ -14,9 +15,11 @@ import {
   CalendarIcon,
 } from "./icons/Icon";
 import ExportModal from "./ExportModal";
-import { MOCK_USERS, MOCK_PROJECT } from "../services/mockData";
 import CalendarView from "./CalendarView";
 import { useAuth } from "../contexts/AuthContext";
+import { useApi } from "../src/hooks/useApi";
+import { usePermissions } from "../src/hooks/usePermissions";
+import { useToast } from "./ui/ToastProvider";
 
 interface ProjectDashboardProps {
   initialItemToOpen: { type: string; id: string } | null;
@@ -28,11 +31,9 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   clearInitialItem,
 }) => {
   const { user } = useAuth();
-  const project = MOCK_PROJECT;
-
-  const [logEntries, setLogEntries] = useState<LogEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: project, isLoading: isProjectLoading } = useApi.projectDetails();
+  const { data: logEntries, isLoading: isLogEntriesLoading, error, retry: refetchLogEntries } = useApi.logEntries();
+  const { data: users, isLoading: isUsersLoading } = useApi.users();
 
   const [selectedEntry, setSelectedEntry] = useState<LogEntry | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -50,39 +51,13 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     startDate: "",
     endDate: "",
   });
+  const { canEditContent } = usePermissions();
+  const isContractorRep = user?.projectRole === UserRole.CONTRACTOR_REP;
+  const readOnly = !canEditContent && !isContractorRep;
+  const { showToast } = useToast();
 
   useEffect(() => {
-    const fetchLogEntries = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const response = await fetch("http://localhost:4000/api/log-entries");
-        if (!response.ok) {
-          throw new Error("La respuesta del servidor no fue exitosa.");
-        }
-        const data = await response.json();
-        setLogEntries(data);
-      } catch (err) {
-        if (err instanceof Error) {
-          setError(err.message);
-        } else {
-          setError("Ocurrió un error desconocido.");
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchLogEntries();
-  }, []);
-
-  const handleOpenDetail = (entry: LogEntry) => {
-    setSelectedEntry(entry);
-    setIsDetailModalOpen(true);
-  };
-
-  useEffect(() => {
-    if (initialItemToOpen && initialItemToOpen.type === "logEntry") {
+    if (initialItemToOpen && initialItemToOpen.type === "logEntry" && logEntries) {
       const entryToOpen = logEntries.find((e) => e.id === initialItemToOpen.id);
       if (entryToOpen) {
         handleOpenDetail(entryToOpen);
@@ -91,11 +66,33 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     }
   }, [initialItemToOpen, logEntries, clearInitialItem]);
 
+  const handleOpenDetail = (entry: LogEntry) => {
+    setSelectedEntry(entry);
+    setIsDetailModalOpen(true);
+  };
+
   const filteredEntries = useMemo(() => {
+    if (!logEntries) return [];
+
     return logEntries.filter((entry) => {
       const searchTermMatch =
         entry.title.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
         entry.description
+          .toLowerCase()
+          .includes(filters.searchTerm.toLowerCase()) ||
+        entry.activitiesPerformed
+          .toLowerCase()
+          .includes(filters.searchTerm.toLowerCase()) ||
+        entry.materialsUsed
+          .toLowerCase()
+          .includes(filters.searchTerm.toLowerCase()) ||
+        entry.workforce
+          .toLowerCase()
+          .includes(filters.searchTerm.toLowerCase()) ||
+        entry.weatherConditions
+          .toLowerCase()
+          .includes(filters.searchTerm.toLowerCase()) ||
+        entry.additionalObservations
           .toLowerCase()
           .includes(filters.searchTerm.toLowerCase()) ||
         String(entry.folioNumber).includes(filters.searchTerm);
@@ -106,11 +103,11 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
         filters.user === "all" ||
         (entry.author && entry.author.id === filters.user);
 
-      const createdAtDateOnly = entry.createdAt.substring(0, 10);
+      const entryDateOnly = entry.entryDate.substring(0, 10);
       const startDateMatch =
-        !filters.startDate || createdAtDateOnly >= filters.startDate;
+        !filters.startDate || entryDateOnly >= filters.startDate;
       const endDateMatch =
-        !filters.endDate || createdAtDateOnly <= filters.endDate;
+        !filters.endDate || entryDateOnly <= filters.endDate;
 
       return (
         searchTermMatch &&
@@ -129,6 +126,14 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   };
 
   const handleOpenForm = () => {
+    if (readOnly) {
+      showToast({
+        title: "Acceso restringido",
+        message: "El rol Viewer solo puede consultar información.",
+        variant: "warning",
+      });
+      return;
+    }
     setIsFormModalOpen(true);
   };
 
@@ -138,6 +143,14 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   };
 
   const handleDateClickOnCalendar = (dateStr: string) => {
+    if (readOnly) {
+      showToast({
+        title: "Acceso restringido",
+        message: "El rol Viewer no puede crear nuevas anotaciones.",
+        variant: "warning",
+      });
+      return;
+    }
     setNewEntryDefaultDate(dateStr);
     setIsFormModalOpen(true);
   };
@@ -157,63 +170,53 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     files: File[]
   ) => {
     if (!user) {
-      setError("No estás autenticado.");
-      return;
+      throw new Error("No estás autenticado.");
+    }
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede crear ni editar anotaciones.",
+        variant: "error",
+      });
+      throw new Error("El perfil Viewer no puede crear anotaciones.");
     }
 
-    const dataToSend = {
-      ...newEntryData,
-      authorId: user.id,
-      projectId: project.id,
-    };
+    if (!project) {
+      throw new Error("No se ha cargado la información del proyecto.");
+    }
 
     try {
-      const response = await fetch("http://localhost:4000/api/log-entries", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      await api.logEntries.create(
+        {
+          ...newEntryData,
+          authorId: user.id,
+          projectId: project.id,
         },
-        body: JSON.stringify(dataToSend),
-      });
+        files
+      );
 
-      if (!response.ok) {
-        throw new Error("Falló la creación de la anotación.");
-      }
-
-      const createdEntry = await response.json();
-      setLogEntries((prevEntries) => [createdEntry, ...prevEntries]);
+      // Refrescar la lista de entradas
+      refetchLogEntries();
       handleCloseForm();
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Ocurrió un error al guardar la anotación.");
-      }
+      throw err instanceof Error ? err : new Error("Ocurrió un error al guardar la anotación.");
     }
   };
 
   const handleDeleteEntry = async (entryId: string) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede eliminar anotaciones.",
+        variant: "error",
+      });
+      throw new Error("El perfil Viewer no puede eliminar anotaciones.");
+    }
     try {
-      const response = await fetch(
-        `http://localhost:4000/api/log-entries/${entryId}`,
-        {
-          method: "DELETE",
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Falló la eliminación de la anotación.");
-      }
-
-      setLogEntries((prevEntries) =>
-        prevEntries.filter((entry) => entry.id !== entryId)
-      );
+      await api.logEntries.delete(entryId);
+      refetchLogEntries();
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Ocurrió un error al eliminar la anotación.");
-      }
+      throw err instanceof Error ? err : new Error("Ocurrió un error al eliminar la anotación.");
     }
   };
 
@@ -222,95 +225,49 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     commentText: string,
     files: File[]
   ) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede agregar comentarios.",
+        variant: "error",
+      });
+      throw new Error("El perfil Viewer no puede agregar comentarios.");
+    }
     if (!user) {
-      setError("No estás autenticado para comentar.");
-      return;
+      throw new Error("No estás autenticado para comentar.");
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:4000/api/log-entries/${entryId}/comments`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            content: commentText,
-            authorId: user.id,
-          }),
-        }
-      );
+      // Crear el comentario
+      await api.logEntries.addComment(entryId, {
+        content: commentText,
+        authorId: user.id,
+      }, files);
 
-      if (!response.ok) {
-        throw new Error("Falló la creación del comentario.");
-      }
-
-      const newComment = await response.json();
-
-      setLogEntries((prevEntries) =>
-        prevEntries.map((entry) => {
-          if (entry.id === entryId) {
-            return {
-              ...entry,
-              comments: [...(entry.comments || []), newComment],
-            };
-          }
-          return entry;
-        })
-      );
-
-      setSelectedEntry((prevSelected) => {
-        if (prevSelected && prevSelected.id === entryId) {
-          return {
-            ...prevSelected,
-            comments: [...(prevSelected.comments || []), newComment],
-          };
-        }
-        return prevSelected;
-      });
+      // Refrescar la entrada
+      const updatedEntry = await api.logEntries.getById(entryId);
+      setSelectedEntry(updatedEntry);
+      refetchLogEntries();
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Ocurrió un error al añadir el comentario.");
-      }
+      throw err instanceof Error ? err : new Error("Ocurrió un error al añadir el comentario.");
     }
   };
 
   const handleUpdateEntry = async (updatedEntryData: LogEntry) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede editar anotaciones.",
+        variant: "error",
+      });
+      throw new Error("El perfil Viewer no puede editar anotaciones.");
+    }
     try {
-      const response = await fetch(
-        `http://localhost:4000/api/log-entries/${updatedEntryData.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(updatedEntryData),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Falló la actualización de la anotación.");
-      }
-
-      const updatedEntryFromServer = await response.json();
-
-      setLogEntries((prevEntries) =>
-        prevEntries.map((entry) =>
-          entry.id === updatedEntryFromServer.id
-            ? updatedEntryFromServer
-            : entry
-        )
-      );
-      setSelectedEntry(updatedEntryFromServer);
+      const updatedEntry = await api.logEntries.update(updatedEntryData.id, updatedEntryData);
+      setSelectedEntry(updatedEntry);
+      refetchLogEntries();
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("Ocurrió un error al actualizar la anotación.");
-      }
+      throw err instanceof Error ? err : new Error("Ocurrió un error al actualizar la anotación.");
     }
   };
 
@@ -318,131 +275,83 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     documentId: string,
     documentType: "logEntry",
     signer: User,
-    password: string
+    payload: SignatureConsentPayload
   ): Promise<{ success: boolean; error?: string }> => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede firmar documentos.",
+        variant: "error",
+      });
+      return {
+        success: false,
+        error: "El perfil Viewer no puede firmar documentos.",
+      };
+    }
     try {
-      const response = await fetch(
-        `http://localhost:4000/api/log-entries/${documentId}/signatures`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ signerId: signer.id, password }),
-        }
-      );
+      const updatedEntry = await api.logEntries.addSignature(documentId, {
+        signerId: signer.id,
+        password: payload.password,
+        consent: payload.consent,
+        consentStatement: payload.consentStatement,
+      });
 
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(responseData.error || "Falló el proceso de firma.");
-      }
-
-      // La respuesta del backend es la anotación actualizada, la usamos para refrescar el estado
-      const updatedEntryFromServer = responseData;
-
-      setLogEntries((prev) =>
-        prev.map((entry) =>
-          entry.id === updatedEntryFromServer.id
-            ? updatedEntryFromServer
-            : entry
-        )
-      );
-      setSelectedEntry(updatedEntryFromServer);
+      setSelectedEntry(updatedEntry);
+      refetchLogEntries();
 
       return { success: true };
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Ocurrió un error inesperado.";
-      setError(errorMessage);
+      const errorMessage = err instanceof Error ? err.message : "Ocurrió un error inesperado.";
       return { success: false, error: errorMessage };
     }
   };
-  const handleExportEntries = () => {
-    const header = `Extracto de Bitácora Digital de Obra\nProyecto: ${
-      project.name
-    }\nContrato: ${
-      project.contractId
-    }\nFecha de Exportación: ${new Date().toLocaleString(
-      "es-CO"
-    )}\n\nFiltros Aplicados:\n- Término de Búsqueda: ${
-      filters.searchTerm || "Ninguno"
-    }\n- Estado: ${filters.status}\n- Tipo: ${filters.type}\n- Usuario: ${
-      filters.user === "all"
-        ? "Todos"
-        : MOCK_USERS.find((u) => u.id === filters.user)?.fullName || "N/A"
-    }\n- Fecha Desde: ${filters.startDate || "N/A"}\n- Fecha Hasta: ${
-      filters.endDate || "N/A"
-    }\n\nTotal de Anotaciones: ${
-      filteredEntries.length
-    }\n\n========================================\n\n`;
 
-    const content = filteredEntries
-      .map((entry) => {
-        const comments = (entry.comments || [])
-          .map(
-            (c) =>
-              `\t- [${new Date(c.timestamp).toLocaleString("es-CO")}] ${
-                c.author.fullName
-              }: ${c.content}`
-          )
-          .join("\n");
-        const attachments = (entry.attachments || [])
-          .map((a) => `\t- ${a.fileName} (${(a.size / 1024).toFixed(2)} KB)`)
-          .join("\n");
-
-        return `
-    Folio: #${entry.folioNumber}
-    Título: ${entry.title}
-    Estado: ${entry.status}
-    Tipo: ${entry.type}
-    Autor: ${entry.author.fullName}
-    Fecha de Creación: ${new Date(entry.createdAt).toLocaleString("es-CO")}
-    Fecha de Actividad: ${new Date(entry.activityStartDate).toLocaleDateString(
-      "es-CO"
-    )} a ${new Date(entry.activityEndDate).toLocaleDateString("es-CO")}
-    Asunto: ${entry.subject}
-    Localización: ${entry.location}
-    Confidencial: ${entry.isConfidential ? "Sí" : "No"}
-    
-    Descripción:
-    ${entry.description}
-    
-    Comentarios (${(entry.comments || []).length}):
-    ${comments || "\t(Sin comentarios)"}
-    
-    Adjuntos (${(entry.attachments || []).length}):
-    ${attachments || "\t(Sin adjuntos)"}
-    
-    ----------------------------------------
-            `;
-      })
-      .join("");
-
-    const fullContent = header + content;
-
-    const blob = new Blob([fullContent], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    const dateStr = new Date().toISOString().slice(0, 10);
-    link.download = `Bitacora_Export_${dateStr}.txt`;
-    document.body.appendChild(link);
-    link.click();
-
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    setIsExportModalOpen(false);
+  const handleExportEntries = async () => {
+    try {
+      const blob = await api.logEntries.exportZip({
+        startDate: filters.startDate || undefined,
+        endDate: filters.endDate || undefined,
+        type: filters.type !== "all" ? filters.type : undefined,
+        status: filters.status !== "all" ? filters.status : undefined,
+        authorId: filters.user !== "all" ? filters.user : undefined,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `bitacoras_${new Date().toISOString().slice(0, 10)}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setIsExportModalOpen(false);
+    } catch (e: any) {
+      showToast({
+        variant: "error",
+        title: "Error al exportar",
+        message: e?.message || "No fue posible generar el ZIP.",
+      });
+    }
   };
 
   if (!user) return null;
+
+  const isLoading = isProjectLoading || isLogEntriesLoading || isUsersLoading;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">{project.name}</h2>
-          <p className="text-sm text-gray-500">
-            Contrato: {project.contractId}
-          </p>
+          {project ? (
+            <>
+              <h2 className="text-2xl font-bold text-gray-900">{project.name}</h2>
+              <p className="text-sm text-gray-500">
+                Contrato: {project.contractId}
+              </p>
+            </>
+          ) : (
+            <div className="animate-pulse">
+              <div className="h-8 w-48 bg-gray-200 rounded mb-2"></div>
+              <div className="h-4 w-32 bg-gray-200 rounded"></div>
+            </div>
+          )}
         </div>
         <div className="flex items-center flex-col sm:flex-row gap-2 w-full sm:w-auto">
           <div className="flex items-center bg-gray-200 rounded-lg p-1">
@@ -476,25 +385,29 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
             leftIcon={<DocumentArrowDownIcon />}
             variant="secondary"
             className="w-full sm:w-auto"
+            disabled={!project || !logEntries || filteredEntries.length === 0}
           >
             Exportar
           </Button>
-          <Button
-            onClick={handleOpenForm}
-            leftIcon={<PlusIcon />}
-            className="w-full sm:w-auto"
-          >
-            Nueva Anotación
-          </Button>
+          {canEditContent && (
+            <Button
+              onClick={handleOpenForm}
+              leftIcon={<PlusIcon />}
+              className="w-full sm:w-auto"
+              disabled={!project}
+            >
+              Nueva Anotación
+            </Button>
+          )}
         </div>
       </div>
 
-      <FilterBar filters={filters} setFilters={setFilters} />
+      <FilterBar filters={filters} setFilters={setFilters} users={users || []} />
 
       {isLoading && (
         <div className="text-center p-8">Cargando anotaciones...</div>
       )}
-      {error && <div className="text-center p-8 text-red-500">{error}</div>}
+      {error && <div className="text-center p-8 text-red-500">{error.message}</div>}
 
       {!isLoading && !error && (
         <>
@@ -514,9 +427,11 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
                   title="Aún no hay anotaciones"
                   message="Crea la primera anotación para iniciar el registro en la bitácora de obra. Puedes adjuntar archivos, fotos y más."
                   actionButton={
-                    <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
-                      Crear Primera Anotación
-                    </Button>
+                    canEditContent ? (
+                      <Button onClick={handleOpenForm} leftIcon={<PlusIcon />} disabled={!project}>
+                        Crear Primera Anotación
+                      </Button>
+                    ) : undefined
                   }
                 />
               )}
@@ -526,34 +441,40 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
             <CalendarView
               entries={filteredEntries}
               onEventClick={handleOpenDetail}
-              onDateClick={handleDateClickOnCalendar}
+              onDateClick={canEditContent ? handleDateClickOnCalendar : undefined}
             />
           )}
         </>
       )}
 
-      {selectedEntry && (
+      {selectedEntry && logEntries && (
         <EntryDetailModal
           isOpen={isDetailModalOpen}
           onClose={handleCloseDetail}
           entry={selectedEntry}
           onUpdate={handleUpdateEntry}
           onAddComment={handleAddComment}
-          onSign={(docId, docType, signer, pass) =>
-            addSignature(docId, docType, signer, pass)
+          onSign={(docId, docType, signer, payload) =>
+            addSignature(docId, docType, signer, payload)
           }
           onDelete={handleDeleteEntry}
           currentUser={user}
-          allUsers={MOCK_USERS}
+          availableUsers={users || []}
+          onRefresh={refetchLogEntries}
+          readOnly={readOnly}
         />
       )}
-      <EntryFormModal
-        isOpen={isFormModalOpen}
-        onClose={handleCloseForm}
-        onSave={handleSaveEntry}
-        initialDate={newEntryDefaultDate}
-        allUsers={MOCK_USERS}
-      />
+      {logEntries && canEditContent && (
+        <EntryFormModal
+          isOpen={isFormModalOpen}
+          onClose={handleCloseForm}
+          onSave={handleSaveEntry}
+          initialDate={newEntryDefaultDate}
+          availableUsers={users || []}
+          currentUser={user}
+          projectStartDate={project?.startDate}
+        />
+      )}
       <ExportModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}

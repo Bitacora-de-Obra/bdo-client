@@ -1,6 +1,7 @@
 import React from 'react';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -14,27 +15,29 @@ interface ExportModalProps {
 }
 
 const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, onExport, entryCount, filters }) => {
+  const { user } = useAuth();
+  const canDownload = user?.canDownload ?? true;
   const hasDateFilters = filters.startDate || filters.endDate;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Exportar Anotaciones de Bitácora"
+      title="Exportar Anotaciones (ZIP de PDFs)"
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
             Cancelar
           </Button>
-          <Button onClick={onExport} disabled={entryCount === 0}>
-            Descargar Extracto
+          <Button onClick={onExport} disabled={entryCount === 0 || !canDownload}>
+            {canDownload ? 'Descargar ZIP' : 'Solo previsualización'}
           </Button>
         </>
       }
     >
       <div className="text-sm text-gray-700 space-y-4">
         <p>
-          Se generará un archivo de texto (`.txt`) con el contenido de las 
+          Se descargará un <strong>ZIP</strong> que contiene los PDFs de 
           <strong> {entryCount} anotaciones</strong> que coinciden con los filtros actuales.
         </p>
         
@@ -55,9 +58,7 @@ const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, onExport, en
           </div>
         )}
 
-        <p>
-          El archivo incluirá detalles como el folio, título, descripción, autor, fechas, comentarios y lista de adjuntos para cada anotación.
-        </p>
+        <p>Si alguna anotación no tiene PDF, se generará automáticamente.</p>
       </div>
     </Modal>
   );

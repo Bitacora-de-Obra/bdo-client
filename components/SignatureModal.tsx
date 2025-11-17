@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { User } from '../types';
+import { SignatureConsentPayload, User } from '../types';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
 import Input from './ui/Input';
@@ -8,15 +8,29 @@ import Input from './ui/Input';
 interface SignatureModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (password: string) => Promise<{ success: boolean; error?: string }>;
+  onConfirm: (
+    payload: SignatureConsentPayload
+  ) => Promise<{ success: boolean; error?: string }>;
   userToSign: User;
+  consentStatement?: string;
 }
+export const DEFAULT_SIGNATURE_CONSENT_STATEMENT =
+  'El usuario consiente el uso de su firma manuscrita digital para este documento.';
 
-const SignatureModal: React.FC<SignatureModalProps> = ({ isOpen, onClose, onConfirm, userToSign }) => {
+const SignatureModal: React.FC<SignatureModalProps> = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  userToSign,
+  consentStatement,
+}) => {
   const [password, setPassword] = useState('');
   const [isAgreed, setIsAgreed] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const effectiveConsentStatement =
+    (consentStatement && consentStatement.trim()) ||
+    DEFAULT_SIGNATURE_CONSENT_STATEMENT;
 
   useEffect(() => {
     if (!isOpen) {
@@ -33,7 +47,11 @@ const SignatureModal: React.FC<SignatureModalProps> = ({ isOpen, onClose, onConf
   const handleConfirm = async () => {
     setError(null);
     setIsSigning(true);
-    const result = await onConfirm(password);
+    const result = await onConfirm({
+      password,
+      consent: isAgreed,
+      consentStatement: effectiveConsentStatement,
+    });
     if (!result.success) {
       setError(result.error || 'Ocurrió un error inesperado.');
       setIsSigning(false);
@@ -48,6 +66,9 @@ const SignatureModal: React.FC<SignatureModalProps> = ({ isOpen, onClose, onConf
         <p className="text-sm text-gray-600">
           {/* Fix: Replaced `userToSign.name` with `userToSign.fullName`. */}
           Yo, <strong className="font-semibold text-gray-800">{userToSign.fullName}</strong>, confirmo que he revisado este documento y estoy de acuerdo con su contenido. Entiendo que esta acción es legalmente vinculante y equivale a mi firma manuscrita.
+        </p>
+        <p className="text-xs text-gray-500 bg-gray-50 border border-dashed border-gray-200 rounded p-2">
+          {effectiveConsentStatement}
         </p>
 
         <Input

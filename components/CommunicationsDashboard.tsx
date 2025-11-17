@@ -1,82 +1,184 @@
-import React, { useState, useMemo } from 'react';
-// Fix: Corrected import path for types
-import { Project, Communication, CommunicationStatus } from '../types';
-// Fix: Corrected import path for custom hook
-import { useMockApi } from '../hooks/useMockApi';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Project, Communication, CommunicationStatus, CommunicationDirection, User } from '../types';
 import CommunicationFilterBar from './CommunicationFilterBar';
 import CommunicationCard from './CommunicationCard';
 import CommunicationFormModal from './CommunicationFormModal';
 import CommunicationDetailModal from './CommunicationDetailModal';
 import Button from './ui/Button';
 import EmptyState from './ui/EmptyState';
-// Fix: Corrected import path for icon
 import { PlusIcon, ChatBubbleLeftRightIcon, ListBulletIcon, TableCellsIcon } from './icons/Icon';
-// Fix: Import useAuth to get the current user for API calls
 import { useAuth } from '../contexts/AuthContext';
 import CommunicationsTable from './CommunicationsTable';
+import { useApi } from '../src/hooks/useApi';
+import api from '../src/services/api';
+import { usePermissions } from '../src/hooks/usePermissions';
+import { useToast } from './ui/ToastProvider';
 
+// Se elimina la interfaz de props, ya no recibe 'api'
 interface CommunicationsDashboardProps {
   project: Project;
-  api: ReturnType<typeof useMockApi>;
+  initialCommunicationId?: string | null;
+  onClearInitialCommunication?: () => void;
 }
 
-const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({ project, api }) => {
-  // Fix: Get current user from auth context
+const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({
+  project,
+  initialCommunicationId = null,
+  onClearInitialCommunication,
+}) => {
   const { user } = useAuth();
-  const { communications, isLoading, error, addCommunication, updateCommunicationStatus } = api;
+  const { canEditContent } = usePermissions();
+  const readOnly = !canEditContent;
+  const { showToast } = useToast();
+
+  const { data: communications, isLoading, error, retry: refetchCommunications } = useApi.communications();
+  const { data: users } = useApi.users();
+
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedComm, setSelectedComm] = useState<Communication | null>(null);
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
-  
-  const [filters, setFilters] = useState({
+
+  const [filters, setFilters] = useState<{
+    searchTerm: string;
+    sender: string;
+    recipient: string;
+    status: 'all' | CommunicationStatus;
+    direction: 'all' | 'sent' | 'received';
+  }>({
     searchTerm: '',
     sender: '',
     recipient: '',
     status: 'all',
+    direction: 'all',
   });
 
+
   const filteredCommunications = useMemo(() => {
+    if (!communications || !user) return [];
+    
     return communications.filter(comm => {
-      const searchTermMatch = comm.subject.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        const searchTermMatch = comm.subject.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
                               comm.radicado.toLowerCase().includes(filters.searchTerm.toLowerCase());
-      const senderMatch = filters.sender === '' || comm.senderDetails.entity.toLowerCase().includes(filters.sender.toLowerCase());
-      const recipientMatch = filters.recipient === '' || comm.recipientDetails.entity.toLowerCase().includes(filters.recipient.toLowerCase());
-      const statusMatch = filters.status === 'all' || comm.status === filters.status;
-      return searchTermMatch && senderMatch && recipientMatch && statusMatch;
+        const senderMatch = filters.sender === '' || comm.senderDetails.entity.toLowerCase().includes(filters.sender.toLowerCase());
+        const recipientMatch = filters.recipient === '' || comm.recipientDetails.entity.toLowerCase().includes(filters.recipient.toLowerCase());
+        const statusMatch = filters.status === 'all' || comm.status === filters.status;
+
+        const directionValue = comm.direction || CommunicationDirection.RECEIVED;
+        const directionMatch =
+          filters.direction === 'all' ||
+          (filters.direction === 'sent' && directionValue === CommunicationDirection.SENT) ||
+          (filters.direction === 'received' && directionValue === CommunicationDirection.RECEIVED);
+
+        return searchTermMatch && senderMatch && recipientMatch && statusMatch && directionMatch;
     });
-  }, [communications, filters]);
-  
-  const handleOpenForm = () => setIsFormModalOpen(true);
+  }, [communications, filters, user]);
+
+  const handleOpenForm = () => {
+    if (readOnly) {
+      showToast({
+        title: 'Acceso restringido',
+        message: 'El rol Viewer solo puede visualizar las comunicaciones.',
+        variant: 'warning',
+      });
+      return;
+    }
+    setIsFormModalOpen(true);
+  };
   const handleCloseForm = () => setIsFormModalOpen(false);
 
   const handleOpenDetail = (comm: Communication) => {
     setSelectedComm(comm);
     setIsDetailModalOpen(true);
   };
-  
+
   const handleCloseDetail = () => {
     setIsDetailModalOpen(false);
     setSelectedComm(null);
   };
 
-  const handleSaveCommunication = async (newCommData: Omit<Communication, 'id' | 'uploader' | 'attachments' | 'status' | 'statusHistory'>) => {
-    // Fix: Add user guard and pass user to API call as required
-    if (!user) return;
-    await addCommunication(newCommData, user);
-    handleCloseForm();
+  useEffect(() => {
+    if (!initialCommunicationId || !communications) return;
+    const commToOpen = communications.find((comm) => comm.id === initialCommunicationId);
+    if (commToOpen) {
+      handleOpenDetail(commToOpen);
+    }
+    onClearInitialCommunication?.();
+  }, [initialCommunicationId, communications, onClearInitialCommunication]);
+
+  const handleSaveCommunication = async (
+    newCommData: Omit<Communication, 'id' | 'uploader' | 'attachments' | 'status' | 'statusHistory' | 'assignee' | 'assignedAt'>,
+    files: File[],
+    options?: { assigneeId?: string | null }
+  ) => {
+    if (!user) {
+      throw new Error('No estás autenticado.');
+    }
+    if (readOnly) {
+      showToast({
+        title: 'Acción no permitida',
+        message: 'El perfil Viewer no puede registrar comunicaciones.',
+        variant: 'error',
+      });
+      throw new Error('El perfil Viewer no puede registrar comunicaciones.');
+    }
+
+    try {
+      const uploadedAttachments = await Promise.all(
+        files.map((file) => api.upload.uploadFile(file, "document"))
+      );
+
+      await api.communications.create({
+        ...newCommData,
+        uploaderId: user.id,
+        attachments: uploadedAttachments,
+        assigneeId: options?.assigneeId ?? undefined,
+      });
+      refetchCommunications();
+      handleCloseForm();
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Error al guardar la comunicación.');
+    }
   }
 
   const handleStatusChange = async (commId: string, newStatus: CommunicationStatus) => {
-    // Fix: Add user guard and pass user to API call as required
-    if (!user) return;
-    await updateCommunicationStatus(commId, newStatus, user);
-    // Update selected communication to reflect changes immediately in modal
-    const updatedComm = communications.find(c => c.id === commId);
-    if (updatedComm) {
-        // Fix: Use the authenticated user from useAuth instead of a mock user
-        const newHistoryEntry = { status: newStatus, user: user, timestamp: new Date().toISOString() };
-        setSelectedComm(prev => prev ? {...prev, status: newStatus, statusHistory: [...prev.statusHistory, newHistoryEntry] } : null);
+    if (readOnly) {
+      showToast({
+        title: 'Acción no permitida',
+        message: 'El perfil Viewer no puede actualizar estados.',
+        variant: 'error',
+      });
+      throw new Error('El perfil Viewer no puede actualizar estados.');
+    }
+    try {
+      await api.communications.updateStatus(commId, newStatus);
+      refetchCommunications();
+      if (selectedComm?.id === commId) {
+        const updatedComm = await api.communications.getById(commId);
+        setSelectedComm(updatedComm);
+      }
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Error al actualizar el estado de la comunicación.');
+    }
+  };
+
+  const handleAssignmentChange = async (commId: string, assigneeId: string | null) => {
+    if (readOnly) {
+      showToast({
+        title: 'Acción no permitida',
+        message: 'El perfil Viewer no puede reasignar comunicaciones.',
+        variant: 'error',
+      });
+      throw new Error('El perfil Viewer no puede reasignar comunicaciones.');
+    }
+    try {
+      const updatedComm = await api.communications.assign(commId, assigneeId);
+      refetchCommunications();
+      if (selectedComm?.id === commId) {
+        setSelectedComm(updatedComm);
+      }
+    } catch (err) {
+      throw err instanceof Error ? err : new Error('Error al actualizar el responsable de la comunicación.');
     }
   };
 
@@ -106,17 +208,19 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({ proje
                     <span className="hidden sm:inline">Tabla</span>
                 </button>
             </div>
-            <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
-              Registrar Comunicación
-            </Button>
+            {canEditContent && (
+              <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
+                Registrar Comunicación
+              </Button>
+            )}
         </div>
       </div>
 
-      <CommunicationFilterBar filters={filters} setFilters={setFilters} />
+      <CommunicationFilterBar filters={filters} setFilters={setFilters} userRole={user?.projectRole || ''} />
 
       {isLoading && <div className="text-center p-8">Cargando comunicaciones...</div>}
-      {error && <div className="text-center p-8 text-red-500">{error}</div>}
-      
+      {error && <div className="text-center p-8 text-red-500">{error.message}</div>}
+
       {!isLoading && !error && (
         <>
             {filteredCommunications.length === 0 ? (
@@ -125,9 +229,11 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({ proje
                     title="No hay comunicaciones registradas"
                     message="Mantén un registro centralizado de todas las comunicaciones oficiales del proyecto, como oficios, solicitudes y respuestas."
                     actionButton={
-                        <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
-                        Registrar Comunicación
-                        </Button>
+                        canEditContent ? (
+                          <Button onClick={handleOpenForm} leftIcon={<PlusIcon />}>
+                            Registrar Comunicación
+                          </Button>
+                        ) : undefined
                     }
                 />
             ) : viewMode === 'card' ? (
@@ -150,12 +256,15 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({ proje
         </>
       )}
 
-      <CommunicationFormModal 
-        isOpen={isFormModalOpen}
-        onClose={handleCloseForm}
-        onSave={handleSaveCommunication}
-        communications={communications}
-      />
+      {canEditContent && (
+        <CommunicationFormModal 
+          isOpen={isFormModalOpen}
+          onClose={handleCloseForm}
+          onSave={handleSaveCommunication}
+          communications={communications || []}
+          users={users || []}
+        />
+      )}
 
       {selectedComm && (
         <CommunicationDetailModal
@@ -164,6 +273,9 @@ const CommunicationsDashboard: React.FC<CommunicationsDashboardProps> = ({ proje
             communication={selectedComm}
             onStatusChange={handleStatusChange}
             allCommunications={communications}
+            users={users || []}
+            onAssign={handleAssignmentChange}
+            readOnly={readOnly}
         />
       )}
     </div>

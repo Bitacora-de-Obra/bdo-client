@@ -38,8 +38,8 @@ export interface AppSettings {
 export enum UserRole {
   RESIDENT = 'Residente de Obra',
   SUPERVISOR = 'Supervisor',
-  CONTRACTOR_REP = 'Representante Contratista',
-  ADMIN = 'Administrador IDU',
+  CONTRACTOR_REP = 'Contratista',
+  ADMIN = 'IDU',
 }
 
 export interface User {
@@ -47,13 +47,17 @@ export interface User {
   fullName: string;
   email: string;
   projectRole: UserRole;
+  appRole: AppRole;
+  entity?: string; // IDU, INTERVENTORIA, CONTRATISTA
+  cargo?: string; // Cargo o posición del usuario
   avatarUrl: string;
   password?: string;
   // Admin fields
-  appRole: AppRole;
   permissions?: Partial<Permission>;
   status: "active" | "inactive";
+  canDownload?: boolean; // Permiso para descargar archivos
   lastLoginAt?: string; // ISO
+  emailVerifiedAt?: string | null;
 }
 
 export interface Project {
@@ -70,6 +74,17 @@ export interface KeyPersonnel {
   company: 'Contratista' | 'Interventoría';
   email: string;
   phone: string;
+  dedication?: string | null;
+}
+
+export interface CorredorVialElement {
+  id: string;
+  civ: string;
+  ubicacion: string;
+  pkId: string;
+  tipoElemento: string;
+  costado: string;
+  sortOrder: number;
 }
 
 export interface ProjectDetails {
@@ -82,6 +97,8 @@ export interface ProjectDetails {
   initialValue: number;
   startDate: string; // ISO date string
   initialEndDate: string; // ISO date string
+  civs?: string | null; // CIVs del corredor vial (JSON array) - DEPRECATED
+  corredorVialElements?: CorredorVialElement[];
   keyPersonnel: KeyPersonnel[];
   // New fields for Interventoria
   interventoriaContractId: string;
@@ -97,6 +114,11 @@ export interface Attachment {
   url: string;
   size: number;
   type: string;
+  downloadUrl?: string;
+  downloadPath?: string;
+  storagePath?: string;
+  createdAt?: string;
+  previewUrl?: string;
 }
 
 export interface Comment {
@@ -118,24 +140,98 @@ export interface Change {
 
 export interface Signature {
   signer: User;
-  signedAt: string; // ISO date string
+  signedAt: string | null; // ISO date string, null if not signed
+  signatureTaskStatus?: 'PENDING' | 'SIGNED' | 'DECLINED' | 'CANCELLED'; // Status from signature task
+  signatureTaskId?: string | null; // ID of the signature task
+}
+
+export interface UserSignature {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  url: string;
+  hash: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SignatureTask {
+  id: string;
+  status: 'PENDING' | 'SIGNED' | 'DECLINED' | 'CANCELLED';
+  assignedAt: string;
+  signedAt?: string;
+  signer: User | null;
+}
+
+export interface ReviewTask {
+  id: string;
+  status: 'PENDING' | 'COMPLETED';
+  assignedAt: string | null;
+  completedAt?: string | null;
+  reviewer: User | null;
+}
+
+export interface SignatureSummary {
+  total: number;
+  signed: number;
+  pending: number;
+  completed: boolean;
+}
+
+export interface SignatureConsentPayload {
+  password: string;
+  consent: boolean;
+  consentStatement: string;
+}
+
+export interface WeatherRainEvent {
+  start: string;
+  end: string;
+}
+
+export interface WeatherReport {
+  summary?: string;
+  temperature?: string;
+  notes?: string;
+  rainEvents: WeatherRainEvent[];
+}
+
+export interface LogEntryListItem {
+  text: string;
+}
+
+export interface PersonnelEntry {
+  role: string;
+  quantity?: number;
+  notes?: string;
+}
+
+export interface EquipmentResourceEntry {
+  name: string;
+  status?: string;
+  notes?: string;
 }
 
 
 // LOGBOOK ENTRIES (ANOTACIONES)
 export enum EntryStatus {
-  APPROVED = 'Aprobado',
-  NEEDS_REVIEW = 'En Revisión',
-  SUBMITTED = 'Radicado',
-  REJECTED = 'Rechazado',
   DRAFT = 'Borrador',
+  SUBMITTED = 'Revisión contratista',
+  NEEDS_REVIEW = 'Revisión final',
+  APPROVED = 'Listo para firmas',
+  SIGNED = 'Firmado',
+  REJECTED = 'Rechazado',
 }
 
 export enum EntryType {
+  GENERAL = 'General',
+  SAFETY = 'HSE',
+  ENVIRONMENTAL = 'Ambiental',
+  SOCIAL = 'Social',
   QUALITY = 'Calidad',
   ADMINISTRATIVE = 'Administrativo',
-  SAFETY = 'HSE',
-  GENERAL = 'General',
+  TECHNICAL = 'Técnico',
 }
 
 export interface LogEntry {
@@ -143,22 +239,59 @@ export interface LogEntry {
   folioNumber: number;
   title: string;
   description: string;
+  entryDate: string;
+  activitiesPerformed: string;
+  materialsUsed: string;
+  workforce: string;
+  weatherConditions: string;
+  additionalObservations: string;
+  scheduleDay: string;
+  locationDetails: string;
+  weatherReport: WeatherReport | null;
+  contractorPersonnel: PersonnelEntry[];
+  interventoriaPersonnel: PersonnelEntry[];
+  equipmentResources: EquipmentResourceEntry[];
+  executedActivities: LogEntryListItem[];
+  executedQuantities: LogEntryListItem[];
+  scheduledActivities: LogEntryListItem[];
+  qualityControls: LogEntryListItem[];
+  materialsReceived: LogEntryListItem[];
+  safetyNotes: LogEntryListItem[];
+  projectIssues: LogEntryListItem[];
+  siteVisits: LogEntryListItem[];
+  contractorObservations: string;
+  interventoriaObservations: string;
+  safetyFindings: string;
+  safetyContractorResponse: string;
+  environmentFindings: string;
+  environmentContractorResponse: string;
+  socialActivities?: LogEntryListItem[];
+  socialObservations: string;
+  socialContractorResponse: string;
+  socialPhotoSummary: string;
+  contractorReviewCompleted?: boolean;
+  contractorReviewCompletedAt?: string | null;
+  contractorReviewer?: User | null;
   author: User;
   createdAt: string; // ISO date string
   updatedAt?: string; // ISO date string
   activityStartDate: string; // ISO date string
   activityEndDate: string; // ISO date string
-  location: string;
-  subject: string;
+  location?: string;
+  subject?: string;
   type: EntryType;
   status: EntryStatus;
   attachments: Attachment[];
   comments: Comment[];
-  assignees: User[];
+  assignees?: User[];
   isConfidential: boolean;
   history?: Change[];
   requiredSignatories: User[];
   signatures: Signature[];
+  signatureTasks?: SignatureTask[];
+  reviewTasks?: ReviewTask[];
+  signatureSummary?: SignatureSummary;
+  pendingSignatureSignatories?: User[];
 }
 
 // DRAWINGS (PLANOS)
@@ -206,6 +339,11 @@ export enum CommunicationStatus {
   RESUELTO = 'Resuelto',
 }
 
+export enum CommunicationDirection {
+  SENT = 'Enviada',
+  RECEIVED = 'Recibida',
+}
+
 export enum DeliveryMethod {
   MAIL = 'Correo Electrónico',
   PRINTED = 'Impreso',
@@ -239,10 +377,15 @@ export interface Communication {
   deliveryMethod: DeliveryMethod;
   notes?: string; // Observaciones
   uploader: User;
+  assignee?: User | null;
+  assignedAt?: string | null;
   attachments: Attachment[];
   status: CommunicationStatus;
   statusHistory: StatusChange[];
   parentId?: string; // opcional
+  direction: CommunicationDirection;
+  requiresResponse: boolean;
+  responseDueDate?: string | null;
 }
 
 
@@ -318,13 +461,22 @@ export interface CostActa {
   paymentDueDate: string | null;
   billedAmount: number;
   totalContractValue: number;
+  periodValue?: number | null; // Valor del periodo
+  advancePaymentPercentage?: number | null; // % de anticipo amortizado
   status: CostActaStatus;
   observations: Observation[];
-  relatedProgress: string;
+  relatedProgress?: string | null;
   attachments: Attachment[];
 }
 
 // WORK PROGRESS (AVANCE DE OBRA)
+export interface ContractItemExecution {
+  id: string;
+  contractItemId: string;
+  pkId: string;
+  quantity: number;
+}
+
 export interface ContractItem {
   id: string;
   itemCode: string;
@@ -332,6 +484,8 @@ export interface ContractItem {
   unit: string;
   unitPrice: number;
   contractQuantity: number;
+  executedQuantity?: number; // Cantidad ejecutada total (suma de todas las ejecuciones)
+  executions?: ContractItemExecution[]; // Ejecuciones por PK_ID
 }
 
 export interface WorkActaItem {
@@ -343,6 +497,7 @@ export enum WorkActaStatus {
   APPROVED = 'Aprobada',
   IN_REVIEW = 'En Revisión',
   DRAFT = 'En Borrador',
+  REJECTED = 'Rechazada',
 }
 
 export interface WorkActa {
@@ -351,7 +506,10 @@ export interface WorkActa {
   period: string;
   date: string; // ISO date string
   status: WorkActaStatus;
+  grossValue?: number | null; // Valor bruto del acta
+  description?: string | null; // Objeto/descripción del acta
   items: WorkActaItem[];
+  attachments: Attachment[];
 }
 
 export enum ModificationType {
@@ -371,6 +529,7 @@ export interface ContractModification {
     days?: number; // For time extensions
     justification: string;
     attachment?: Attachment;
+    affectsFiftyPercent?: boolean;
 }
 
 
@@ -419,11 +578,21 @@ export enum ReportScope {
   INTERVENTORIA = 'Interventoría',
 }
 
+export interface ReportVersionInfo {
+  id: string;
+  version: number;
+  status: ReportStatus;
+  submissionDate: string;
+  createdAt?: string;
+}
+
 export interface Report {
   id: string;
   type: 'Weekly' | 'Monthly';
   reportScope: ReportScope;
   number: string;
+  version: number;
+  previousReportId?: string | null;
   period: string; // "Semana del X al Y" or "Mes de Z"
   submissionDate: string; // ISO date string
   status: ReportStatus;
@@ -432,17 +601,20 @@ export interface Report {
   author: User;
   requiredSignatories: User[];
   signatures: Signature[];
+  versions?: ReportVersionInfo[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // NOTIFICATIONS
 export interface Notification {
   id: string;
-  type: 'commitment_due' | 'log_entry_assigned';
+  type: 'commitment_due' | 'log_entry_assigned' | 'communication_assigned' | 'mention';
   urgency: 'overdue' | 'due_soon' | 'info';
   message: string;
   sourceDescription: string;
-  relatedView: 'minutes' | 'logbook';
-  relatedItemType: 'acta' | 'logEntry';
+  relatedView: 'minutes' | 'logbook' | 'communications' | 'drawings';
+  relatedItemType: 'acta' | 'logEntry' | 'communication' | 'drawing';
   relatedItemId: string;
   createdAt: string;
   isRead: boolean;

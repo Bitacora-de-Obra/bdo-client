@@ -1,5 +1,5 @@
 import React from 'react';
-import { Communication, CommunicationStatus } from '../types';
+import { Communication, CommunicationStatus, CommunicationDirection } from '../types';
 import Card from './ui/Card';
 import CommunicationStatusBadge from './CommunicationStatusBadge';
 
@@ -20,25 +20,30 @@ const CommunicationsTable: React.FC<CommunicationsTableProps> = ({ communication
             <th scope="col" className="px-4 py-3">Fecha</th>
             <th scope="col" className="px-4 py-3">Remitente</th>
             <th scope="col" className="px-4 py-3">Destinatario</th>
+            <th scope="col" className="px-4 py-3">Dirección</th>
             <th scope="col" className="px-4 py-3">Asunto</th>
+            <th scope="col" className="px-4 py-3">Responsable</th>
             <th scope="col" className="px-4 py-3 text-center">Requiere Rta.</th>
             <th scope="col" className="px-4 py-3">Estado</th>
           </tr>
         </thead>
         <tbody>
           {communications.map(comm => {
-            const requiresResponse = comm.dueDate && comm.status !== CommunicationStatus.RESUELTO;
+            const requiresResponse = comm.requiresResponse && comm.status !== CommunicationStatus.RESUELTO;
+            const responseDue = comm.responseDueDate ? formatDate(comm.responseDueDate) : comm.dueDate ? formatDate(comm.dueDate) : null;
             return (
               <tr key={comm.id} className="bg-white border-b hover:bg-gray-50 cursor-pointer" onClick={() => onSelect(comm)}>
                 <td className="px-4 py-4 font-medium text-gray-900 whitespace-nowrap">{comm.radicado}</td>
                 <td className="px-4 py-4">{formatDate(comm.sentDate)}</td>
                 <td className="px-4 py-4">{comm.senderDetails.entity}</td>
                 <td className="px-4 py-4">{comm.recipientDetails.entity}</td>
+                <td className="px-4 py-4">{comm.direction === CommunicationDirection.SENT ? 'Enviada' : 'Recibida'}</td>
                 <td className="px-4 py-4 max-w-xs truncate" title={comm.subject}>{comm.subject}</td>
+                <td className="px-4 py-4">{comm.assignee ? comm.assignee.fullName : 'Sin asignar'}</td>
                 <td className="px-4 py-4 text-center">
                   {requiresResponse ? (
-                    <span className="inline-flex items-center text-yellow-600 font-semibold" title={`Sí, vence el ${formatDate(comm.dueDate!)}`}>
-                       Sí
+                    <span className="inline-flex items-center text-yellow-600 font-semibold" title={responseDue ? `Sí, vence el ${responseDue}` : 'Sí'}>
+                       Sí{responseDue ? ` · ${responseDue}` : ''}
                     </span>
                   ) : (
                     <span className="text-gray-400">No</span>
