@@ -1,7 +1,7 @@
 
 
 import React, { useState } from 'react';
-import { ProjectDetails, LogEntry, Communication, Acta, Report, Attachment } from '../types';
+import { ProjectDetails, LogEntry, Communication, Acta, Report, Attachment, ControlPoint } from '../types';
 import { useApi } from '../src/hooks/useApi';
 import Card from './ui/Card';
 import Button from './ui/Button';
@@ -25,6 +25,7 @@ const ExportDashboard: React.FC<ExportDashboardProps> = ({ project }) => {
   const { data: communications } = useApi.communications();
   const { data: actas } = useApi.actas();
   const { data: reports } = useApi.reports();
+  const { data: controlPoints } = useApi.controlPoints();
 
   const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -328,7 +329,73 @@ ${report.summary}
       }
     }
 
-    // 4. Generate ZIP and Download
+    // 5. Export Control Points (Puntos Fijos)
+    const controlPointsData = controlPoints ?? [];
+    setExportProgressMessage(`Procesando ${controlPointsData.length} puntos fijos...`);
+    const controlPointsFolder = projectFolder.folder('5_Puntos_Fijos');
+    for (let index = 0; index < controlPointsData.length; index += 1) {
+      const point = controlPointsData[index];
+      const pointFolderName = sanitizeFilename(`${point.code || `punto_${index + 1}`}_${point.name || 'sin_nombre'}`);
+      const pointFolder = controlPointsFolder?.folder(pointFolderName);
+      
+      const pointContent = `Código: ${point.code || 'N/A'}
+Nombre: ${point.name || 'Sin nombre'}
+Descripción: ${point.description || 'Sin descripción'}
+Ubicación: ${point.location || 'Sin ubicación'}
+Coordenadas: ${point.coordinates || 'N/A'}
+Fecha de creación: ${new Date(point.createdAt).toLocaleDateString('es-CO')}
+
+Fotos registradas: ${point.photos?.length || 0}
+`;
+      pointFolder?.file('detalle_punto.txt', pointContent);
+
+      // Exportar fotos del punto fijo
+      if (point.photos && point.photos.length > 0) {
+        setExportProgressMessage(`Descargando fotos de puntos fijos (${index + 1}/${controlPointsData.length})...`);
+        const fotosFolder = pointFolder?.folder('fotos');
+        for (let photoIndex = 0; photoIndex < point.photos.length; photoIndex += 1) {
+          const photo = point.photos[photoIndex];
+          const photoDate = photo.date ? new Date(photo.date).toISOString().slice(0, 10) : photoIndex + 1;
+          const photoAuthor = photo.author?.fullName || 'desconocido';
+          
+          // Intentar descargar la foto desde el attachment
+          if (photo.attachment) {
+            const { fileName, blob } = await fetchAttachmentContent(photo.attachment);
+            const safePhotoName = sanitizeFilename(`${photoDate}_${photoAuthor}_${fileName}`);
+            fotosFolder?.file(safePhotoName, blob);
+          } else if (photo.url) {
+            // Fallback: intentar descargar desde la URL directa
+            try {
+              const headers: Record<string, string> = {};
+              const token = localStorage.getItem("accessToken");
+              if (token) {
+                headers.Authorization = `Bearer ${token}`;
+              }
+              const response = await fetch(photo.url, { headers, credentials: "include" });
+              if (response.ok) {
+                const blob = await response.blob();
+                const safePhotoName = sanitizeFilename(`${photoDate}_${photoAuthor}_foto_${photoIndex + 1}.${blob.type.split('/')[1] || 'jpg'}`);
+                fotosFolder?.file(safePhotoName, blob);
+              }
+            } catch (error) {
+              console.warn(`No se pudo descargar foto ${photoIndex + 1} del punto ${point.code}`, error);
+            }
+          }
+          
+          // Agregar información de la foto en un archivo de texto
+          if (photo.notes) {
+            const photoNotesContent = `Fecha: ${photoDate}
+Autor: ${photoAuthor}
+Notas: ${photo.notes}
+`;
+            fotosFolder?.file(`info_foto_${photoIndex + 1}.txt`, photoNotesContent);
+          }
+        }
+      }
+    }
+    await sleep(1000);
+
+    // 6. Generate ZIP and Download
     setExportProgressMessage('Comprimiendo archivos y preparando descarga...');
     await sleep(1500);
     
