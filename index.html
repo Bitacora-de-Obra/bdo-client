@@ -9,7 +9,7 @@
       function configureTailwind() {
         // Intentar múltiples veces con retry más largo
         let attempts = 0;
-        const maxAttempts = 20; // Más intentos
+        const maxAttempts = 20;
         
         function tryConfigure() {
           attempts++;
@@ -37,32 +37,70 @@
               console.warn('Error configurando Tailwind:', e);
             }
           } else if (attempts < maxAttempts) {
-            // Reintentar después de 100ms (más tiempo)
             setTimeout(tryConfigure, 100);
           } else {
-            console.warn('⚠️ Tailwind no disponible después de múltiples intentos, pero la app puede funcionar');
+            console.warn('⚠️ Tailwind no disponible, usando estilos básicos');
             return false;
           }
         }
         
-        // Iniciar intento de configuración
         return tryConfigure();
       }
       
-      // Cargar Tailwind con manejo de errores mejorado
-      const tailwindScript = document.createElement('script');
-      tailwindScript.src = 'https://cdn.tailwindcss.com';
-      tailwindScript.async = true;
-      tailwindScript.onload = function() {
-        console.log('📦 Tailwind CDN cargado, configurando...');
-        configureTailwind();
-      };
-      tailwindScript.onerror = function() {
-        console.warn('❌ Error cargando Tailwind CDN, intentando fallback...');
-        // Intentar cargar desde otro CDN o continuar sin Tailwind
-        setTimeout(configureTailwind, 500);
-      };
-      document.head.appendChild(tailwindScript);
+      // Intentar cargar Tailwind desde múltiples CDNs
+      const tailwindCDNs = [
+        'https://cdn.tailwindcss.com',
+        'https://unpkg.com/tailwindcss@3/lib/index.min.js',
+      ];
+      
+      let currentCDNIndex = 0;
+      
+      function tryLoadTailwind() {
+        if (currentCDNIndex >= tailwindCDNs.length) {
+          console.warn('❌ No se pudo cargar Tailwind desde ningún CDN, la app funcionará con estilos básicos');
+          // Inyectar estilos básicos mínimos para que la app sea usable
+          const style = document.createElement('style');
+          style.textContent = `
+            body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 0; }
+            .bg-gray-100 { background-color: #f3f4f6; }
+            .bg-white { background-color: white; }
+            .text-center { text-align: center; }
+            .flex { display: flex; }
+            .items-center { align-items: center; }
+            .justify-center { justify-content: center; }
+            .min-h-screen { min-height: 100vh; }
+            .p-8 { padding: 2rem; }
+            .space-y-6 > * + * { margin-top: 1.5rem; }
+            .w-full { width: 100%; }
+            .max-w-md { max-width: 28rem; }
+            .rounded-lg { border-radius: 0.5rem; }
+            .shadow-md { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+            input, button { padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.25rem; }
+            button { background-color: #3b82f6; color: white; cursor: pointer; }
+            button:hover { background-color: #2563eb; }
+            button:disabled { opacity: 0.5; cursor: not-allowed; }
+          `;
+          document.head.appendChild(style);
+          return;
+        }
+        
+        const tailwindScript = document.createElement('script');
+        tailwindScript.src = tailwindCDNs[currentCDNIndex];
+        tailwindScript.async = true;
+        tailwindScript.onload = function() {
+          console.log('📦 Tailwind CDN cargado desde:', tailwindCDNs[currentCDNIndex]);
+          configureTailwind();
+        };
+        tailwindScript.onerror = function() {
+          console.warn('❌ Error cargando Tailwind desde:', tailwindCDNs[currentCDNIndex]);
+          currentCDNIndex++;
+          tryLoadTailwind();
+        };
+        document.head.appendChild(tailwindScript);
+      }
+      
+      // Iniciar carga de Tailwind
+      tryLoadTailwind();
       
       // También intentar cuando la página cargue completamente
       if (document.readyState === 'loading') {
@@ -71,7 +109,6 @@
         configureTailwind();
       }
       
-      // Fallback: intentar cuando la ventana cargue
       window.addEventListener('load', function() {
         setTimeout(configureTailwind, 200);
       });
