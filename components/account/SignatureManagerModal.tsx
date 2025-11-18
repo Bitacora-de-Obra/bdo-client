@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Modal from "../ui/Modal";
 import Button from "../ui/Button";
+import Input from "../ui/Input";
 import { useToast } from "../ui/ToastProvider";
 import api from "../../src/services/api";
 import { UserSignature } from "../../types";
@@ -18,12 +19,19 @@ const SignatureManagerModal: React.FC<SignatureManagerModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [signature, setSignature] = useState<UserSignature | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [password, setPassword] = useState("");
+  const [showPasswordInput, setShowPasswordInput] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDecrypting, setIsDecrypting] = useState(false);
+  const [decryptedSignatureUrl, setDecryptedSignatureUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) {
       setSelectedFile(null);
+      setPassword("");
+      setShowPasswordInput(false);
+      setDecryptedSignatureUrl(null);
       return;
     }
     const fetchSignature = async () => {
@@ -60,25 +68,72 @@ const SignatureManagerModal: React.FC<SignatureManagerModalProps> = ({
       });
       return;
     }
+    
+    if (!password || password.trim() === "") {
+      showToast({
+        variant: "warning",
+        title: "Contraseña requerida",
+        message: "Debes ingresar tu contraseña para proteger tu firma.",
+      });
+      return;
+    }
+
     setIsUploading(true);
     try {
-      const response = await api.userSignature.upload(selectedFile);
+      const response = await api.userSignature.upload(selectedFile, password);
       setSignature(response.signature);
       setSelectedFile(null);
+      setPassword("");
+      setShowPasswordInput(false);
+      setDecryptedSignatureUrl(null);
       showToast({
         variant: "success",
         title: "Firma actualizada",
-        message: "Tu firma manuscrita se guardó correctamente.",
+        message: response.message || "Tu firma manuscrita se guardó y encriptó correctamente. Solo tú puedes acceder a ella con tu contraseña.",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error subiendo la firma", error);
+      const errorMessage = error?.message || "No se pudo guardar tu firma. Intenta nuevamente.";
       showToast({
         variant: "error",
         title: "Error",
-        message: "No se pudo guardar tu firma. Intenta nuevamente.",
+        message: errorMessage,
       });
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleDecryptSignature = async () => {
+    if (!password || password.trim() === "") {
+      showToast({
+        variant: "warning",
+        title: "Contraseña requerida",
+        message: "Debes ingresar tu contraseña para ver tu firma.",
+      });
+      return;
+    }
+
+    setIsDecrypting(true);
+    try {
+      const response = await api.userSignature.decrypt(password);
+      setDecryptedSignatureUrl(response.signature.dataUrl);
+      showToast({
+        variant: "success",
+        title: "Firma desencriptada",
+        message: "Tu firma se cargó correctamente.",
+      });
+    } catch (error: any) {
+      console.error("Error desencriptando la firma", error);
+      const errorMessage = error?.message || "Contraseña incorrecta o no se pudo desencriptar la firma.";
+      showToast({
+        variant: "error",
+        title: "Error",
+        message: errorMessage,
+      });
+      setDecryptedSignatureUrl(null);
+    } finally {
+      setIsDecrypting(false);
     }
   };
 
@@ -118,35 +173,80 @@ const SignatureManagerModal: React.FC<SignatureManagerModalProps> = ({
       );
     }
 
-    if (signature.mimeType === "application/pdf") {
+    // Si hay una firma desencriptada, mostrarla
+    if (decryptedSignatureUrl) {
+      if (signature.mimeType === "application/pdf") {
+        return (
+          <div className="flex flex-col gap-2">
+            <p className="text-sm text-gray-600 mb-2">
+              Vista previa de tu firma (desencriptada):
+            </p>
+            <iframe
+              src={decryptedSignatureUrl}
+              className="max-h-32 border rounded-md shadow-sm bg-white"
+              title="Vista previa de firma PDF"
+            />
+          </div>
+        );
+      }
+
       return (
-        <div className="flex flex-col gap-2">
-          <p className="text-sm text-gray-600">
-            Tienes registrada una firma en PDF. Puedes descargarla para
-            verificarla:
+        <div>
+          <p className="text-sm text-gray-600 mb-2">
+            Vista previa de tu firma (desencriptada):
           </p>
-          <a
-            href={signature.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-brand-primary hover:text-brand-secondary text-sm font-medium"
-          >
-            Ver firma PDF
-          </a>
+          <img
+            src={decryptedSignatureUrl}
+            alt="Firma manuscrita"
+            className="max-h-32 border rounded-md shadow-sm bg-white p-2"
+          />
         </div>
       );
     }
 
+    // Si no está desencriptada, mostrar opción para desencriptar
     return (
-      <div>
-        <p className="text-sm text-gray-600 mb-2">
-          Vista previa de tu firma actual:
+      <div className="space-y-3">
+        <p className="text-sm text-gray-600">
+          Tienes una firma guardada y protegida con encriptación. Para verla, ingresa tu contraseña.
         </p>
-        <img
-          src={signature.url}
-          alt="Firma manuscrita"
-          className="max-h-32 border rounded-md shadow-sm bg-white p-2"
-        />
+        {!showPasswordInput ? (
+          <Button
+            variant="secondary"
+            onClick={() => setShowPasswordInput(true)}
+          >
+            Ver mi firma
+          </Button>
+        ) : (
+          <div className="space-y-2">
+            <Input
+              label="Contraseña para desencriptar tu firma"
+              id="decrypt-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Ingresa tu contraseña"
+            />
+            <div className="flex gap-2">
+              <Button
+                variant="primary"
+                onClick={handleDecryptSignature}
+                disabled={!password || isDecrypting}
+              >
+                {isDecrypting ? "Desencriptando..." : "Ver firma"}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setShowPasswordInput(false);
+                  setPassword("");
+                }}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -177,10 +277,26 @@ const SignatureManagerModal: React.FC<SignatureManagerModalProps> = ({
             className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-primary/10 file:text-brand-primary hover:file:bg-brand-primary/20"
           />
           {selectedFile && (
-            <p className="text-xs text-gray-500">
-              Archivo seleccionado: {selectedFile.name} (
-              {(selectedFile.size / 1024).toFixed(1)} KB)
-            </p>
+            <>
+              <p className="text-xs text-gray-500">
+                Archivo seleccionado: {selectedFile.name} (
+                {(selectedFile.size / 1024).toFixed(1)} KB)
+              </p>
+              <div className="mt-2">
+                <Input
+                  label="Contraseña para proteger tu firma"
+                  id="upload-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Ingresa tu contraseña"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Tu firma se encriptará con esta contraseña. Solo tú podrás acceder a ella.
+                </p>
+              </div>
+            </>
           )}
         </div>
 

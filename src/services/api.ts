@@ -877,13 +877,20 @@ export const userSignatureApi = {
   get: async () => {
     return apiFetch("/users/me/signature");
   },
-  upload: async (file: File) => {
+  upload: async (file: File, password: string) => {
     const formData = new FormData();
     formData.append("signature", file);
+    formData.append("password", password);
     return apiFetch("/users/me/signature", {
       method: "POST",
       body: formData,
       headers: {},
+    });
+  },
+  decrypt: async (password: string) => {
+    return apiFetch("/users/me/signature/decrypt", {
+      method: "POST",
+      body: JSON.stringify({ password }),
     });
   },
   remove: async () => {
