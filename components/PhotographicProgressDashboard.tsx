@@ -160,8 +160,8 @@ const PhotographicProgressDashboard: React.FC<PhotographicProgressDashboardProps
       // setIsLoading(true); // Opcional: Feedback visual
 
       try {
-          // 1. Subir el archivo de la foto a /api/upload
-          const uploadResult: Attachment = await api.upload.uploadFile(file, "photo");
+          // 1. Subir el archivo de la foto a /api/upload con el ID del punto fijo
+          const uploadResult: Attachment = await api.upload.uploadFile(file, "photo", selectedControlPoint.id);
 
           // 2. Crear la PhotoEntry llamando a /api/control-points/:id/photos
           const photoPayload = {

@@ -1277,11 +1277,15 @@ export const weeklyReportsApi = {
 export const uploadApi = {
   uploadFile: async (
     file: File,
-    type: "document" | "photo" | "drawing"
+    type: "document" | "photo" | "drawing",
+    controlPointId?: string
   ): Promise<Attachment> => {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("type", type);
+    if (controlPointId && type === "photo") {
+      formData.append("controlPointId", controlPointId);
+    }
 
     return apiFetch("/upload", {
       method: "POST",
