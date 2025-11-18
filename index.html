@@ -7,21 +7,46 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css" rel="stylesheet" />
     <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              'idu-blue': '#0033A0',
-              'idu-cyan': '#00B0DA',
-              'brand-primary': '#0D47A1',
-              'brand-secondary': '#1976D2',
-              'brand-accent': '#29B6F6',
-              'status-green': '#2E7D32',
-              'status-yellow': '#F9A825',
-              'status-red': '#C62828',
-            },
+      // Esperar a que Tailwind esté cargado antes de configurarlo
+      if (typeof tailwind !== 'undefined') {
+        tailwind.config = {
+          theme: {
+            extend: {
+              colors: {
+                'idu-blue': '#0033A0',
+                'idu-cyan': '#00B0DA',
+                'brand-primary': '#0D47A1',
+                'brand-secondary': '#1976D2',
+                'brand-accent': '#29B6F6',
+                'status-green': '#2E7D32',
+                'status-yellow': '#F9A825',
+                'status-red': '#C62828',
+              },
+            }
           }
-        }
+        };
+      } else {
+        // Si Tailwind no está disponible, intentar configurarlo cuando se cargue
+        window.addEventListener('load', function() {
+          if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+              theme: {
+                extend: {
+                  colors: {
+                    'idu-blue': '#0033A0',
+                    'idu-cyan': '#00B0DA',
+                    'brand-primary': '#0D47A1',
+                    'brand-secondary': '#1976D2',
+                    'brand-accent': '#29B6F6',
+                    'status-green': '#2E7D32',
+                    'status-yellow': '#F9A825',
+                    'status-red': '#C62828',
+                  },
+                }
+              }
+            };
+          }
+        });
       }
     </script>
 <script type="importmap">
