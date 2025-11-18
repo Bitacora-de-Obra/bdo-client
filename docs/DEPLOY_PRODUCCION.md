@@ -47,3 +47,4 @@ Después de hacer el merge o cambiar la rama:
 3. Verifica que el mensaje de error sea "Revisa tus datos de acceso e intenta nuevamente"
 
 
+

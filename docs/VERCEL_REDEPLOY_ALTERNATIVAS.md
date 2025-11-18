@@ -62,3 +62,4 @@ Antes de hacer redeploy, verifica:
 3. Que la rama de producción en Vercel sea `main`
 
 
+

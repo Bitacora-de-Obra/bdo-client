@@ -110,3 +110,4 @@ import('./src/services/offline/sync').then(m => m.syncManager.sync());
 - Verifica que el token de autenticación sea válido
 
 
+
