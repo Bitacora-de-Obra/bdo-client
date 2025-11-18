@@ -68,7 +68,12 @@ const ProjectSummaryDashboard: React.FC<ProjectSummaryDashboardProps> = ({ proje
     };
   }, [project, contractModifications]);
 
-  const formatCurrency = (value: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(value);
+  const formatCurrency = (value: number | null | undefined) => {
+    if (value === null || value === undefined || isNaN(value)) {
+      return '$ 0';
+    }
+    return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(value);
+  };
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
 
   // Filtrar personal por búsqueda
@@ -115,14 +120,12 @@ const ProjectSummaryDashboard: React.FC<ProjectSummaryDashboardProps> = ({ proje
         <KPICard title="Plazo Total Vigente" value={`${totalDurationDays}`} subValue="días" className="lg:col-span-2 bg-idu-cyan/5 border-idu-cyan/50" />
       </div>
       
-      {capSummary && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <KPICard title="Tope 50%" value={formatCurrency(capSummary.cap)} />
-          <KPICard title="Usado (afecta 50%)" value={formatCurrency(capSummary.additionsAffecting)} subValue={`${Number(capSummary.usedPercent ?? 0).toFixed(1)}% del contrato`} />
-          <KPICard title="Restante para 50%" value={formatCurrency(capSummary.remainingCap)} className={capSummary.remainingCap <= 0 ? 'bg-red-50' : ''} />
-          <KPICard title="Incorporaciones (no afectan)" value={formatCurrency(capSummary.additionsNonAffecting)} />
-        </div>
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <KPICard title="Tope 50%" value={formatCurrency(capSummary?.cap)} />
+        <KPICard title="Usado (afecta 50%)" value={formatCurrency(capSummary?.additionsAffecting ?? 0)} subValue={`${Number(capSummary?.usedPercent ?? 0).toFixed(1)}% del contrato`} />
+        <KPICard title="Restante para 50%" value={formatCurrency(capSummary?.remainingCap)} className={capSummary && capSummary.remainingCap <= 0 ? 'bg-red-50' : ''} />
+        <KPICard title="Incorporaciones (no afectan)" value={formatCurrency(capSummary?.additionsNonAffecting ?? 0)} />
+      </div>
 
       <Card>
         <div className="p-5">
