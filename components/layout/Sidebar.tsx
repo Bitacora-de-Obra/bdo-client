@@ -16,6 +16,7 @@ import {
 } from '../icons/Icon';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserRole } from '../../types';
+import bitacoraLogo from '../../assets/Generated Image November 18, 2025 - 11_44AM (1).png';
 
 interface SidebarProps {
   isSidebarOpen: boolean;
@@ -113,10 +114,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, setIsSidebarOpen, curr
             <div className="h-full px-3 py-4 overflow-y-auto">
                 <div className="flex items-center justify-between mb-5">
                     <a href="#" className="flex items-center pl-2.5">
-                        <div className="h-8 w-8 mr-3 rounded-full bg-white text-gray-800 font-bold flex items-center justify-center">
-                          ID
+                        <div className="h-8 w-8 mr-3">
+                          <img 
+                            src={bitacoraLogo} 
+                            alt="Bitácora Digital" 
+                            className="w-full h-full object-contain rounded-full"
+                          />
                         </div>
-                        <span className="self-center text-xl font-semibold whitespace-nowrap text-white">Bitácora IDU</span>
+                        <span className="self-center text-xl font-semibold whitespace-nowrap text-white">Bitácora Digital</span>
                     </a>
                      <button 
                         onClick={() => setIsSidebarOpen(false)}

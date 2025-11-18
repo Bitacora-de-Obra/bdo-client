@@ -6,6 +6,7 @@ import Select from "../ui/Select";
 import { AppRole, User, UserRole } from "../../types";
 import api from "../../src/services/api";
 import { useToast } from "../ui/ToastProvider";
+import bitacoraLogo from "../../assets/Generated Image November 18, 2025 - 11_44AM (1).png";
 
 type AuthMode = "login" | "forgot" | "reset" | "register" | "verify";
 
@@ -680,8 +681,12 @@ const LoginScreen: React.FC = () => {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
         <div className="text-center">
-          <div className="h-12 w-12 mx-auto rounded-full bg-gray-900 text-white flex items-center justify-center text-lg font-bold">
-            IDU
+          <div className="h-20 w-20 mx-auto">
+            <img 
+              src={bitacoraLogo} 
+              alt="Bitácora Digital de Obra" 
+              className="w-full h-full object-contain"
+            />
           </div>
           <h2 className="mt-6 text-2xl font-bold text-gray-900">
             {modeCopy.title}
