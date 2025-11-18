@@ -681,7 +681,7 @@ const LoginScreen: React.FC = () => {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
         <div className="text-center">
-          <div className="h-20 w-20 mx-auto">
+          <div className="h-64 w-64 mx-auto">
             <img 
               src={bitacoraLogo} 
               alt="Bitácora Digital de Obra" 
