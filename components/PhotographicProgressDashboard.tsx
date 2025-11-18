@@ -164,11 +164,20 @@ const PhotographicProgressDashboard: React.FC<PhotographicProgressDashboardProps
           const uploadResult: Attachment = await api.upload.uploadFile(file, "photo", selectedControlPoint.id);
 
           // 2. Crear la PhotoEntry llamando a /api/control-points/:id/photos
-          const photoPayload = {
+          // Pasar la fecha de modificación del archivo si está disponible (para mantener orden cronológico)
+          const photoPayload: any = {
               notes: data.notes,
               authorId: user.id,
               attachmentId: uploadResult.id // ID del Attachment creado
           };
+          
+          // Si data tiene fileDate (fecha de modificación del archivo), incluirla
+          if ((data as any).fileDate) {
+              photoPayload.fileDate = (data as any).fileDate;
+          } else if (file.lastModified) {
+              // Si no viene en data pero el archivo tiene lastModified, usarlo
+              photoPayload.fileDate = new Date(file.lastModified).toISOString();
+          }
 
           const newPhotoEntry: PhotoEntry = await api(`/control-points/${selectedControlPoint.id}/photos`, {
               method: 'POST',
