@@ -7,7 +7,7 @@ import { CameraIcon } from './icons/Icon';
 interface PhotoUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: Omit<PhotoEntry, 'id' | 'author' | 'date'> & { fileDate?: string }, file: File) => Promise<void>;
+  onSave: (data: Omit<PhotoEntry, 'id' | 'author' | 'date'>, file: File) => Promise<void>;
   controlPoint: ControlPoint;
 }
 
@@ -189,13 +189,8 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
       ctx.drawImage(video, 0, 0);
       canvas.toBlob((blob) => {
         if (blob) {
-          const now = Date.now();
-          const fileName = `foto_${controlPoint.name.replace(/\s+/g, '_')}_${now}.jpg`;
-          // Crear el archivo con la fecha actual como lastModified para mantener orden cronológico
-          const file = new File([blob], fileName, { 
-            type: 'image/jpeg',
-            lastModified: now // Usar timestamp actual para fotos capturadas
-          });
+          const fileName = `foto_${controlPoint.name.replace(/\s+/g, '_')}_${Date.now()}.jpg`;
+          const file = new File([blob], fileName, { type: 'image/jpeg' });
           const preview = canvas.toDataURL('image/jpeg');
           setFiles(prev => [...prev, { file, preview, notes: '' }]);
           stopCamera();
@@ -208,17 +203,9 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
     if (selectedFiles.length > 0) {
-      // Ordenar archivos por fecha de modificación (más antiguos primero)
-      // Esto preserva el orden cronológico de las fotos
-      const sortedFiles = selectedFiles.sort((a, b) => {
-        const dateA = a.lastModified || 0; // Usar lastModified o 0 como fallback
-        const dateB = b.lastModified || 0;
-        return dateA - dateB;
-      });
-      
       const newFiles: FileWithPreview[] = [];
       
-      sortedFiles.forEach((file) => {
+      selectedFiles.forEach((file) => {
         const reader = new FileReader();
         reader.onloadend = () => {
           newFiles.push({
@@ -228,7 +215,7 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
           });
           
           // Cuando todos los archivos se hayan leído, actualizar el estado
-          if (newFiles.length === sortedFiles.length) {
+          if (newFiles.length === selectedFiles.length) {
             setFiles(prev => [...prev, ...newFiles]);
           }
         };
@@ -260,8 +247,7 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
     setUploadProgress(`Subiendo 0 de ${files.length} fotos...`);
     
     try {
-      // Subir todas las fotos en secuencia para mantener el orden
-      // Agregar un pequeño delay entre subidas para asegurar que las fechas se mantengan en orden
+      // Subir todas las fotos en secuencia
       for (let i = 0; i < files.length; i++) {
         const fileWithPreview = files[i];
         setUploadProgress(`Subiendo ${i + 1} de ${files.length}: ${fileWithPreview.file.name}...`);
@@ -269,27 +255,8 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
         try {
           // Usar las notas específicas de la foto, o las notas generales si no hay
           const photoNotes = fileWithPreview.notes || notes;
-          // Pasar la fecha de modificación del archivo para mantener el orden cronológico
-          // Si múltiples fotos tienen la misma fecha, agregar un pequeño offset basado en el índice
-          let fileDate: string | undefined;
-          if (fileWithPreview.file.lastModified) {
-            const baseDate = new Date(fileWithPreview.file.lastModified);
-            // Agregar milisegundos al índice para mantener orden incluso si las fechas son iguales
-            baseDate.setMilliseconds(baseDate.getMilliseconds() + i);
-            fileDate = baseDate.toISOString();
-          }
-          
-          await onSave({ 
-            notes: photoNotes, 
-            url: '',
-            fileDate
-          }, fileWithPreview.file);
+          await onSave({ notes: photoNotes, url: '' }, fileWithPreview.file);
           setUploadedCount(i + 1);
-          
-          // Pequeño delay entre subidas para asegurar orden (solo si no es la última)
-          if (i < files.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 100)); // 100ms de delay
-          }
         } catch (error: any) {
           const errorMessage = error?.message || `Error al subir ${fileWithPreview.file.name}`;
           setUploadErrors(prev => [...prev, errorMessage]);
