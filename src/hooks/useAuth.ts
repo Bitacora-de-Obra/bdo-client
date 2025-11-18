@@ -36,19 +36,44 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Verificar el token al iniciar y refrescarlo periódicamente
   useEffect(() => {
+    let refreshAttempts = 0;
+    const MAX_REFRESH_ATTEMPTS = 3;
+
     const refreshToken = async () => {
       try {
         const response = await api.auth.refreshToken();
-        setUser(response.user);
+        
+        // Guardar el nuevo accessToken en localStorage
+        if (response.accessToken) {
+          localStorage.setItem("accessToken", response.accessToken);
+        }
+        
+        // Actualizar el usuario
+        if (response.user) {
+          setUser(response.user);
+        }
+        
+        // Resetear contador de intentos en caso de éxito
+        refreshAttempts = 0;
       } catch (err) {
-        setUser(null);
+        refreshAttempts++;
+        console.warn(`Intento de refresh fallido (${refreshAttempts}/${MAX_REFRESH_ATTEMPTS}):`, err);
+        
+        // Solo cerrar sesión después de múltiples intentos fallidos
+        if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
+          console.error("Múltiples intentos de refresh fallaron, cerrando sesión");
+          setUser(null);
+          localStorage.removeItem("accessToken");
+        }
+        // Si es el primer o segundo intento, no cerrar sesión todavía
       }
     };
 
     refreshToken();
 
-    // Refrescar el token cada 14 minutos (el token expira en 15)
-    const interval = setInterval(refreshToken, 14 * 60 * 1000);
+    // Refrescar el token cada 10 minutos (el token expira en 15, así que tenemos margen)
+    // Reducido de 14 a 10 minutos para tener más margen de seguridad
+    const interval = setInterval(refreshToken, 10 * 60 * 1000);
 
     return () => clearInterval(interval);
   }, []);

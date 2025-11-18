@@ -130,11 +130,52 @@ const shouldAttemptTokenRefresh = (
   return message.includes("token");
 };
 
+// Función helper para refrescar el token proactivamente antes de operaciones críticas
+async function ensureFreshToken(): Promise<void> {
+  const accessToken = localStorage.getItem("accessToken");
+  if (!accessToken) {
+    return; // No hay token, el refresh normal lo manejará
+  }
+
+  try {
+    // Decodificar el token para verificar cuánto tiempo le queda
+    const payload = JSON.parse(atob(accessToken.split('.')[1]));
+    const expirationTime = payload.exp * 1000; // Convertir a milisegundos
+    const currentTime = Date.now();
+    const timeUntilExpiry = expirationTime - currentTime;
+    
+    // Si el token expira en menos de 5 minutos, refrescarlo proactivamente
+    if (timeUntilExpiry < 5 * 60 * 1000) {
+      console.log("Token expirando pronto, refrescando proactivamente...");
+      const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
+        method: "POST",
+        credentials: "include",
+      });
+      
+      if (refreshResponse.ok) {
+        const { accessToken: newAccessToken } = await refreshResponse.json();
+        localStorage.setItem("accessToken", newAccessToken);
+        console.log("Token refrescado proactivamente");
+      }
+    }
+  } catch (error) {
+    // Si hay error al verificar/refrescar, continuar con la petición normal
+    // El sistema de refresh automático lo manejará
+    console.warn("Error al verificar/refrescar token proactivamente:", error);
+  }
+}
+
 async function apiFetch(
   endpoint: string,
   options: RequestInit = {},
   retryOn401 = true
 ) {
+  // Refrescar token proactivamente antes de operaciones críticas (POST, PUT, DELETE)
+  const isCriticalOperation = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method || '');
+  if (isCriticalOperation && !endpoint.includes('/auth/')) {
+    await ensureFreshToken();
+  }
+  
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
@@ -773,6 +814,8 @@ export const logEntriesApi = {
       consentStatement?: string;
     }
   ) => {
+    // Refrescar token proactivamente antes de firmar (operación crítica)
+    await ensureFreshToken();
     return apiFetch(`/log-entries/${entryId}/signatures`, {
       method: "POST",
       body: JSON.stringify(data),
@@ -1007,6 +1050,8 @@ export const actasApi = {
       consentStatement?: string;
     }
   ) => {
+    // Refrescar token proactivamente antes de firmar (operación crítica)
+    await ensureFreshToken();
     return apiFetch(`/actas/${actaId}/signatures`, {
       method: "POST",
       body: JSON.stringify(data),
