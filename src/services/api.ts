@@ -904,6 +904,7 @@ export const attachmentsApi = {
   sign: async (
     attachmentId: string,
     data: {
+      password: string;
       consentStatement?: string;
       page?: number;
       x?: number;
@@ -912,12 +913,13 @@ export const attachmentsApi = {
       height?: number;
       baseline?: boolean;
       baselineRatio?: number;
-    } = {}
+    }
   ) => {
     return apiFetch(`/attachments/${attachmentId}/sign`, {
       method: "POST",
       body: JSON.stringify({
         consent: true,
+        password: data.password,
         ...data,
       }),
     });
