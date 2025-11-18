@@ -3,6 +3,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 // Fix: Corrected import path for App component
 import App from './App';
+import './src/index.css';
 import { initOfflineMode, registerServiceWorker } from './src/services/offline/init';
 
 // Inicializar modo offline
