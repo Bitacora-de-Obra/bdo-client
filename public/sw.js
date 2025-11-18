@@ -1,6 +1,6 @@
 // Service Worker para modo offline
-const CACHE_NAME = 'bdo-cache-v1';
-const STATIC_CACHE_NAME = 'bdo-static-v1';
+const CACHE_NAME = 'bdo-cache-v2';
+const STATIC_CACHE_NAME = 'bdo-static-v2';
 
 // Recursos estáticos a cachear
 const STATIC_ASSETS = [
