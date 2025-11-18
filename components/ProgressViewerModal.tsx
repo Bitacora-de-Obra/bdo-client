@@ -1,8 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
-import { ControlPoint } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { ControlPoint, PhotoEntry } from '../types';
 import Modal from './ui/Modal';
 import { UserCircleIcon, CalendarIcon } from './icons/Icon';
+import api from '../src/services/api';
+import { useToast } from './ui/ToastProvider';
 
 const PlayIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
@@ -21,43 +23,134 @@ interface ProgressViewerModalProps {
   isOpen: boolean;
   onClose: () => void;
   controlPoint: ControlPoint;
+  onPhotosReordered?: (updatedPhotos: PhotoEntry[]) => void; // Callback para actualizar el estado en el padre
 }
 
-const ProgressViewerModal: React.FC<ProgressViewerModalProps> = ({ isOpen, onClose, controlPoint }) => {
+const ProgressViewerModal: React.FC<ProgressViewerModalProps> = ({ isOpen, onClose, controlPoint, onPhotosReordered }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [photos, setPhotos] = useState<PhotoEntry[]>(controlPoint.photos);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [isReordering, setIsReordering] = useState(false);
+  const { showToast } = useToast();
+
+  // Sincronizar fotos cuando cambia el controlPoint
+  useEffect(() => {
+    setPhotos(controlPoint.photos);
+  }, [controlPoint.photos]);
 
   useEffect(() => {
     if (isOpen) {
-      setCurrentIndex(controlPoint.photos.length - 1);
+      setCurrentIndex(photos.length - 1);
     } else {
-        setIsPlaying(false);
+      setIsPlaying(false);
+      setDraggedIndex(null);
+      setDragOverIndex(null);
     }
-  }, [isOpen, controlPoint]);
+  }, [isOpen, photos.length]);
 
   useEffect(() => {
     let intervalId: number | undefined;
     if (isPlaying) {
       intervalId = window.setInterval(() => {
-        setCurrentIndex(prev => (prev + 1) % controlPoint.photos.length);
+        setCurrentIndex(prev => (prev + 1) % photos.length);
       }, 1500);
     }
     return () => clearInterval(intervalId);
-  }, [isPlaying, controlPoint.photos.length]);
+  }, [isPlaying, photos.length]);
 
   const goToPrevious = () => {
-    setCurrentIndex(prev => (prev === 0 ? controlPoint.photos.length - 1 : prev - 1));
+    setCurrentIndex(prev => (prev === 0 ? photos.length - 1 : prev - 1));
   };
 
   const goToNext = () => {
-    setCurrentIndex(prev => (prev + 1) % controlPoint.photos.length);
+    setCurrentIndex(prev => (prev + 1) % photos.length);
+  };
+
+  // Funciones para drag-and-drop
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', ''); // Necesario para algunos navegadores
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    setDragOverIndex(null);
+
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      return;
+    }
+
+    // Reordenar localmente
+    const newPhotos = [...photos];
+    const [draggedPhoto] = newPhotos.splice(draggedIndex, 1);
+    newPhotos.splice(dropIndex, 0, draggedPhoto);
+    setPhotos(newPhotos);
+
+    // Actualizar índice actual si es necesario
+    if (currentIndex === draggedIndex) {
+      setCurrentIndex(dropIndex);
+    } else if (currentIndex === dropIndex) {
+      setCurrentIndex(draggedIndex);
+    } else if (draggedIndex < currentIndex && dropIndex >= currentIndex) {
+      setCurrentIndex(currentIndex - 1);
+    } else if (draggedIndex > currentIndex && dropIndex <= currentIndex) {
+      setCurrentIndex(currentIndex + 1);
+    }
+
+    setDraggedIndex(null);
+
+    // Guardar el nuevo orden en el backend
+    try {
+      setIsReordering(true);
+      const photoIds = newPhotos.map(photo => photo.id);
+      const response = await api.controlPoints.reorderPhotos(controlPoint.id, photoIds);
+      
+      // Actualizar con las fotos del servidor (que incluyen el orden actualizado)
+      setPhotos(response.photos);
+      
+      // Notificar al componente padre
+      if (onPhotosReordered) {
+        onPhotosReordered(response.photos);
+      }
+
+      showToast({
+        variant: 'success',
+        title: 'Orden actualizado',
+        message: 'Las fotos se han reorganizado correctamente.',
+      });
+    } catch (error: any) {
+      console.error('Error al reordenar fotos:', error);
+      // Revertir cambios locales
+      setPhotos(controlPoint.photos);
+      showToast({
+        variant: 'error',
+        title: 'Error',
+        message: error?.message || 'No se pudo actualizar el orden de las fotos.',
+      });
+    } finally {
+      setIsReordering(false);
+    }
   };
   
-  if (!controlPoint || controlPoint.photos.length === 0) {
+  if (!controlPoint || photos.length === 0) {
       return null;
   }
   
-  const currentPhoto = controlPoint.photos[currentIndex];
+  const currentPhoto = photos[currentIndex];
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Progreso: ${controlPoint.name}`} size="2xl">
@@ -88,7 +181,7 @@ const ProgressViewerModal: React.FC<ProgressViewerModalProps> = ({ isOpen, onClo
                 </div>
             </div>
              <div className="text-sm font-semibold text-gray-600">
-                {currentIndex + 1} / {controlPoint.photos.length}
+                {currentIndex + 1} / {photos.length}
             </div>
         </div>
         {currentPhoto.notes && <p className="mt-2 text-sm text-gray-800">{currentPhoto.notes}</p>}
@@ -96,10 +189,30 @@ const ProgressViewerModal: React.FC<ProgressViewerModalProps> = ({ isOpen, onClo
 
        <div className="mt-4 flex items-center justify-center gap-4">
         <div className="flex-1 h-20 overflow-x-auto flex items-center gap-2 p-2 bg-gray-100 rounded-lg">
-          {controlPoint.photos.map((photo, index) => (
-            <button key={photo.id} onClick={() => setCurrentIndex(index)} className={`flex-shrink-0 w-20 h-16 rounded-md overflow-hidden transition-all duration-200 ${index === currentIndex ? 'ring-2 ring-brand-primary ring-offset-2' : 'opacity-60 hover:opacity-100'}`}>
-              <img src={photo.url} alt={`Thumbnail ${index + 1}`} className="w-full h-full object-cover" />
-            </button>
+          {photos.map((photo, index) => (
+            <div
+              key={photo.id}
+              draggable={!isReordering}
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, index)}
+              className={`flex-shrink-0 w-20 h-16 rounded-md overflow-hidden transition-all duration-200 cursor-move ${
+                index === currentIndex ? 'ring-2 ring-brand-primary ring-offset-2' : 'opacity-60 hover:opacity-100'
+              } ${
+                draggedIndex === index ? 'opacity-30 scale-95' : ''
+              } ${
+                dragOverIndex === index && draggedIndex !== index ? 'ring-2 ring-blue-400 ring-offset-1 scale-105' : ''
+              } ${isReordering ? 'cursor-wait' : ''}`}
+            >
+              <button
+                onClick={() => setCurrentIndex(index)}
+                className="w-full h-full"
+                disabled={isReordering}
+              >
+                <img src={photo.url} alt={`Thumbnail ${index + 1}`} className="w-full h-full object-cover pointer-events-none" />
+              </button>
+            </div>
           ))}
         </div>
         <button onClick={() => setIsPlaying(!isPlaying)} className="p-3 bg-brand-primary text-white rounded-full hover:bg-brand-secondary transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary">

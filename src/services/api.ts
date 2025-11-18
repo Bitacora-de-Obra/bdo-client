@@ -1106,6 +1106,12 @@ export const controlPointsApi = {
       body: JSON.stringify(data),
     });
   },
+  reorderPhotos: async (pointId: string, photoIds: string[]) => {
+    return apiFetch(`/control-points/${pointId}/photos/reorder`, {
+      method: "PUT",
+      body: JSON.stringify({ photoIds }),
+    });
+  },
 };
 
 // API Functions for Project Tasks

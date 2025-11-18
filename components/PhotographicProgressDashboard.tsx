@@ -271,6 +271,20 @@ const PhotographicProgressDashboard: React.FC<PhotographicProgressDashboardProps
               isOpen={isProgressViewerOpen}
               onClose={() => setIsProgressViewerOpen(false)}
               controlPoint={selectedControlPoint} // Muestra las fotos del estado local
+              onPhotosReordered={(updatedPhotos) => {
+                // Actualizar el estado local cuando se reordenen las fotos
+                setControlPoints(prevPoints =>
+                  prevPoints.map(point =>
+                    point.id === selectedControlPoint.id
+                      ? { ...point, photos: updatedPhotos }
+                      : point
+                  )
+                );
+                // Actualizar también el selectedControlPoint
+                setSelectedControlPoint(prev => 
+                  prev ? { ...prev, photos: updatedPhotos } : null
+                );
+              }}
             />
           </>
       )}
