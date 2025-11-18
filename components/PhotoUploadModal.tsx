@@ -11,9 +11,14 @@ interface PhotoUploadModalProps {
   controlPoint: ControlPoint;
 }
 
+interface FileWithPreview {
+  file: File;
+  preview: string;
+  notes: string;
+}
+
 const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, onSave, controlPoint }) => {
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [notes, setNotes] = useState('');
   const [captureMode, setCaptureMode] = useState<'file' | 'camera'>('file');
   const [cameraAvailable, setCameraAvailable] = useState(false);
@@ -21,6 +26,8 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>('');
+  const [uploadedCount, setUploadedCount] = useState(0);
+  const [uploadErrors, setUploadErrors] = useState<string[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -141,12 +148,13 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
     if (!isOpen) {
       // Reset form on close
       const timer = setTimeout(() => {
-        setFile(null);
-        setPreview(null);
+        setFiles([]);
         setNotes('');
         setCaptureMode('file');
         setIsUploading(false);
         setUploadProgress('');
+        setUploadedCount(0);
+        setUploadErrors([]);
         stopCamera();
       }, 300);
       return () => clearTimeout(timer);
@@ -183,8 +191,8 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
         if (blob) {
           const fileName = `foto_${controlPoint.name.replace(/\s+/g, '_')}_${Date.now()}.jpg`;
           const file = new File([blob], fileName, { type: 'image/jpeg' });
-          setFile(file);
-          setPreview(canvas.toDataURL('image/jpeg'));
+          const preview = canvas.toDataURL('image/jpeg');
+          setFiles(prev => [...prev, { file, preview, notes: '' }]);
           stopCamera();
           setCaptureMode('file'); // Cambiar a modo archivo después de capturar
         }
@@ -193,37 +201,86 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result as string);
-      };
-      reader.readAsDataURL(selectedFile);
+    const selectedFiles = Array.from(e.target.files || []);
+    if (selectedFiles.length > 0) {
+      const newFiles: FileWithPreview[] = [];
+      
+      selectedFiles.forEach((file) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          newFiles.push({
+            file,
+            preview: reader.result as string,
+            notes: ''
+          });
+          
+          // Cuando todos los archivos se hayan leído, actualizar el estado
+          if (newFiles.length === selectedFiles.length) {
+            setFiles(prev => [...prev, ...newFiles]);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
     }
+  };
+
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateFileNotes = (index: number, notes: string) => {
+    setFiles(prev => prev.map((item, i) => 
+      i === index ? { ...item, notes } : item
+    ));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) {
-      alert("Por favor, selecciona una foto para subir.");
+    if (files.length === 0) {
+      alert("Por favor, selecciona al menos una foto para subir.");
       return;
     }
     
     setIsUploading(true);
-    setUploadProgress('Preparando foto...');
+    setUploadedCount(0);
+    setUploadErrors([]);
+    setUploadProgress(`Subiendo 0 de ${files.length} fotos...`);
     
     try {
-      setUploadProgress('Subiendo foto al servidor...');
-      await onSave({ notes, url: '' }, file);
-      setUploadProgress('Foto guardada exitosamente');
-      // El modal se cerrará automáticamente desde el componente padre
+      // Subir todas las fotos en secuencia
+      for (let i = 0; i < files.length; i++) {
+        const fileWithPreview = files[i];
+        setUploadProgress(`Subiendo ${i + 1} de ${files.length}: ${fileWithPreview.file.name}...`);
+        
+        try {
+          // Usar las notas específicas de la foto, o las notas generales si no hay
+          const photoNotes = fileWithPreview.notes || notes;
+          await onSave({ notes: photoNotes, url: '' }, fileWithPreview.file);
+          setUploadedCount(i + 1);
+        } catch (error: any) {
+          const errorMessage = error?.message || `Error al subir ${fileWithPreview.file.name}`;
+          setUploadErrors(prev => [...prev, errorMessage]);
+          console.error(`Error al guardar foto ${i + 1}:`, error);
+          // Continuar con las siguientes fotos aunque una falle
+        }
+      }
+      
+      if (uploadErrors.length === 0) {
+        setUploadProgress(`¡Todas las fotos se subieron exitosamente!`);
+        // Cerrar el modal después de un breve delay
+        setTimeout(() => {
+          onClose();
+        }, 1500);
+      } else if (uploadedCount > 0) {
+        setUploadProgress(`${uploadedCount} de ${files.length} fotos subidas. ${uploadErrors.length} error(es).`);
+      } else {
+        setUploadProgress('Error al subir las fotos.');
+        setIsUploading(false);
+      }
     } catch (error) {
-      console.error('Error al guardar foto:', error);
+      console.error('Error general al guardar fotos:', error);
       setUploadProgress('');
       setIsUploading(false);
-      // El error se manejará en el componente padre
     }
   };
 
@@ -235,7 +292,7 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
             <label className="block text-sm font-medium text-gray-700">
               Foto del Avance
             </label>
-            {cameraAvailable && !preview && (
+            {cameraAvailable && files.length === 0 && (
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -275,20 +332,48 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
             </div>
           )}
 
-          <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-            {preview ? (
-              <div className="text-center w-full">
-                <img src={preview} alt="Vista previa" className="max-h-60 mx-auto rounded-md" />
+          <div className="mt-1 px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+            {files.length > 0 ? (
+              <div className="space-y-3">
+                <div className="text-sm text-gray-600 mb-2">
+                  {files.length} foto{files.length > 1 ? 's' : ''} seleccionada{files.length > 1 ? 's' : ''}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
+                  {files.map((fileWithPreview, index) => (
+                    <div key={index} className="relative group">
+                      <img 
+                        src={fileWithPreview.preview} 
+                        alt={`Vista previa ${index + 1}`} 
+                        className="w-full h-32 object-cover rounded-md border border-gray-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeFile(index)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Eliminar foto"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                      <div className="mt-1">
+                        <input
+                          type="text"
+                          placeholder="Notas (opcional)"
+                          value={fileWithPreview.notes}
+                          onChange={(e) => updateFileNotes(index, e.target.value)}
+                          className="w-full text-xs px-2 py-1 border border-gray-300 rounded"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    setFile(null);
-                    setPreview(null);
-                    stopCamera();
-                  }}
+                  onClick={() => setFiles([])}
                   className="mt-2 text-sm text-red-600 hover:text-red-800"
                 >
-                  Cambiar foto
+                  Limpiar todas las fotos
                 </button>
               </div>
             ) : captureMode === 'camera' ? (
@@ -352,7 +437,7 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
                     htmlFor="file-upload"
                     className="relative cursor-pointer bg-white rounded-md font-medium text-brand-primary hover:text-brand-secondary focus-within:outline-none"
                   >
-                    <span>Selecciona una foto</span>
+                    <span>Selecciona una o más fotos</span>
                     <input
                       id="file-upload"
                       name="file-upload"
@@ -360,11 +445,15 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
                       className="sr-only"
                       accept="image/*"
                       capture="environment"
+                      multiple
                       onChange={handleFileChange}
                     />
                   </label>
                 </div>
-                <p className="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB</p>
+                <p className="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB cada una</p>
+                <p className="text-xs text-blue-600 mt-1">
+                  Puedes seleccionar múltiples fotos a la vez (mantén presionado Ctrl/Cmd para seleccionar varias)
+                </p>
                 {cameraAvailable && (
                   <p className="text-xs text-blue-600 mt-2">
                     O usa el botón "Tomar foto" para capturar desde la cámara
@@ -377,7 +466,7 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
 
         <div>
           <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
-            Notas (Opcional)
+            Notas generales (Opcional)
           </label>
           <textarea
             id="notes"
@@ -385,8 +474,11 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
             className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Añade una descripción breve del estado actual."
+            placeholder="Notas que se aplicarán a todas las fotos (puedes agregar notas individuales a cada foto arriba)."
           />
+          <p className="text-xs text-gray-500 mt-1">
+            Estas notas se aplicarán a todas las fotos que no tengan notas individuales.
+          </p>
         </div>
 
         {isUploading && (
@@ -395,9 +487,33 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
               <div className="flex-1">
                 <p className="text-sm font-medium text-blue-800">{uploadProgress}</p>
+                {files.length > 1 && (
+                  <div className="mt-2">
+                    <div className="w-full bg-blue-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${(uploadedCount / files.length) * 100}%` }}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-blue-600 mt-1">
+                      {uploadedCount} de {files.length} fotos subidas
+                    </p>
+                  </div>
+                )}
                 <p className="text-xs text-blue-600 mt-1">Por favor, no cierres esta ventana...</p>
               </div>
             </div>
+          </div>
+        )}
+
+        {uploadErrors.length > 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-md p-3">
+            <p className="text-sm font-medium text-red-800 mb-2">Errores al subir algunas fotos:</p>
+            <ul className="list-disc list-inside text-xs text-red-600 space-y-1">
+              {uploadErrors.map((error, index) => (
+                <li key={index}>{error}</li>
+              ))}
+            </ul>
           </div>
         )}
 
@@ -412,16 +528,16 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
           </Button>
           <Button 
             type="submit" 
-            disabled={!file || isUploading}
+            disabled={files.length === 0 || isUploading}
             className="flex items-center gap-2"
           >
             {isUploading ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                <span>Guardando...</span>
+                <span>Subiendo...</span>
               </>
             ) : (
-              'Guardar Foto'
+              `Guardar ${files.length > 0 ? `${files.length} ` : ''}Foto${files.length > 1 ? 's' : ''}`
             )}
           </Button>
         </div>
