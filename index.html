@@ -4,14 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bitácora Digital de Obra (BDO)</title>
-    <script src="https://cdn.tailwindcss.com" onload="configureTailwind()" onerror="console.warn('Tailwind CDN failed to load')"></script>
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css" rel="stylesheet" />
     <script>
       // Función para configurar Tailwind cuando esté disponible
       function configureTailwind() {
-        // Intentar múltiples veces con retry
+        // Intentar múltiples veces con retry más largo
         let attempts = 0;
-        const maxAttempts = 10;
+        const maxAttempts = 20; // Más intentos
         
         function tryConfigure() {
           attempts++;
@@ -33,21 +31,38 @@
                   }
                 }
               };
-              console.log('Tailwind configurado correctamente');
+              console.log('✅ Tailwind configurado correctamente');
+              return true;
             } catch (e) {
               console.warn('Error configurando Tailwind:', e);
             }
           } else if (attempts < maxAttempts) {
-            // Reintentar después de 50ms
-            setTimeout(tryConfigure, 50);
+            // Reintentar después de 100ms (más tiempo)
+            setTimeout(tryConfigure, 100);
           } else {
-            console.warn('Tailwind no disponible después de múltiples intentos');
+            console.warn('⚠️ Tailwind no disponible después de múltiples intentos, pero la app puede funcionar');
+            return false;
           }
         }
         
         // Iniciar intento de configuración
-        tryConfigure();
+        return tryConfigure();
       }
+      
+      // Cargar Tailwind con manejo de errores mejorado
+      const tailwindScript = document.createElement('script');
+      tailwindScript.src = 'https://cdn.tailwindcss.com';
+      tailwindScript.async = true;
+      tailwindScript.onload = function() {
+        console.log('📦 Tailwind CDN cargado, configurando...');
+        configureTailwind();
+      };
+      tailwindScript.onerror = function() {
+        console.warn('❌ Error cargando Tailwind CDN, intentando fallback...');
+        // Intentar cargar desde otro CDN o continuar sin Tailwind
+        setTimeout(configureTailwind, 500);
+      };
+      document.head.appendChild(tailwindScript);
       
       // También intentar cuando la página cargue completamente
       if (document.readyState === 'loading') {
@@ -57,8 +72,11 @@
       }
       
       // Fallback: intentar cuando la ventana cargue
-      window.addEventListener('load', configureTailwind);
+      window.addEventListener('load', function() {
+        setTimeout(configureTailwind, 200);
+      });
     </script>
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css" rel="stylesheet" />
 <script type="importmap">
 {
   "imports": {
