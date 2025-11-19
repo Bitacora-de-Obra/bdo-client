@@ -12,7 +12,7 @@ interface ProjectSummaryDashboardProps {
 const KPICard: React.FC<{ title: string; value: string | number; subValue?: string; className?: string }> = ({ title, value, subValue, className }) => (
     <Card className={`p-5 h-full flex flex-col ${className}`}>
         <h3 className="text-sm font-medium text-gray-500 truncate mb-2">{title}</h3>
-        <p className="text-2xl lg:text-3xl font-bold text-gray-900 break-words flex-grow flex items-center">{value}</p>
+        <p className="text-lg lg:text-xl xl:text-2xl font-bold text-gray-900 break-words break-all flex-grow flex items-center overflow-wrap-anywhere">{value}</p>
         {subValue && <p className="text-sm text-gray-500 mt-2">{subValue}</p>}
     </Card>
 );
