@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { ChevronDownIcon, BellIcon, Bars3Icon, ChevronUpIcon } from '../icons/Icon';
+import { ChevronDownIcon, BellIcon, Bars3Icon, ChevronUpIcon, ChevronLeftIcon, ChevronRightIcon } from '../icons/Icon';
 import { Notification } from '../../types';
 import NotificationPanel from '../notifications/NotificationPanel';
 import { getUserAvatarUrl } from '../../src/utils/avatar';
@@ -9,6 +9,8 @@ import { getFullRoleName } from '../../src/utils/roleDisplay';
 
 interface HeaderProps {
   setIsSidebarOpen: (isOpen: boolean) => void;
+  isSidebarCollapsed: boolean;
+  setIsSidebarCollapsed: (collapsed: boolean) => void;
   notifications: Notification[];
   setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
   onNotificationClick: (notification: Notification) => void;
@@ -17,6 +19,8 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({
   setIsSidebarOpen,
+  isSidebarCollapsed,
+  setIsSidebarCollapsed,
   notifications,
   setNotifications,
   onNotificationClick,
@@ -67,6 +71,17 @@ const Header: React.FC<HeaderProps> = ({
           >
             <span className="sr-only">Open sidebar</span>
             <Bars3Icon />
+        </button>
+        <button 
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className="text-gray-500 hover:text-gray-700 focus:outline-none hidden lg:flex items-center justify-center p-2 rounded-md hover:bg-gray-100"
+            title={isSidebarCollapsed ? "Mostrar menú" : "Ocultar menú"}
+          >
+            {isSidebarCollapsed ? (
+              <ChevronRightIcon className="w-5 h-5" />
+            ) : (
+              <ChevronLeftIcon className="w-5 h-5" />
+            )}
         </button>
         <h1 className="text-xl font-semibold text-gray-800 ml-4 hidden md:block">Bitácora Digital de Obra</h1>
       </div>

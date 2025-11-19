@@ -12,7 +12,9 @@ import {
     XMarkIcon,
     ChartPieIcon,
     ShieldCheckIcon,
-    MapIcon
+    MapIcon,
+    ChevronLeftIcon,
+    ChevronRightIcon
 } from '../icons/Icon';
 import { useAuth } from '../../contexts/AuthContext';
 import { UserRole } from '../../types';
@@ -21,6 +23,8 @@ import bitacoraLogo from '../../assets/Generated Image November 18, 2025 - 11_44
 interface SidebarProps {
   isSidebarOpen: boolean;
   setIsSidebarOpen: (isOpen: boolean) => void;
+  isSidebarCollapsed: boolean;
+  setIsSidebarCollapsed: (collapsed: boolean) => void;
   currentView: string;
   setCurrentView: (view: string) => void;
 }
@@ -44,7 +48,7 @@ const navItems = [
     { id: 'admin', label: 'Administración', icon: <ShieldCheckIcon />, section: 'Herramientas', appRoles: ['admin'] },
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, setIsSidebarOpen, currentView, setCurrentView }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, setIsSidebarOpen, isSidebarCollapsed, setIsSidebarCollapsed, currentView, setCurrentView }) => {
   const { user } = useAuth();
   
   const handleNavClick = (view: string) => {
@@ -108,44 +112,72 @@ const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, setIsSidebarOpen, curr
         ></div>
         
         <aside
-            className={`fixed top-0 left-0 z-30 w-64 h-screen transition-transform transform bg-gray-800 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
+            className={`fixed top-0 left-0 z-30 w-64 h-screen transition-transform transform bg-gray-800 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} ${isSidebarCollapsed ? 'lg:-translate-x-full' : 'lg:translate-x-0'}`}
             aria-label="Sidebar"
         >
-            <div className="h-full px-3 py-4 overflow-y-auto">
+            <div className="h-full px-3 py-4 overflow-y-auto relative">
                 <div className="flex items-center justify-between mb-5">
-                    <a href="#" className="flex items-center pl-2.5">
-                        <div className="h-16 w-16 mr-3">
-                          <img 
-                            src={bitacoraLogo} 
-                            alt="Bitácora Digital" 
-                            className="w-full h-full object-contain rounded-full"
-                          />
-                        </div>
-                        <span className="self-center text-xl font-semibold whitespace-nowrap text-white">Bitácora Digital</span>
-                    </a>
-                     <button 
-                        onClick={() => setIsSidebarOpen(false)}
-                        className="text-gray-400 hover:bg-gray-700 p-1.5 rounded-md lg:hidden"
-                     >
-                        <XMarkIcon className="w-6 h-6" />
-                    </button>
+                    {!isSidebarCollapsed && (
+                      <a href="#" className="flex items-center pl-2.5">
+                          <div className="h-16 w-16 mr-3">
+                            <img 
+                              src={bitacoraLogo} 
+                              alt="Bitácora Digital" 
+                              className="w-full h-full object-contain rounded-full"
+                            />
+                          </div>
+                          <span className="self-center text-xl font-semibold whitespace-nowrap text-white">Bitácora Digital</span>
+                      </a>
+                    )}
+                     <div className="flex items-center gap-2">
+                       <button 
+                          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                          className="text-gray-400 hover:bg-gray-700 p-1.5 rounded-md hidden lg:flex"
+                          title={isSidebarCollapsed ? "Mostrar menú" : "Ocultar menú"}
+                       >
+                          {isSidebarCollapsed ? (
+                            <ChevronRightIcon className="w-5 h-5" />
+                          ) : (
+                            <ChevronLeftIcon className="w-5 h-5" />
+                          )}
+                       </button>
+                       <button 
+                          onClick={() => setIsSidebarOpen(false)}
+                          className="text-gray-400 hover:bg-gray-700 p-1.5 rounded-md lg:hidden"
+                       >
+                          <XMarkIcon className="w-6 h-6" />
+                       </button>
+                     </div>
                 </div>
-                <nav>
-                  <ul className="space-y-2">
-                      {sections.map(section => (
-                          <React.Fragment key={section}>
-                              <li className="px-2 pt-4 pb-2">
-                                  <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{section}</span>
-                              </li>
-                              {visibleNavItems.filter(item => item.section === section).map(item => (
-                                  <NavLink key={item.id} item={item} />
-                              ))}
-                          </React.Fragment>
-                      ))}
-                  </ul>
-                </nav>
+                {!isSidebarCollapsed && (
+                  <nav>
+                    <ul className="space-y-2">
+                        {sections.map(section => (
+                            <React.Fragment key={section}>
+                                <li className="px-2 pt-4 pb-2">
+                                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{section}</span>
+                                </li>
+                                {visibleNavItems.filter(item => item.section === section).map(item => (
+                                    <NavLink key={item.id} item={item} />
+                                ))}
+                            </React.Fragment>
+                        ))}
+                    </ul>
+                  </nav>
+                )}
             </div>
         </aside>
+        
+        {/* Botón flotante para expandir cuando está colapsado */}
+        {isSidebarCollapsed && (
+          <button
+            onClick={() => setIsSidebarCollapsed(false)}
+            className="fixed left-0 top-1/2 z-30 bg-gray-800 text-white p-2 rounded-r-md shadow-lg hover:bg-gray-700 transition-colors hidden lg:flex items-center justify-center"
+            title="Mostrar menú"
+          >
+            <ChevronRightIcon className="w-5 h-5" />
+          </button>
+        )}
     </>
   );
 };

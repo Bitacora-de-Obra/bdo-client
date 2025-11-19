@@ -29,7 +29,13 @@ import { OfflineIndicator } from "./src/components/offline/OfflineIndicator";
 type InitialItemToOpen = { type: "acta" | "logEntry" | "communication" | "drawing"; id: string };
 
 const MainApp = () => {
+  // Estado para sidebar móvil (solo para móviles)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  // Estado persistente para sidebar colapsado (desktop)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem('sidebarCollapsed');
+    return saved ? JSON.parse(saved) : false;
+  });
   const [currentView, setCurrentView] = useState("summary");
   const [initialItemToOpen, setInitialItemToOpen] =
     useState<InitialItemToOpen | null>(null);
@@ -47,6 +53,11 @@ const MainApp = () => {
 
   const isLoading =
     isProjectLoading || (isModificationsLoading && !contractModifications);
+
+  // Guardar estado del sidebar colapsado en localStorage
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', JSON.stringify(isSidebarCollapsed));
+  }, [isSidebarCollapsed]);
 
   const refreshNotifications = useCallback(async () => {
     if (!user) {
@@ -220,12 +231,16 @@ const MainApp = () => {
       <Sidebar
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={setIsSidebarOpen}
+        isSidebarCollapsed={isSidebarCollapsed}
+        setIsSidebarCollapsed={setIsSidebarCollapsed}
         currentView={currentView}
         setCurrentView={setCurrentView}
       />
-      <div className="flex-1 flex flex-col overflow-hidden lg:ml-64">
+      <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${isSidebarCollapsed ? 'lg:ml-0' : 'lg:ml-64'}`}>
         <Header
           setIsSidebarOpen={setIsSidebarOpen}
+          isSidebarCollapsed={isSidebarCollapsed}
+          setIsSidebarCollapsed={setIsSidebarCollapsed}
           notifications={notifications}
           setNotifications={setNotifications}
           onNotificationClick={(notification: Notification) =>
