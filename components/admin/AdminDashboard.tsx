@@ -390,98 +390,100 @@ const UsersView: React.FC<UsersViewProps> = ({
             No encontramos usuarios que coincidan con los filtros.
           </div>
         ) : (
-          <table className="w-full text-sm text-left text-gray-600">
-            <thead className="text-xs uppercase bg-gray-50 text-gray-500">
-              <tr>
-                <th scope="col" className="px-6 py-3">
-                  Nombre Completo
-                </th>
-                <th scope="col" className="px-6 py-3">
-                  Email
-                </th>
-                <th scope="col" className="px-6 py-3">
-                  Entidad
-                </th>
-                <th scope="col" className="px-6 py-3">
-                  Cargo
-                </th>
-                <th scope="col" className="px-6 py-3">
-                  Rol de Aplicación
-                </th>
-                <th scope="col" className="px-6 py-3">
-                  Rol de Proyecto
-                </th>
-                <th scope="col" className="px-6 py-3">
-                  Estado
-                </th>
-                <th scope="col" className="px-6 py-3">
-                  Último Acceso
-                </th>
-                <th scope="col" className="px-6 py-3 text-right">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedUsers.map((user) => (
-                <tr
-                  key={user.id}
-                  className="bg-white border-b last:border-b-0 hover:bg-gray-50 transition"
-                >
-                  <td className="px-6 py-4 font-medium text-gray-900">
-                    {user.fullName}
-                  </td>
-                  <td className="px-6 py-4">{user.email}</td>
-                  <td className="px-6 py-4">
-                    {user.entity ? (
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                        {user.entity}
-                      </span>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    {user.cargo ? (
-                      <span className="text-sm text-gray-700">{user.cargo}</span>
-                    ) : (
-                      <span className="text-gray-400">-</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 capitalize">{user.appRole}</td>
-                  <td className="px-6 py-4">{getFullRoleName(user.projectRole, user.entity)}</td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        user.status === "active"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {user.status === "active" ? "Activo" : "Inactivo"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    {user.lastLoginAt
-                      ? new Date(user.lastLoginAt).toLocaleString("es-CO")
-                      : "Nunca"}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => {
-                        setEditUser(user);
-                        setIsEditModalOpen(true);
-                      }}
-                    >
-                      Editar
-                    </Button>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left text-gray-600 min-w-[1000px]">
+              <thead className="text-xs uppercase bg-gray-50 text-gray-500">
+                <tr>
+                  <th scope="col" className="px-4 py-3 whitespace-nowrap">
+                    Nombre Completo
+                  </th>
+                  <th scope="col" className="px-4 py-3 whitespace-nowrap">
+                    Email
+                  </th>
+                  <th scope="col" className="px-4 py-3 whitespace-nowrap">
+                    Entidad
+                  </th>
+                  <th scope="col" className="px-4 py-3 whitespace-nowrap">
+                    Cargo
+                  </th>
+                  <th scope="col" className="px-4 py-3 whitespace-nowrap">
+                    Rol de Aplicación
+                  </th>
+                  <th scope="col" className="px-4 py-3 whitespace-nowrap">
+                    Rol de Proyecto
+                  </th>
+                  <th scope="col" className="px-4 py-3 whitespace-nowrap">
+                    Estado
+                  </th>
+                  <th scope="col" className="px-4 py-3 whitespace-nowrap">
+                    Último Acceso
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-right sticky right-0 bg-gray-50 whitespace-nowrap">
+                    Acciones
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {paginatedUsers.map((user) => (
+                  <tr
+                    key={user.id}
+                    className="bg-white border-b last:border-b-0 hover:bg-gray-50 transition"
+                  >
+                    <td className="px-4 py-4 font-medium text-gray-900 whitespace-nowrap">
+                      {user.fullName}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">{user.email}</td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      {user.entity ? (
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                          {user.entity}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      {user.cargo ? (
+                        <span className="text-sm text-gray-700">{user.cargo}</span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-4 capitalize whitespace-nowrap">{user.appRole}</td>
+                    <td className="px-4 py-4 whitespace-nowrap">{getFullRoleName(user.projectRole, user.entity)}</td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <span
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          user.status === "active"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
+                        {user.status === "active" ? "Activo" : "Inactivo"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      {user.lastLoginAt
+                        ? new Date(user.lastLoginAt).toLocaleString("es-CO")
+                        : "Nunca"}
+                    </td>
+                    <td className="px-4 py-4 text-right sticky right-0 bg-white whitespace-nowrap">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => {
+                          setEditUser(user);
+                          setIsEditModalOpen(true);
+                        }}
+                      >
+                        Editar
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </Card>
 
