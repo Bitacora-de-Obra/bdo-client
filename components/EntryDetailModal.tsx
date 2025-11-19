@@ -3238,7 +3238,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
             </div>
           )}
           {/* Change History */}
-          <ChangeHistory history={history} />
+          <ChangeHistory history={history} availableUsers={availableUsers} />
         </div>
 
         {isEditing && validationError && (

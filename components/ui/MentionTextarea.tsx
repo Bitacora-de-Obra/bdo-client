@@ -134,11 +134,18 @@ const MentionTextarea: React.FC<MentionTextareaProps> = ({
   return (
     <div className="relative">
       <div
-        className="pointer-events-none absolute inset-0 z-0 rounded-md p-2 text-sm text-gray-900 whitespace-pre-wrap break-words"
+        className="pointer-events-none absolute inset-0 z-0 rounded-md p-2 text-sm text-gray-900 whitespace-pre-wrap break-words overflow-hidden"
+        style={{
+          padding: '0.5rem',
+          lineHeight: '1.5rem',
+          minHeight: 'inherit',
+        }}
         aria-hidden="true"
       >
         {value ? (
-          renderCommentWithMentions(value, users)
+          <div style={{ lineHeight: '1.5rem', padding: 0 }}>
+            {renderCommentWithMentions(value, users)}
+          </div>
         ) : (
           <span className="text-gray-400">{placeholder}</span>
         )}
@@ -149,11 +156,13 @@ const MentionTextarea: React.FC<MentionTextareaProps> = ({
         value={value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
-        placeholder={placeholder}
+        placeholder=""
         className={`relative z-10 block w-full rounded-md border border-gray-300 bg-transparent p-2 text-transparent caret-brand-primary focus:border-brand-primary focus:ring-brand-primary focus:ring-1 sm:text-sm ${className || ""}`}
         style={{
           ...(style || {}),
           resize: style?.resize ?? ("vertical" as React.CSSProperties["resize"]),
+          lineHeight: '1.5rem',
+          minHeight: '2.5rem',
         }}
       />
       {showSuggestions && suggestions.length > 0 && (
