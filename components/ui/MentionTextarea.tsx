@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { User } from '../../types';
 import { getUserAvatarUrl } from '../../src/utils/avatar';
 import { getFullRoleName } from '../../src/utils/roleDisplay';
+import { renderCommentWithMentions } from '../../src/utils/mentions';
 
 interface MentionTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   value: string;
@@ -15,6 +16,8 @@ const MentionTextarea: React.FC<MentionTextareaProps> = ({
   onChange,
   users,
   placeholder = "Escribe tu comentario aquí...",
+  className,
+  style,
   ...props
 }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -130,6 +133,16 @@ const MentionTextarea: React.FC<MentionTextareaProps> = ({
 
   return (
     <div className="relative">
+      <div
+        className="pointer-events-none absolute inset-0 z-0 rounded-md p-2 text-sm text-gray-900 whitespace-pre-wrap break-words"
+        aria-hidden="true"
+      >
+        {value ? (
+          renderCommentWithMentions(value, users)
+        ) : (
+          <span className="text-gray-400">{placeholder}</span>
+        )}
+      </div>
       <textarea
         {...props}
         ref={textareaRef}
@@ -137,7 +150,11 @@ const MentionTextarea: React.FC<MentionTextareaProps> = ({
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+        className={`relative z-10 block w-full rounded-md border border-gray-300 bg-transparent p-2 text-transparent caret-brand-primary focus:border-brand-primary focus:ring-brand-primary focus:ring-1 sm:text-sm ${className || ""}`}
+        style={{
+          ...(style || {}),
+          resize: style?.resize ?? ("vertical" as React.CSSProperties["resize"]),
+        }}
       />
       {showSuggestions && suggestions.length > 0 && (
         <div
@@ -179,4 +196,3 @@ const MentionTextarea: React.FC<MentionTextareaProps> = ({
 };
 
 export default MentionTextarea;
-

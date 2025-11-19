@@ -150,6 +150,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [newComment, setNewComment] = useState("");
   const [commentFiles, setCommentFiles] = useState<File[]>([]);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [formEntryDate, setFormEntryDate] = useState<string>("");
@@ -710,6 +711,9 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingComment) {
+      return;
+    }
     if (readOnly) {
       showToast({
         title: "Acción no permitida",
@@ -719,9 +723,21 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       return;
     }
     if (newComment.trim() || commentFiles.length > 0) {
-      await onAddComment(entry.id, newComment.trim(), commentFiles);
-      setNewComment("");
-      setCommentFiles([]);
+      try {
+        setIsSubmittingComment(true);
+        await onAddComment(entry.id, newComment.trim(), commentFiles);
+        setNewComment("");
+        setCommentFiles([]);
+      } catch (error) {
+        console.error("Error al publicar comentario:", error);
+        showToast({
+          title: "No se pudo publicar el comentario",
+          message: "Intenta nuevamente en unos segundos.",
+          variant: "error",
+        });
+      } finally {
+        setIsSubmittingComment(false);
+      }
     }
   };
 
@@ -3170,13 +3186,52 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                         className="sr-only"
                       />
                     </label>
-                    <Button
-                      type="submit"
-                      size="sm"
-                      disabled={!newComment.trim() && commentFiles.length === 0}
-                    >
-                      Publicar Comentario
-                    </Button>
+                    <div className="flex flex-col items-end">
+                      <Button
+                        type="submit"
+                        size="sm"
+                        disabled={
+                          (!newComment.trim() && commentFiles.length === 0) ||
+                          isSubmittingComment
+                        }
+                      >
+                        {isSubmittingComment ? (
+                          <>
+                            <svg
+                              className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              ></circle>
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              ></path>
+                            </svg>
+                            Publicando...
+                          </>
+                        ) : (
+                          "Publicar Comentario"
+                        )}
+                      </Button>
+                      {isSubmittingComment && (
+                        <p
+                          className="mt-1 text-xs text-gray-500"
+                          aria-live="polite"
+                        >
+                          Estamos enviando tu comentario...
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </form>
