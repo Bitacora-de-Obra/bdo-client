@@ -10,10 +10,10 @@ interface ProjectSummaryDashboardProps {
 }
 
 const KPICard: React.FC<{ title: string; value: string | number; subValue?: string; className?: string }> = ({ title, value, subValue, className }) => (
-    <Card className={`p-5 ${className}`}>
-        <h3 className="text-sm font-medium text-gray-500 truncate">{title}</h3>
-        <p className="mt-1 text-2xl lg:text-3xl font-bold text-gray-900 break-words">{value}</p>
-        {subValue && <p className="text-sm text-gray-500 mt-1">{subValue}</p>}
+    <Card className={`p-5 h-full flex flex-col ${className}`}>
+        <h3 className="text-sm font-medium text-gray-500 truncate mb-2">{title}</h3>
+        <p className="text-2xl lg:text-3xl font-bold text-gray-900 break-words flex-grow flex items-center">{value}</p>
+        {subValue && <p className="text-sm text-gray-500 mt-2">{subValue}</p>}
     </Card>
 );
 
@@ -110,17 +110,17 @@ const ProjectSummaryDashboard: React.FC<ProjectSummaryDashboardProps> = ({ proje
         <p className="text-md text-gray-500 mt-1">Contrato: {project.contractId}</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <KPICard title="Valor Inicial" value={formatCurrency(project.initialValue)} />
         <KPICard title="Valor Adiciones" value={formatCurrency(totalAdditionsValue)} />
-        <KPICard title="Valor Total Contrato" value={formatCurrency(totalContractValue)} className="lg:col-span-2 bg-idu-blue/5 border-idu-blue/50" />
+        <KPICard title="Valor Total Contrato" value={formatCurrency(totalContractValue)} className="bg-idu-blue/5 border-idu-blue/50" />
         
         <KPICard title="Plazo Inicial" value={`${initialDurationDays}`} subValue="días" />
         <KPICard title="Prórrogas" value={`${totalExtensionDays}`} subValue="días" />
-        <KPICard title="Plazo Total Vigente" value={`${totalDurationDays}`} subValue="días" className="lg:col-span-2 bg-idu-cyan/5 border-idu-cyan/50" />
+        <KPICard title="Plazo Total Vigente" value={`${totalDurationDays}`} subValue="días" className="bg-idu-cyan/5 border-idu-cyan/50" />
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard title="Tope 50%" value={formatCurrency(capSummary?.cap)} />
         <KPICard title="Usado (afecta 50%)" value={formatCurrency(capSummary?.additionsAffecting ?? 0)} subValue={`${Number(capSummary?.usedPercent ?? 0).toFixed(1)}% del contrato`} />
         <KPICard title="Restante para 50%" value={formatCurrency(capSummary?.remainingCap)} className={capSummary && capSummary.remainingCap <= 0 ? 'bg-red-50' : ''} />
