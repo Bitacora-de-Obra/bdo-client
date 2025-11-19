@@ -43,10 +43,9 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   const [entryType, setEntryType] = useState<EntryType>(EntryType.GENERAL);
   const [title, setTitle] = useState<string>("");
   const [summary, setSummary] = useState<string>("");
-  const [activitiesPerformed, setActivitiesPerformed] = useState<string>("");
-  const [materialsUsed, setMaterialsUsed] = useState<string>("");
-  const [workforce, setWorkforce] = useState<string>("");
-  const [weatherConditions, setWeatherConditions] = useState<string>("");
+  const [materialsUsed, setMaterialsUsed] = useState<
+    Array<{ material: string; quantity: string; unit: string }>
+  >([{ material: "", quantity: "", unit: "" }]);
   const [additionalObservations, setAdditionalObservations] =
     useState<string>("");
   const [scheduleDay, setScheduleDay] = useState<string>("");
@@ -107,10 +106,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     setEntryType(EntryType.GENERAL);
     setTitle("");
     setSummary("");
-    setActivitiesPerformed("");
-    setMaterialsUsed("");
-    setWorkforce("");
-    setWeatherConditions("");
+    setMaterialsUsed([{ material: "", quantity: "", unit: "" }]);
     setAdditionalObservations("");
     setScheduleDay("");
     setLocationDetails("");
@@ -325,6 +321,26 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     );
   };
 
+  const updateMaterialRow = (
+    index: number,
+    field: "material" | "quantity" | "unit",
+    value: string
+  ) => {
+    setMaterialsUsed((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+    );
+  };
+
+  const addMaterialRow = () => {
+    setMaterialsUsed((prev) => [...prev, { material: "", quantity: "", unit: "" }]);
+  };
+
+  const removeMaterialRow = (index: number) => {
+    setMaterialsUsed((prev) =>
+      prev.length === 1 ? prev : prev.filter((_, i) => i !== index)
+    );
+  };
+
   const linesToItems = (value: string) =>
     value
       .split("\n")
@@ -433,6 +449,22 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
         notes: entry.notes || undefined,
       }));
 
+    // Convertir lista de materiales a texto formateado
+    const normalizedMaterials = materialsUsed
+      .map((entry) => ({
+        material: entry.material.trim(),
+        quantity: entry.quantity.trim(),
+        unit: entry.unit.trim(),
+      }))
+      .filter((entry) => entry.material)
+      .map((entry) => {
+        const parts = [entry.material];
+        if (entry.quantity) parts.push(entry.quantity);
+        if (entry.unit) parts.push(entry.unit);
+        return parts.join(" - ");
+      })
+      .join("\n");
+
     setIsSaving(true);
     try {
       await onSave(
@@ -440,10 +472,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           title: title.trim(),
           description: summary.trim(),
           entryDate: entryDateIso,
-          activitiesPerformed: activitiesPerformed.trim(),
-          materialsUsed: materialsUsed.trim(),
-          workforce: workforce.trim(),
-          weatherConditions: weatherConditions.trim(),
+          materialsUsed: normalizedMaterials || "",
           additionalObservations: additionalObservations.trim(),
           scheduleDay: scheduleDay.trim(),
           locationDetails: locationDetails.trim(),
@@ -646,57 +675,55 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
 
         {showGeneralSections && (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Actividades realizadas
-                </label>
-                <textarea
-                  value={activitiesPerformed}
-                  onChange={(e) => setActivitiesPerformed(e.target.value)}
-                  rows={4}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                  placeholder="Describe las tareas ejecutadas en la jornada"
-                />
+            <div>
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-semibold text-gray-800">Materiales utilizados</h4>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={addMaterialRow}
+                >
+                  Añadir material
+                </Button>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Materiales utilizados
-                </label>
-                <textarea
-                  value={materialsUsed}
-                  onChange={(e) => setMaterialsUsed(e.target.value)}
-                  rows={4}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                  placeholder="Registra cantidades, tipos de material, proveedores, etc."
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Personal en obra
-                </label>
-                <textarea
-                  value={workforce}
-                  onChange={(e) => setWorkforce(e.target.value)}
-                  rows={3}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                  placeholder="Cuadrillas presentes, subcontratistas, horas hombre..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Condiciones climáticas
-                </label>
-                <textarea
-                  value={weatherConditions}
-                  onChange={(e) => setWeatherConditions(e.target.value)}
-                  rows={3}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                  placeholder="Estado del clima, incidencia en las actividades, riesgos, etc."
-                />
+              <div className="mt-2 space-y-3">
+                {materialsUsed.map((item, index) => (
+                  <div key={`material-${index}`} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                    <Input
+                      label={index === 0 ? "Material" : undefined}
+                      value={item.material}
+                      onChange={(e) => updateMaterialRow(index, 'material', e.target.value)}
+                      placeholder="Ej. Cemento, Acero, etc."
+                    />
+                    <Input
+                      label={index === 0 ? "Cantidad" : undefined}
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={item.quantity}
+                      onChange={(e) => updateMaterialRow(index, 'quantity', e.target.value)}
+                      placeholder="Ej. 100"
+                    />
+                    <Input
+                      label={index === 0 ? "Unidad" : undefined}
+                      value={item.unit}
+                      onChange={(e) => updateMaterialRow(index, 'unit', e.target.value)}
+                      placeholder="Ej. kg, m³, m², etc."
+                    />
+                    {materialsUsed.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeMaterialRow(index)}
+                        className="text-red-500 hover:text-red-700 text-xs font-semibold sm:col-span-3 text-left"
+                      >
+                        <span className="inline-flex items-center gap-1">
+                          <XMarkIcon className="h-4 w-4" /> Quitar
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           </>
