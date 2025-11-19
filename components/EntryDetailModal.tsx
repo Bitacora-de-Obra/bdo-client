@@ -33,7 +33,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { getFullRoleName } from "../src/utils/roleDisplay";
 import { getUserAvatarUrl } from "../src/utils/avatar";
 import MentionTextarea from "./ui/MentionTextarea";
-import { renderCommentWithMentions } from "../src/utils/mentions";
+import { convertInputMentionsToPayload, renderCommentWithMentions } from "../src/utils/mentions";
 
 interface EntryDetailModalProps {
   isOpen: boolean;
@@ -722,10 +722,11 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       });
       return;
     }
-    if (newComment.trim() || commentFiles.length > 0) {
+    const preparedComment = convertInputMentionsToPayload(newComment).trim();
+    if (preparedComment || commentFiles.length > 0) {
       try {
         setIsSubmittingComment(true);
-        await onAddComment(entry.id, newComment.trim(), commentFiles);
+        await onAddComment(entry.id, preparedComment, commentFiles);
         setNewComment("");
         setCommentFiles([]);
       } catch (error) {
@@ -3238,7 +3239,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
             </div>
           )}
           {/* Change History */}
-          <ChangeHistory history={history} />
+          <ChangeHistory history={history} users={Array.from(knownUsers.values())} />
         </div>
 
         {isEditing && validationError && (

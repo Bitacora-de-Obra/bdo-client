@@ -1,14 +1,35 @@
 import React from 'react';
-import { Change } from '../types';
-import { UserCircleIcon, ArrowLongRightIcon } from './icons/Icon';
+import { Change, User } from '../types';
+import { ArrowLongRightIcon } from './icons/Icon';
 import { getUserAvatarUrl } from '../src/utils/avatar';
+import { renderCommentWithMentions } from '../src/utils/mentions';
 
 interface ChangeHistoryProps {
   history?: Change[];
+  users?: User[];
 }
 
-const ChangeDetail: React.FC<{ change: Change }> = ({ change }) => {
+const ChangeDetail: React.FC<{ change: Change; users: User[] }> = ({ change, users }) => {
     const { fieldName, oldValue, newValue } = change;
+    const normalizedField = fieldName?.toLowerCase() ?? '';
+    const isCommentChange = normalizedField.includes('comentario');
+
+    if (isCommentChange) {
+        return (
+            <div className="space-y-1 text-sm">
+                {oldValue && oldValue.trim() && oldValue !== 'vacío' && (
+                    <div className="text-red-500 line-through whitespace-pre-wrap break-words">
+                        {renderCommentWithMentions(oldValue, users)}
+                    </div>
+                )}
+                {newValue && (
+                    <div className="text-green-600 font-medium whitespace-pre-wrap break-words">
+                        {renderCommentWithMentions(newValue, users)}
+                    </div>
+                )}
+            </div>
+        );
+    }
 
     if (fieldName === 'created') {
         return <span className="text-blue-600 font-medium truncate" title={newValue || ''}>{newValue || 'Anotación creada'}</span>;
@@ -29,15 +50,19 @@ const ChangeDetail: React.FC<{ change: Change }> = ({ change }) => {
     // Default case for regular field changes
     return (
         <div className="flex items-center">
-            <span className="text-red-500 line-through truncate" title={oldValue}>{oldValue || 'vacío'}</span>
+            <span className="text-red-500 line-through truncate" title={oldValue}>
+                {oldValue ? renderCommentWithMentions(oldValue, users) : 'vacío'}
+            </span>
             <ArrowLongRightIcon className="h-4 w-4 mx-2 text-gray-400 flex-shrink-0" />
-            <span className="text-green-600 font-medium truncate" title={newValue}>{newValue || 'vacío'}</span>
+            <span className="text-green-600 font-medium truncate" title={newValue}>
+                {newValue ? renderCommentWithMentions(newValue, users) : 'vacío'}
+            </span>
         </div>
     );
 };
 
 
-const ChangeHistory: React.FC<ChangeHistoryProps> = ({ history }) => {
+const ChangeHistory: React.FC<ChangeHistoryProps> = ({ history, users = [] }) => {
   if (!history || history.length === 0) {
     return (
         <div>
@@ -71,7 +96,7 @@ const ChangeHistory: React.FC<ChangeHistoryProps> = ({ history }) => {
                     )}
                 </p>
                 <div className="mt-1 flex items-center text-xs text-gray-600 bg-white border rounded-md p-1.5">
-                  <ChangeDetail change={change} />
+                  <ChangeDetail change={change} users={users} />
               </div>
               <p className="text-xs text-gray-400 mt-1">{new Date(change.timestamp).toLocaleString('es-CO')}</p>
             </div>

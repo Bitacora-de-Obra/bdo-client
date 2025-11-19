@@ -1,6 +1,24 @@
 import React from 'react';
 import { User } from '../../types';
 
+export const MENTION_ID_MARKER = '\u2063'; // Invisible separator to keep IDs hidden while typing
+
+const escapeRegex = (value: string) => value.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+
+/**
+ * Convierte el contenido que usa marcadores invisibles (para la caja de texto)
+ * al formato persistido @[userId] antes de enviarlo al backend.
+ */
+export const convertInputMentionsToPayload = (content: string): string => {
+  if (!content) return '';
+
+  const marker = escapeRegex(MENTION_ID_MARKER);
+  const pattern = new RegExp(`@([^${marker}]+)${marker}([a-f0-9-]+)${marker}`, 'gi');
+  return content
+    .replace(pattern, (_match, _displayName, userId) => `@[${userId}]`)
+    .replace(new RegExp(marker, 'g'), '');
+};
+
 /**
  * Renderiza el contenido de un comentario reemplazando menciones @[userId] 
  * con badges destacados que muestran el nombre del usuario
@@ -66,6 +84,5 @@ export const renderCommentWithMentions = (
   // Si no hay menciones, retornar el contenido original
   return parts.length > 0 ? parts : content;
 };
-
 
 

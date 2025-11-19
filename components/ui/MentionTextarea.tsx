@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { User } from '../../types';
 import { getUserAvatarUrl } from '../../src/utils/avatar';
 import { getFullRoleName } from '../../src/utils/roleDisplay';
-import { renderCommentWithMentions } from '../../src/utils/mentions';
+import { convertInputMentionsToPayload, MENTION_ID_MARKER, renderCommentWithMentions } from '../../src/utils/mentions';
 
 interface MentionTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
   value: string;
@@ -86,7 +86,7 @@ const MentionTextarea: React.FC<MentionTextareaProps> = ({
     const text = value;
     const beforeMention = text.substring(0, mentionStart);
     const afterMention = text.substring(textareaRef.current.selectionStart || text.length);
-    const mentionText = `@[${user.id}]`;
+    const mentionText = `@${user.fullName}${MENTION_ID_MARKER}${user.id}${MENTION_ID_MARKER}`;
     const newText = beforeMention + mentionText + ' ' + afterMention;
 
     // Crear un evento sintético para actualizar el valor
@@ -138,7 +138,7 @@ const MentionTextarea: React.FC<MentionTextareaProps> = ({
         aria-hidden="true"
       >
         {value ? (
-          renderCommentWithMentions(value, users)
+          renderCommentWithMentions(convertInputMentionsToPayload(value), users)
         ) : (
           <span className="text-gray-400">{placeholder}</span>
         )}
