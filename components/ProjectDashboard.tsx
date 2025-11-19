@@ -34,7 +34,6 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const { data: project, isLoading: isProjectLoading } = useApi.projectDetails();
   const { data: logEntries, isLoading: isLogEntriesLoading, error, retry: refetchLogEntries } = useApi.logEntries();
   const { data: users, isLoading: isUsersLoading } = useApi.users();
-  const { data: contractItems } = useApi.contractItems();
 
   const [selectedEntry, setSelectedEntry] = useState<LogEntry | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -474,8 +473,6 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
           availableUsers={users || []}
           currentUser={user}
           projectStartDate={project?.startDate}
-          contractItems={contractItems || []}
-          corredorVialElements={project?.corredorVialElements || []}
         />
       )}
       <ExportModal
