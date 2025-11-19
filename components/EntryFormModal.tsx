@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { LogEntry, EntryStatus, EntryType, User } from "../types";
+import { LogEntry, EntryStatus, EntryType, User, ContractItem, CorredorVialElement } from "../types";
 import Modal from "./ui/Modal";
 import Button from "./ui/Button";
 import Input from "./ui/Input";
 import Select from "./ui/Select";
 import { XMarkIcon } from "./icons/Icon";
 import { getFullRoleName } from "../src/utils/roleDisplay";
+import { useApi } from "../src/hooks/useApi";
+import api from "../src/services/api";
 
 interface EntryFormModalProps {
   isOpen: boolean;
@@ -28,6 +30,8 @@ interface EntryFormModalProps {
   availableUsers: User[];
   currentUser: User | null;
   projectStartDate?: string; // Fecha de inicio del proyecto
+  contractItems?: ContractItem[]; // Ítems contractuales para selección
+  corredorVialElements?: CorredorVialElement[]; // Elementos del corredor vial para PK_IDs
 }
 
 const EntryFormModal: React.FC<EntryFormModalProps> = ({
@@ -37,15 +41,30 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   initialDate,
   availableUsers,
   currentUser,
-  projectStartDate
+  projectStartDate,
+  contractItems = [],
+  corredorVialElements = []
 }) => {
   const [entryDate, setEntryDate] = useState<string>("");
   const [entryType, setEntryType] = useState<EntryType>(EntryType.GENERAL);
   const [title, setTitle] = useState<string>("");
   const [summary, setSummary] = useState<string>("");
   const [materialsUsed, setMaterialsUsed] = useState<
-    Array<{ material: string; quantity: string; unit: string }>
+    Array<{ 
+      material: string; 
+      quantity: string; 
+      unit: string;
+      contractItemId?: string; // ID del ítem contractual si se selecciona
+      pkId?: string; // PK_ID del corredor vial
+    }>
   >([{ material: "", quantity: "", unit: "" }]);
+  const [executedActivities, setExecutedActivities] = useState<
+    Array<{
+      contractItemId: string;
+      quantity: string;
+      pkId: string;
+    }>
+  >([]);
   const [additionalObservations, setAdditionalObservations] =
     useState<string>("");
   const [scheduleDay, setScheduleDay] = useState<string>("");
@@ -107,6 +126,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     setTitle("");
     setSummary("");
     setMaterialsUsed([{ material: "", quantity: "", unit: "" }]);
+    setExecutedActivities([]);
     setAdditionalObservations("");
     setScheduleDay("");
     setLocationDetails("");
@@ -323,11 +343,25 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
 
   const updateMaterialRow = (
     index: number,
-    field: "material" | "quantity" | "unit",
+    field: "material" | "quantity" | "unit" | "contractItemId" | "pkId",
     value: string
   ) => {
     setMaterialsUsed((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+      prev.map((item, i) => {
+        if (i === index) {
+          const updated = { ...item, [field]: value };
+          // Si se selecciona un ítem contractual, actualizar material y unit automáticamente
+          if (field === "contractItemId" && value) {
+            const selectedItem = contractItems.find(item => item.id === value);
+            if (selectedItem) {
+              updated.material = selectedItem.description;
+              updated.unit = selectedItem.unit;
+            }
+          }
+          return updated;
+        }
+        return item;
+      })
     );
   };
 
@@ -339,6 +373,24 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     setMaterialsUsed((prev) =>
       prev.length === 1 ? prev : prev.filter((_, i) => i !== index)
     );
+  };
+
+  const updateExecutedActivityRow = (
+    index: number,
+    field: "contractItemId" | "quantity" | "pkId",
+    value: string
+  ) => {
+    setExecutedActivities((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+    );
+  };
+
+  const addExecutedActivityRow = () => {
+    setExecutedActivities((prev) => [...prev, { contractItemId: "", quantity: "", pkId: "" }]);
+  };
+
+  const removeExecutedActivityRow = (index: number) => {
+    setExecutedActivities((prev) => prev.filter((_, i) => i !== index));
   };
 
   const linesToItems = (value: string) =>
@@ -514,6 +566,48 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
         },
         [...files, ...photos]
       );
+
+      // Guardar ejecuciones de materiales con ítems contractuales
+      const materialExecutions = materialsUsed
+        .filter(entry => entry.contractItemId && entry.quantity && entry.pkId)
+        .map(entry => ({
+          contractItemId: entry.contractItemId!,
+          quantity: Number(entry.quantity),
+          pkId: entry.pkId!
+        }));
+
+      for (const execution of materialExecutions) {
+        try {
+          await api.contractItems.updateExecutedQuantity(
+            execution.contractItemId,
+            execution.quantity,
+            execution.pkId
+          );
+        } catch (err) {
+          console.error(`Error guardando ejecución de material ${execution.contractItemId}:`, err);
+        }
+      }
+
+      // Guardar ejecuciones de actividades
+      const activityExecutions = executedActivities
+        .filter(entry => entry.contractItemId && entry.quantity && entry.pkId)
+        .map(entry => ({
+          contractItemId: entry.contractItemId,
+          quantity: Number(entry.quantity),
+          pkId: entry.pkId
+        }));
+
+      for (const execution of activityExecutions) {
+        try {
+          await api.contractItems.updateExecutedQuantity(
+            execution.contractItemId,
+            execution.quantity,
+            execution.pkId
+          );
+        } catch (err) {
+          console.error(`Error guardando ejecución de actividad ${execution.contractItemId}:`, err);
+        }
+      }
     } catch (err) {
       setValidationError(
         err instanceof Error
@@ -692,33 +786,67 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
               </div>
               <div className="mt-2 space-y-3">
                 {materialsUsed.map((item, index) => (
-                  <div key={`material-${index}`} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-                    <Input
-                      label={index === 0 ? "Material" : undefined}
-                      value={item.material}
-                      onChange={(e) => updateMaterialRow(index, 'material', e.target.value)}
-                      placeholder="Ej. Cemento, Acero, etc."
-                    />
-                    <Input
-                      label={index === 0 ? "Cantidad" : undefined}
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={item.quantity}
-                      onChange={(e) => updateMaterialRow(index, 'quantity', e.target.value)}
-                      placeholder="Ej. 100"
-                    />
-                    <Input
-                      label={index === 0 ? "Unidad" : undefined}
-                      value={item.unit}
-                      onChange={(e) => updateMaterialRow(index, 'unit', e.target.value)}
-                      placeholder="Ej. kg, m³, m², etc."
-                    />
+                  <div key={`material-${index}`} className="space-y-2 p-3 border border-gray-200 rounded-md">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {contractItems.length > 0 && (
+                        <Select
+                          label={index === 0 ? "Ítem contractual (opcional)" : undefined}
+                          value={item.contractItemId || ""}
+                          onChange={(e) => updateMaterialRow(index, 'contractItemId', e.target.value)}
+                        >
+                          <option value="">Seleccionar ítem...</option>
+                          {contractItems.map((contractItem) => (
+                            <option key={contractItem.id} value={contractItem.id}>
+                              {contractItem.itemCode} - {contractItem.description} ({contractItem.unit})
+                            </option>
+                          ))}
+                        </Select>
+                      )}
+                      {corredorVialElements.length > 0 && (
+                        <Select
+                          label={index === 0 ? "PK_ID (opcional)" : undefined}
+                          value={item.pkId || ""}
+                          onChange={(e) => updateMaterialRow(index, 'pkId', e.target.value)}
+                        >
+                          <option value="">Seleccionar PK_ID...</option>
+                          {corredorVialElements.map((element) => (
+                            <option key={element.pkId} value={element.pkId}>
+                              {element.pkId} - {element.civ} ({element.tipoElemento})
+                            </option>
+                          ))}
+                        </Select>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                      <Input
+                        label={index === 0 ? "Material" : undefined}
+                        value={item.material}
+                        onChange={(e) => updateMaterialRow(index, 'material', e.target.value)}
+                        placeholder="Ej. Cemento, Acero, etc."
+                        disabled={!!item.contractItemId}
+                      />
+                      <Input
+                        label={index === 0 ? "Cantidad" : undefined}
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={item.quantity}
+                        onChange={(e) => updateMaterialRow(index, 'quantity', e.target.value)}
+                        placeholder="Ej. 100"
+                      />
+                      <Input
+                        label={index === 0 ? "Unidad" : undefined}
+                        value={item.unit}
+                        onChange={(e) => updateMaterialRow(index, 'unit', e.target.value)}
+                        placeholder="Ej. kg, m³, m², etc."
+                        disabled={!!item.contractItemId}
+                      />
+                    </div>
                     {materialsUsed.length > 1 && (
                       <button
                         type="button"
                         onClick={() => removeMaterialRow(index)}
-                        className="text-red-500 hover:text-red-700 text-xs font-semibold sm:col-span-3 text-left"
+                        className="text-red-500 hover:text-red-700 text-xs font-semibold text-left"
                       >
                         <span className="inline-flex items-center gap-1">
                           <XMarkIcon className="h-4 w-4" /> Quitar
@@ -729,6 +857,85 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                 ))}
               </div>
             </div>
+
+            {/* Sección de Actividades Ejecutadas con Ítems Contractuales */}
+            {contractItems.length > 0 && (
+              <div className="mt-6">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-gray-800">Actividades ejecutadas (con ítems contractuales)</h4>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={addExecutedActivityRow}
+                  >
+                    Añadir actividad
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500 mt-1 mb-3">
+                  Selecciona un ítem contractual y registra la cantidad ejecutada para actualizar el resumen de cantidades de obra.
+                </p>
+                <div className="mt-2 space-y-3">
+                  {executedActivities.length === 0 ? (
+                    <p className="text-sm text-gray-500 italic">No hay actividades registradas. Haz clic en "Añadir actividad" para comenzar.</p>
+                  ) : (
+                    executedActivities.map((activity, index) => (
+                      <div key={`activity-${index}`} className="p-3 border border-gray-200 rounded-md space-y-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <Select
+                            label={index === 0 ? "Ítem contractual" : undefined}
+                            value={activity.contractItemId}
+                            onChange={(e) => updateExecutedActivityRow(index, 'contractItemId', e.target.value)}
+                            required
+                          >
+                            <option value="">Seleccionar ítem...</option>
+                            {contractItems.map((contractItem) => (
+                              <option key={contractItem.id} value={contractItem.id}>
+                                {contractItem.itemCode} - {contractItem.description} ({contractItem.unit})
+                              </option>
+                            ))}
+                          </Select>
+                          {corredorVialElements.length > 0 && (
+                            <Select
+                              label={index === 0 ? "PK_ID" : undefined}
+                              value={activity.pkId}
+                              onChange={(e) => updateExecutedActivityRow(index, 'pkId', e.target.value)}
+                              required
+                            >
+                              <option value="">Seleccionar PK_ID...</option>
+                              {corredorVialElements.map((element) => (
+                                <option key={element.pkId} value={element.pkId}>
+                                  {element.pkId} - {element.civ} ({element.tipoElemento})
+                                </option>
+                              ))}
+                            </Select>
+                          )}
+                          <Input
+                            label={index === 0 ? "Cantidad ejecutada" : undefined}
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={activity.quantity}
+                            onChange={(e) => updateExecutedActivityRow(index, 'quantity', e.target.value)}
+                            placeholder="Cantidad"
+                            required
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeExecutedActivityRow(index)}
+                          className="text-red-500 hover:text-red-700 text-xs font-semibold text-left"
+                        >
+                          <span className="inline-flex items-center gap-1">
+                            <XMarkIcon className="h-4 w-4" /> Quitar
+                          </span>
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </>
         )}
         {showGeneralSections && (
