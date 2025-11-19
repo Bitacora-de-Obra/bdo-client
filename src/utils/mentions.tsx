@@ -3,7 +3,57 @@ import { User } from '../../types';
 
 export const MENTION_ID_MARKER = '\u2063'; // Invisible separator to keep IDs hidden while typing
 
+const ZERO_WIDTH_BASE_CHARS = ['\u200B', '\u200C', '\u200D', '\u2060', '\uFEFF'];
+const ZERO_WIDTH_CHAR_SET = new Set(ZERO_WIDTH_BASE_CHARS);
+const ZERO_WIDTH_COMBINATIONS = ZERO_WIDTH_BASE_CHARS.flatMap((first) =>
+  ZERO_WIDTH_BASE_CHARS.map((second) => first + second)
+);
+const SUPPORTED_ID_CHARS = '0123456789abcdef-';
+
+const ZERO_WIDTH_ENCODE_MAP: Record<string, string> = {};
+const ZERO_WIDTH_DECODE_MAP: Record<string, string> = {};
+
+SUPPORTED_ID_CHARS.split('').forEach((char, index) => {
+  const combo = ZERO_WIDTH_COMBINATIONS[index];
+  ZERO_WIDTH_ENCODE_MAP[char] = combo;
+  ZERO_WIDTH_DECODE_MAP[combo] = char;
+});
+
 const escapeRegex = (value: string) => value.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+
+const isZeroWidthEncoded = (value: string) =>
+  value.length > 0 && [...value].every((char) => ZERO_WIDTH_CHAR_SET.has(char));
+
+const decodeZeroWidthIdentifier = (value: string): string | null => {
+  if (!value) return null;
+  if (!isZeroWidthEncoded(value)) {
+    return value;
+  }
+
+  if (value.length % 2 !== 0) {
+    return value;
+  }
+
+  let decoded = '';
+  for (let i = 0; i < value.length; i += 2) {
+    const chunk = value.slice(i, i + 2);
+    const mapped = ZERO_WIDTH_DECODE_MAP[chunk];
+    if (!mapped) {
+      return value;
+    }
+    decoded += mapped;
+  }
+
+  return decoded;
+};
+
+export const encodeMentionIdentifier = (userId: string): string => {
+  if (!userId) return '';
+  return userId
+    .split('')
+    .map((char) => ZERO_WIDTH_ENCODE_MAP[char] ?? char)
+    .join('');
+};
 
 /**
  * Convierte el contenido que usa marcadores invisibles (para la caja de texto)
@@ -13,9 +63,12 @@ export const convertInputMentionsToPayload = (content: string): string => {
   if (!content) return '';
 
   const marker = escapeRegex(MENTION_ID_MARKER);
-  const pattern = new RegExp(`@([^${marker}]+)${marker}([a-f0-9-]+)${marker}`, 'gi');
+  const pattern = new RegExp(`@([^${marker}]*)${marker}([^${marker}]+)${marker}`, 'gi');
   return content
-    .replace(pattern, (_match, _displayName, userId) => `@[${userId}]`)
+    .replace(pattern, (_match, _displayName, encodedId) => {
+      const userId = decodeZeroWidthIdentifier(encodedId) ?? encodedId;
+      return `@[${userId}]`;
+    })
     .replace(new RegExp(marker, 'g'), '');
 };
 
