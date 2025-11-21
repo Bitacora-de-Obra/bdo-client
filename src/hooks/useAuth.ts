@@ -18,7 +18,7 @@ interface AuthContextType {
     appRole: string;
   }) => Promise<void>;
   verifyEmail: (token: string) => Promise<void>;
-  forgotPassword: (email: string) => Promise<void>;
+  forgotPassword: (email: string, baseUrl?: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
   changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
   updateProfile: (profileData: {
@@ -119,8 +119,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     await refreshUser();
   }, [refreshUser]);
 
-  const forgotPassword = useCallback(async (email: string) => {
-    await api.auth.forgotPassword(email);
+  const forgotPassword = useCallback(async (email: string, baseUrl?: string) => {
+    await api.auth.forgotPassword(email, baseUrl);
   }, []);
 
   const resetPassword = useCallback(async (token: string, newPassword: string) => {

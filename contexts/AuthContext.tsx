@@ -57,7 +57,7 @@ interface AuthContextType {
     payload: RegisterPayload
   ) => Promise<{ user: User; verificationEmailSent: boolean }>;
   verifyEmail: (token: string) => Promise<void>;
-  forgotPassword: (email: string) => Promise<void>;
+  forgotPassword: (email: string, baseUrl?: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
   changePassword: (oldPassword: string, newPassword: string) => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -271,10 +271,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     [loadProfile]
   );
 
-  const forgotPassword = useCallback(async (email: string) => {
+  const forgotPassword = useCallback(async (email: string, baseUrl?: string) => {
     setError(null);
     try {
-      await api.auth.forgotPassword(email);
+      await api.auth.forgotPassword(email, baseUrl);
     } catch (forgotError: any) {
       console.error(
         "AuthProvider: Error al solicitar restablecimiento:",

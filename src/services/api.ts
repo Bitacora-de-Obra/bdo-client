@@ -518,10 +518,13 @@ export const authApi = {
     return response;
   },
 
-  forgotPassword: async (email: string): Promise<ApiMessageResponse> => {
+  forgotPassword: async (
+    email: string,
+    baseUrl?: string
+  ): Promise<ApiMessageResponse> => {
     const response = await apiFetch("/auth/forgot-password", {
       method: "POST",
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, baseUrl }),
     });
     return response;
   },

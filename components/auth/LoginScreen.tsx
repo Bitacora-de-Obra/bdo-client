@@ -298,7 +298,7 @@ const LoginScreen: React.FC = () => {
     setFormError(null);
     try {
       setForgotSubmitting(true);
-      await forgotPassword(forgotEmail.trim());
+      await forgotPassword(forgotEmail.trim(), window.location.origin);
       showToast({
         variant: "success",
         title: "Solicitud enviada",
