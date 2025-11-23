@@ -11,6 +11,7 @@ import {
   PersonnelEntry,
   SignatureConsentPayload,
   ReviewTask,
+  Comment,
 } from "../types";
 import Modal from "./ui/Modal";
 import Badge from "./ui/Badge";
@@ -44,7 +45,7 @@ interface EntryDetailModalProps {
     entryId: string,
     commentText: string,
     files: File[]
-  ) => Promise<void>;
+  ) => Promise<Comment>;
   onSign: (
     documentId: string,
     documentType: "logEntry",

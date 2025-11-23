@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { ProjectDetails, LogEntry, User, SignatureConsentPayload, UserRole } from "../types";
+import { ProjectDetails, LogEntry, User, SignatureConsentPayload, UserRole, Comment } from "../types";
 import api from "../src/services/api";
 import FilterBar from "./FilterBar";
 import EntryCard from "./EntryCard";
@@ -224,7 +224,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     entryId: string,
     commentText: string,
     files: File[]
-  ) => {
+  ): Promise<Comment> => {
     if (readOnly) {
       showToast({
         title: "Acción no permitida",
@@ -239,7 +239,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
 
     try {
       // Crear el comentario
-      await api.logEntries.addComment(entryId, {
+      const createdComment = await api.logEntries.addComment(entryId, {
         content: commentText,
         authorId: user.id,
       }, files);
@@ -248,6 +248,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
       const updatedEntry = await api.logEntries.getById(entryId);
       setSelectedEntry(updatedEntry);
       refetchLogEntries();
+      return createdComment;
     } catch (err) {
       throw err instanceof Error ? err : new Error("Ocurrió un error al añadir el comentario.");
     }

@@ -789,7 +789,7 @@ export const logEntriesApi = {
     entryId: string,
     comment: { content: string; authorId: string },
     files: File[] = []
-  ) => {
+  ): Promise<Comment> => {
     const formData = new FormData();
     formData.append("content", comment.content);
     formData.append("authorId", comment.authorId);
