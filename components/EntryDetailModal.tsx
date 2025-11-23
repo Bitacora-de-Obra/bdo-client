@@ -203,6 +203,13 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const [equipmentResourcesDraft, setEquipmentResourcesDraft] = useState<
     Array<{ name: string; status: string; notes: string }>
   >([{ name: "", status: "", notes: "" }]);
+
+  // Debug: asegurarnos de que el modal de edición abra correctamente
+  useEffect(() => {
+    if (isEditing) {
+      console.info("[EntryDetailModal] editing mode ON (z-fix)");
+    }
+  }, [isEditing]);
   const knownUsers = useMemo(() => {
     const map = new Map<string, User>();
     const register = (user?: User | null) => {
