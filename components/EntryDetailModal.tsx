@@ -733,7 +733,14 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     if (preparedComment || commentFiles.length > 0) {
       try {
         setIsSubmittingComment(true);
-        await onAddComment(entry.id, preparedComment, commentFiles);
+        const createdComment = await onAddComment(entry.id, preparedComment, commentFiles);
+        // Si el backend devuelve el comentario creado (con attachments), agréguelo al estado
+        if (createdComment) {
+          setEditedEntry((prev) => ({
+            ...prev,
+            comments: [...(prev.comments || []), createdComment],
+          }));
+        }
         setNewComment("");
         setCommentFiles([]);
       } catch (error) {
