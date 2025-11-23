@@ -23,10 +23,10 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer,
   if (!isOpen) return null;
 
   const modalContent = (
-    <div className="fixed inset-0 z-[1050] flex items-center justify-center overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-      <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity z-10" onClick={onClose}></div>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity z-40" onClick={onClose}></div>
       
-      <div className={`relative z-20 bg-white rounded-lg shadow-xl transform transition-all sm:my-8 w-full mx-4 ${sizeClasses[size]}`}>
+      <div className={`relative z-50 bg-white rounded-lg shadow-xl transform transition-all sm:my-8 w-full mx-4 ${sizeClasses[size]}`}>
         <div className="flex justify-between items-center p-4 border-b">
           <h3 className="text-lg font-semibold text-gray-900" id="modal-title">
             {title}
@@ -41,7 +41,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer,
             </svg>
           </button>
         </div>
-        <div className="p-6 overflow-y-auto max-h-[80vh]">
+        <div className="p-6 overflow-y-auto max-h-[90vh]">
           {children}
         </div>
         {footer && (
