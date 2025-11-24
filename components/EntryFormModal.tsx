@@ -502,7 +502,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           socialObservations: socialObservations.trim(),
           socialContractorResponse: socialContractorResponse.trim(),
           socialPhotoSummary: socialPhotoSummary.trim(),
-          activityStartDate: normalizedDate.toISOString(),
+          activityStartDate: startOfDay.toISOString(),
           activityEndDate: endOfDay.toISOString(),
           subject: "",
           location: "",
