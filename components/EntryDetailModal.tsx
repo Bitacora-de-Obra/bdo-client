@@ -140,7 +140,8 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
         ? fromTasks
         : (entryData.requiredSignatories || []).map((user) => user.id);
     const setOfIds = new Set<string>(baseIds);
-    if (entryData.author?.id) {
+    // Solo agregar autor si el entry no tenía skipAuthorAsSigner
+    if (entryData.author?.id && !entryData.skipAuthorAsSigner) {
       setOfIds.add(entryData.author.id);
     }
     return Array.from(setOfIds);
@@ -250,9 +251,6 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
         nextSet.add(userId);
       } else {
         nextSet.delete(userId);
-      }
-      if (entry.author?.id) {
-        nextSet.add(entry.author.id);
       }
       const nextIds = Array.from(nextSet);
       const resolved = nextIds
@@ -894,13 +892,12 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       (editedEntry.interventoriaObservations || "").trim();
 
     const signerIds = new Set(selectedSignerIds);
-    if (author?.id) {
-      signerIds.add(author.id);
-    }
+    const skipAuthorAsSigner = !selectedSignerIds.includes(author?.id || "");
     const requiredSignatories = Array.from(signerIds)
       .map((id) => findUserById(id))
       .filter((user): user is User => Boolean(user));
     finalEntry.requiredSignatories = requiredSignatories;
+    finalEntry.skipAuthorAsSigner = skipAuthorAsSigner;
 
     setIsUpdating(true);
     try {
@@ -2746,12 +2743,12 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                 Firmantes responsables
               </h4>
               <p className="mt-1 text-xs text-gray-500">
-                Define quiénes deben firmar esta anotación. El autor está incluido automáticamente.
+                Define quiénes deben firmar esta anotación. Puedes quitar al autor si solo cargará la bitácora.
               </p>
               <div className="mt-2 border border-gray-200 rounded-md divide-y max-h-48 overflow-y-auto">
                 {sortedUsers.map((user) => {
                   const isAuthor = author?.id === user.id;
-                  const isChecked = selectedSignerIds.includes(user.id) || isAuthor;
+                  const isChecked = selectedSignerIds.includes(user.id);
                   return (
                     <label
                       key={user.id}
@@ -2764,7 +2761,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                         onChange={(event) =>
                           handleToggleSigner(user.id, event.target.checked)
                         }
-                        disabled={isAuthor}
+                        disabled={false}
                       />
                       <span>
                         <span className="font-semibold text-gray-900">
