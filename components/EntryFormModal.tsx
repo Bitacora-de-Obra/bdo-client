@@ -390,18 +390,18 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
       return;
     }
 
-    const parsedDate = new Date(`${entryDate}T00:00:00`);
+    // Fijar mediodía UTC para evitar corrimientos de fecha
+    const parsedDate = new Date(`${entryDate}T12:00:00Z`);
     if (isNaN(parsedDate.getTime())) {
       setValidationError("La fecha seleccionada no es válida.");
       return;
     }
 
-    const normalizedDate = new Date(parsedDate);
-    normalizedDate.setHours(0, 0, 0, 0);
-    const entryDateIso = normalizedDate.toISOString();
+    const entryDateIso = parsedDate.toISOString();
 
-    const endOfDay = new Date(normalizedDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    // Usar el mismo día para inicio/fin de actividades
+    const startOfDay = new Date(`${entryDate}T12:00:00Z`);
+    const endOfDay = new Date(`${entryDate}T23:59:59.999Z`);
 
     const signerIds = new Set(selectedSignerIds);
     const requiredSignatories = Array.from(signerIds)

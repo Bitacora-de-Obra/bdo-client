@@ -781,16 +781,15 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       return;
     }
 
-    const parsedDate = new Date(`${formEntryDate}T00:00:00`);
+    // Fijar mediodía UTC para evitar corrimientos de fecha
+    const parsedDate = new Date(`${formEntryDate}T12:00:00Z`);
     if (isNaN(parsedDate.getTime())) {
       setValidationError("La fecha del diario no es válida.");
       return;
     }
 
-    const normalizedDate = new Date(parsedDate);
-    normalizedDate.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(normalizedDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    const entryDateIso = parsedDate.toISOString();
+    const endOfDay = new Date(`${formEntryDate}T23:59:59.999Z`);
 
     const newAttachments = newFiles.map((file) => ({
       id: `att-${Date.now()}-${file.name}`,
@@ -809,8 +808,8 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       workforce: (editedEntry.workforce || "").trim(),
       weatherConditions: (editedEntry.weatherConditions || "").trim(),
       additionalObservations: (editedEntry.additionalObservations || "").trim(),
-      entryDate: normalizedDate.toISOString(),
-      activityStartDate: normalizedDate.toISOString(),
+      entryDate: entryDateIso,
+      activityStartDate: entryDateIso,
       activityEndDate: endOfDay.toISOString(),
       attachments: [...(editedEntry.attachments || []), ...newAttachments],
     } as LogEntry;
