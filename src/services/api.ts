@@ -669,6 +669,7 @@ export const logEntriesApi = {
     > & {
       authorId?: string;
       projectId?: string;
+      skipAuthorAsSigner?: boolean;
     },
     files: File[] = []
   ) => {
@@ -707,6 +708,7 @@ export const logEntriesApi = {
     appendIfDefined("status", data.status);
     appendIfDefined("authorId", data.authorId);
     appendIfDefined("projectId", data.projectId);
+    appendIfDefined("skipAuthorAsSigner", (data as any).skipAuthorAsSigner);
 
     appendJson("weatherReport", (data as any).weatherReport);
     appendJson("contractorPersonnel", (data as any).contractorPersonnel);

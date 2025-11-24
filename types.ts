@@ -292,6 +292,7 @@ export interface LogEntry {
   reviewTasks?: ReviewTask[];
   signatureSummary?: SignatureSummary;
   pendingSignatureSignatories?: User[];
+  skipAuthorAsSigner?: boolean;
 }
 
 // DRAWINGS (PLANOS)
