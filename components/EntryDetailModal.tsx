@@ -2761,7 +2761,6 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                         onChange={(event) =>
                           handleToggleSigner(user.id, event.target.checked)
                         }
-                        disabled={false}
                       />
                       <span>
                         <span className="font-semibold text-gray-900">
