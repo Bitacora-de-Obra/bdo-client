@@ -247,9 +247,6 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
       } else {
         next.delete(userId);
       }
-      if (currentUser) {
-        next.add(currentUser.id);
-      }
       return Array.from(next);
     });
   };
@@ -407,9 +404,6 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     endOfDay.setHours(23, 59, 59, 999);
 
     const signerIds = new Set(selectedSignerIds);
-    if (currentUser) {
-      signerIds.add(currentUser.id);
-    }
     const requiredSignatories = Array.from(signerIds)
       .map((id) =>
         availableUsers.find((user) => user.id === id) ||
@@ -418,6 +412,8 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
       .filter((user): user is User => Boolean(user));
 
     const weatherReport = buildWeatherReport();
+    const skipAuthorAsSigner =
+      Boolean(currentUser) && !selectedSignerIds.includes(currentUser!.id);
 
     const normalizePersonnelDraft = (
       entries: Array<{ role: string; quantity: string; notes: string }>
@@ -515,6 +511,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           isConfidential: false,
           assignees: [],
           requiredSignatories,
+          skipAuthorAsSigner,
           signatures: [],
         },
         [...files, ...photos]
@@ -1130,7 +1127,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           Firmantes responsables
         </h4>
         <p className="text-xs text-gray-500 mb-2">
-          Selecciona a quienes deben firmar la anotación. El autor se incluye automáticamente.
+          Selecciona a quienes deben firmar la anotación. Puedes quitar al autor si solo va a cargar la bitácora.
         </p>
         <div className="border border-gray-200 rounded-md divide-y max-h-48 overflow-y-auto">
           {sortedUsers.map((user) => {
@@ -1144,11 +1141,10 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                 <input
                   type="checkbox"
                   className="mt-1 h-4 w-4 text-brand-primary border-gray-300 rounded focus:ring-brand-primary"
-                  checked={isChecked || isAuthor}
+                  checked={isChecked}
                   onChange={(event) =>
                     toggleSigner(user.id, event.target.checked)
                   }
-                  disabled={isAuthor}
                 />
                 <span>
                   <span className="font-semibold text-gray-900">
