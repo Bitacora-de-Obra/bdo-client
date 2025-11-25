@@ -42,10 +42,11 @@ const navItems = [
     { id: 'planning', label: 'Cronograma', icon: <CalendarDaysIcon />, section: 'Seguimiento' },
     { id: 'costs', label: 'Costos Interventoría', icon: <CalculatorIcon />, section: 'Seguimiento', roles: [UserRole.SUPERVISOR, UserRole.ADMIN] },
     { id: 'weekly_reports', label: 'Informes Semanales', icon: <DocumentChartBarIcon />, section: 'Reportes' },
-    { id: 'monthly_reports_obra', label: 'Informes Mensuales (Obra)', icon: <DocumentChartBarIcon />, section: 'Reportes' },
-    { id: 'monthly_reports_interventoria', label: 'Informes Mensuales (Interv.)', icon: <DocumentChartBarIcon />, section: 'Reportes', roles: [UserRole.SUPERVISOR, UserRole.ADMIN] },
-    { id: 'export_project', label: 'Exportar Expediente', icon: <DocumentArrowDownIcon />, section: 'Herramientas', appRoles: ['admin'] },
-    { id: 'admin', label: 'Administración', icon: <ShieldCheckIcon />, section: 'Herramientas', appRoles: ['admin'] },
+  { id: 'monthly_reports_obra', label: 'Informes Mensuales (Obra)', icon: <DocumentChartBarIcon />, section: 'Reportes' },
+  { id: 'monthly_reports_interventoria', label: 'Informes Mensuales (Interv.)', icon: <DocumentChartBarIcon />, section: 'Reportes', roles: [UserRole.SUPERVISOR, UserRole.ADMIN] },
+  { id: 'export_project', label: 'Exportar Expediente', icon: <DocumentArrowDownIcon />, section: 'Herramientas', appRoles: ['admin'] },
+  { id: 'admin', label: 'Administración', icon: <ShieldCheckIcon />, section: 'Herramientas', appRoles: ['admin'] },
+  { id: 'manual', label: 'Manual de Usuario', icon: <DocumentTextIcon />, section: 'Ayuda' },
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, setIsSidebarOpen, isSidebarCollapsed, setIsSidebarCollapsed, currentView, setCurrentView }) => {
@@ -54,7 +55,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, setIsSidebarOpen, isSi
   const handleNavClick = (view: string) => {
     // Deshabilitar acceso al chat temporalmente
     if (view === 'chat') {
-      return; // No hacer nada, mantener la vista actual
+      return;
+    }
+    if (view === 'manual') {
+      window.open('/docs/manual-usuario.html', '_blank', 'noopener,noreferrer');
+      if (window.innerWidth < 1024) setIsSidebarOpen(false);
+      return;
     }
     setCurrentView(view);
     if (window.innerWidth < 1024) { // lg breakpoint
