@@ -6,6 +6,7 @@ import Input from './ui/Input';
 import Select from './ui/Select';
 import { XMarkIcon } from './icons/Icon';
 import api from '../src/services/api';
+import { ContractModification } from '../types';
 
 interface ContractModificationFormModalProps {
   isOpen: boolean;
@@ -21,12 +22,28 @@ interface ContractModificationFormModalProps {
     },
     file: File | null
   ) => Promise<void>;
+  onUpdate?: (
+    id: string,
+    data: {
+      number?: string;
+      type?: ModificationType;
+      date?: string;
+      value?: number;
+      days?: number;
+      justification?: string;
+      affectsFiftyPercent?: boolean;
+    },
+    file: File | null
+  ) => Promise<void>;
+  initialData?: ContractModification | null;
 }
 
 const ContractModificationFormModal: React.FC<ContractModificationFormModalProps> = ({
   isOpen,
   onClose,
   onSave,
+  onUpdate,
+  initialData,
 }) => {
   const [number, setNumber] = useState('');
   const [type, setType] = useState<ModificationType>(ModificationType.ADDITION);
@@ -50,8 +67,17 @@ const ContractModificationFormModal: React.FC<ContractModificationFormModalProps
   useEffect(() => {
     if (isOpen) {
       api.contractModifications.summary().then(setSummary).catch(() => setSummary(null));
+      if (initialData) {
+        setNumber(initialData.number || '');
+        setType(initialData.type as ModificationType);
+        setDate(initialData.date ? initialData.date.substring(0, 10) : '');
+        setValue(initialData.value !== undefined && initialData.value !== null ? `${initialData.value}` : '');
+        setDays(initialData.days !== undefined && initialData.days !== null ? `${initialData.days}` : '');
+        setJustification(initialData.justification || '');
+        setAffectsFiftyPercent(initialData.affectsFiftyPercent !== undefined ? initialData.affectsFiftyPercent : true);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, initialData]);
 
   const willExceedCap = useMemo(() => {
     if (!summary) return false;
@@ -107,25 +133,28 @@ const ContractModificationFormModal: React.FC<ContractModificationFormModalProps
 
     setIsSubmitting(true);
     try {
-      await onSave(
-        {
-          number,
-          type,
-          date: new Date(date).toISOString(),
-          value:
-            type === ModificationType.ADDITION && value
-              ? parseFloat(value)
-              : undefined,
-          days:
-            type === ModificationType.TIME_EXTENSION && days
-              ? parseInt(days, 10)
-              : undefined,
-          justification,
-          // passthrough for API
-          ...(type === ModificationType.ADDITION ? { affectsFiftyPercent } : {}),
-        },
-        file
-      );
+      const payload = {
+        number,
+        type,
+        date: new Date(date).toISOString(),
+        value:
+          type === ModificationType.ADDITION && value
+            ? parseFloat(value)
+            : undefined,
+        days:
+          type === ModificationType.TIME_EXTENSION && days
+            ? parseInt(days, 10)
+            : undefined,
+        justification,
+        ...(type === ModificationType.ADDITION ? { affectsFiftyPercent } : {}),
+      };
+
+      if (initialData && onUpdate) {
+        await onUpdate(initialData.id, payload, file);
+      } else {
+        await onSave(payload, file);
+      }
+
       resetForm();
     } catch (error: any) {
       console.error('Error al guardar la modificación:', error);
@@ -323,7 +352,11 @@ const ContractModificationFormModal: React.FC<ContractModificationFormModalProps
             Cancelar
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Guardando...' : 'Guardar Modificación'}
+            {isSubmitting
+              ? 'Guardando...'
+              : initialData
+              ? 'Actualizar Modificación'
+              : 'Guardar Modificación'}
           </Button>
         </div>
       </form>

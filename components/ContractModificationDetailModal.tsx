@@ -9,6 +9,8 @@ interface ContractModificationDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   modification: ContractModification;
+  onEdit?: (mod: ContractModification) => void;
+  canEdit?: boolean;
 }
 
 const formatValue = (mod: ContractModification) => {
@@ -31,6 +33,8 @@ const ContractModificationDetailModal: React.FC<ContractModificationDetailModalP
   isOpen,
   onClose,
   modification,
+  onEdit,
+  canEdit = false,
 }) => {
   const { user } = useAuth();
   const canDownload = user?.canDownload ?? true;
@@ -107,6 +111,13 @@ const ContractModificationDetailModal: React.FC<ContractModificationDetailModalP
             <span className="text-xs text-gray-400 italic">Solo previsualización</span>
           )}
         </div>
+        {canEdit && onEdit && (
+          <div className="flex justify-end">
+            <Button type="button" variant="secondary" onClick={() => onEdit(modification)}>
+              Editar
+            </Button>
+          </div>
+        )}
       </div>
     </Modal>
   );

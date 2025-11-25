@@ -1219,6 +1219,24 @@ export const contractModificationsApi = {
       body: JSON.stringify(data),
     });
   },
+  update: async (
+    id: string,
+    data: {
+      number?: string;
+      type?: ModificationType;
+      date?: string;
+      value?: number;
+      days?: number;
+      justification?: string;
+      attachmentId?: string;
+      affectsFiftyPercent?: boolean;
+    }
+  ) => {
+    return apiFetch(`/contract-modifications/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
 };
 
 // API Functions for Project Details

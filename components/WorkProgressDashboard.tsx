@@ -66,6 +66,7 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
   const [isCostActaDetailModalOpen, setIsCostActaDetailModalOpen] = useState(false);
   const [isActaFormModalOpen, setIsActaFormModalOpen] = useState(false);
   const [isModFormModalOpen, setIsModFormModalOpen] = useState(false);
+  const [editingModification, setEditingModification] = useState<ContractModification | null>(null);
   const [selectedModification, setSelectedModification] = useState<ContractModification | null>(null);
   const [isModificationDetailOpen, setIsModificationDetailOpen] = useState(false);
   const { canEditContent } = usePermissions();
@@ -366,9 +367,63 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
       }
 
       setIsModFormModalOpen(false);
+      setEditingModification(null);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Error al guardar la modificación contractual.";
+      throw new Error(message);
+    }
+  };
+
+  const handleUpdateModification = async (
+    id: string,
+    data: {
+      number?: string;
+      type?: ModificationType;
+      date?: string;
+      value?: number;
+      days?: number;
+      justification?: string;
+      affectsFiftyPercent?: boolean;
+    },
+    file: File | null
+  ) => {
+    if (readOnly) {
+      showToast({
+        title: "Acción no permitida",
+        message: "El perfil Viewer no puede editar modificaciones contractuales.",
+        variant: "error",
+      });
+      throw new Error("El perfil Viewer no puede editar modificaciones.");
+    }
+    try {
+      let attachmentId: string | undefined;
+      if (file) {
+        const uploadedAttachment = await api.upload.uploadFile(file, "document");
+        attachmentId = uploadedAttachment.id;
+      }
+
+      const updated = await api.contractModifications.update(id, {
+        ...data,
+        attachmentId,
+      });
+
+      setModifications((prev) => {
+        const without = prev.filter((mod) => mod.id !== updated.id);
+        return [updated, ...without].sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+      });
+
+      if (onContractModificationsRefresh) {
+        await onContractModificationsRefresh();
+      }
+
+      setIsModFormModalOpen(false);
+      setEditingModification(null);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Error al actualizar la modificación contractual.";
       throw new Error(message);
     }
   };
@@ -460,7 +515,10 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
           </h3>
           {canEditContent && (
             <Button
-              onClick={() => setIsModFormModalOpen(true)}
+              onClick={() => {
+                setEditingModification(null);
+                setIsModFormModalOpen(true);
+              }}
               leftIcon={<PlusIcon />}
               size="sm"
               variant="secondary"
@@ -487,11 +545,11 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
                   <tr
                     key={mod.id}
                     className="bg-white border-b hover:bg-gray-50 cursor-pointer"
-                    onClick={() => {
-                      setSelectedModification(mod);
-                      setIsModificationDetailOpen(true);
-                    }}
-                  >
+      onClick={() => {
+        setSelectedModification(mod);
+        setIsModificationDetailOpen(true);
+      }}
+    >
                     <th scope="row" className="px-6 py-4 font-medium text-gray-900">{mod.number}</th>
                     <td className="px-6 py-4">{mod.type}</td>
                     <td className="px-6 py-4">{new Date(mod.date).toLocaleDateString("es-CO")}</td>
@@ -659,8 +717,13 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
       {canEditContent && (
         <ContractModificationFormModal
           isOpen={isModFormModalOpen}
-          onClose={() => setIsModFormModalOpen(false)}
+          onClose={() => {
+            setIsModFormModalOpen(false);
+            setEditingModification(null);
+          }}
           onSave={handleSaveModification} // Conectado al backend
+          onUpdate={handleUpdateModification}
+          initialData={editingModification}
         />
       )}
       {selectedModification && (
@@ -671,6 +734,12 @@ const WorkProgressDashboard: React.FC<WorkProgressDashboardProps> = ({
             setSelectedModification(null);
           }}
           modification={selectedModification}
+          canEdit={canEditContent}
+          onEdit={(mod) => {
+            setEditingModification(mod);
+            setIsModificationDetailOpen(false);
+            setIsModFormModalOpen(true);
+          }}
         />
       )}
     </div>
