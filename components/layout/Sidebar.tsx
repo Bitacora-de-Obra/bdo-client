@@ -59,7 +59,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, setIsSidebarOpen, isSi
       return;
     }
     if (view === 'manual') {
-      window.open('/docs/manual-usuario.html', '_blank', 'noopener,noreferrer');
+      const manualUrl = `${window.location.origin}/docs/manual-usuario.html`;
+      window.open(manualUrl, '_blank', 'noopener,noreferrer');
       if (window.innerWidth < 1024) setIsSidebarOpen(false);
       return;
     }
