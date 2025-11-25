@@ -8,6 +8,7 @@ import {
     CameraIcon,
     CalendarDaysIcon,
     DocumentArrowDownIcon,
+    DocumentIcon,
     ListBulletIcon,
     XMarkIcon,
     ChartPieIcon,
@@ -46,7 +47,7 @@ const navItems = [
   { id: 'monthly_reports_interventoria', label: 'Informes Mensuales (Interv.)', icon: <DocumentChartBarIcon />, section: 'Reportes', roles: [UserRole.SUPERVISOR, UserRole.ADMIN] },
   { id: 'export_project', label: 'Exportar Expediente', icon: <DocumentArrowDownIcon />, section: 'Herramientas', appRoles: ['admin'] },
   { id: 'admin', label: 'Administración', icon: <ShieldCheckIcon />, section: 'Herramientas', appRoles: ['admin'] },
-  { id: 'manual', label: 'Manual de Usuario', icon: <DocumentTextIcon />, section: 'Ayuda' },
+  { id: 'manual', label: 'Manual de Usuario', icon: <DocumentIcon />, section: 'Ayuda' },
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, setIsSidebarOpen, isSidebarCollapsed, setIsSidebarCollapsed, currentView, setCurrentView }) => {
