@@ -652,14 +652,13 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             Resumen general del día
           </label>
           <textarea
-            id="summary"
-            value={summary}
-            onChange={(e) => setSummary(e.target.value)}
-            rows={4}
-            className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-            required
-          />
-        </div>
+          id="summary"
+          value={summary}
+          onChange={(e) => setSummary(e.target.value)}
+          rows={4}
+          className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+        />
+      </div>
           </>
         )}
 
