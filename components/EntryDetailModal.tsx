@@ -766,21 +766,6 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       return;
     }
 
-    if (!formEntryDate) {
-      setValidationError("Debes indicar la fecha de la bitácora.");
-      return;
-    }
-
-    if (!editedEntry.title.trim()) {
-      setValidationError("El título no puede estar vacío.");
-      return;
-    }
-
-    if (!editedEntry.description.trim()) {
-      setValidationError("El resumen general es obligatorio.");
-      return;
-    }
-
     // Fijar mediodía UTC para evitar corrimientos de fecha
     const parsedDate = new Date(`${formEntryDate}T12:00:00Z`);
     if (isNaN(parsedDate.getTime())) {

@@ -375,21 +375,6 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     e.preventDefault();
     setValidationError(null);
 
-    if (!entryDate) {
-      setValidationError("Debes seleccionar la fecha de la bitácora.");
-      return;
-    }
-
-    if (!title.trim()) {
-      setValidationError("El título es obligatorio.");
-      return;
-    }
-
-    if (!summary.trim()) {
-      setValidationError("El resumen general del día es obligatorio.");
-      return;
-    }
-
     // Fijar mediodía UTC para evitar corrimientos de fecha
     const parsedDate = new Date(`${entryDate}T12:00:00Z`);
     if (isNaN(parsedDate.getTime())) {
