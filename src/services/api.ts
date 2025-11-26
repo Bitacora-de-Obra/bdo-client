@@ -234,7 +234,13 @@ async function apiFetch(
     typeof localStorage !== "undefined"
   ) {
     const storedRole = localStorage.getItem("appRole");
-    if (storedRole === "viewer") {
+    // Permitir que un viewer cambie su contraseña; bloquear el resto de mutaciones
+    const allowListForViewer = ["/auth/change-password"];
+    const isAllowedForViewer = allowListForViewer.some((path) =>
+      endpoint.startsWith(path)
+    );
+
+    if (storedRole === "viewer" && !isAllowedForViewer) {
       throw handleApiError({
         statusCode: 403,
         message: "El rol Viewer solo puede consultar información.",
