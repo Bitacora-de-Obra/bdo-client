@@ -293,6 +293,11 @@ const LoginScreen: React.FC = () => {
 
       clearError();
       setFormError(finalMessage);
+      showToast({
+        variant: "error",
+        title: "Inicio de sesión",
+        message: finalMessage,
+      });
     }
   };
 
