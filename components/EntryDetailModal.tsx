@@ -459,7 +459,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   }, [entry, isOpen]);
 
   const handleDelete = async () => {
-    if (readOnly) {
+    if (readOnly && !isAdmin) {
       showToast({
         title: "Acción no permitida",
         message: "No tienes permisos para eliminar anotaciones.",
@@ -3359,7 +3359,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
         )}
         {/* Modal Footer */}
         <div className="mt-6 flex flex-col sm:flex-row sm:justify-between items-center gap-2">
-          {isEditing ? (
+          {(isEditing || isAdmin) ? (
             <div>
               <Button variant="danger" onClick={handleDelete}>
                 Eliminar Anotación
