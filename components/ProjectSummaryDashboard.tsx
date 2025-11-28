@@ -40,7 +40,8 @@ const ProjectSummaryDashboard: React.FC<ProjectSummaryDashboardProps> = ({ proje
     initialDurationDays,
     totalExtensionDays,
     totalDurationDays,
-    currentEndDate
+    currentEndDate,
+    remainingDays,
   } = useMemo(() => {
     const totalAdditions = contractModifications
       .filter(mod => mod.type === ModificationType.ADDITION)
@@ -57,6 +58,11 @@ const ProjectSummaryDashboard: React.FC<ProjectSummaryDashboardProps> = ({ proje
     
     const finalEndDate = new Date(initialEndDate);
     finalEndDate.setDate(finalEndDate.getDate() + totalExtensions);
+    const today = new Date();
+    const todayUTC = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+    const endUTC = Date.UTC(finalEndDate.getFullYear(), finalEndDate.getMonth(), finalEndDate.getDate());
+    const diffMs = endUTC - todayUTC;
+    const daysLeft = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
     
     return {
       totalAdditionsValue: totalAdditions,
@@ -64,7 +70,8 @@ const ProjectSummaryDashboard: React.FC<ProjectSummaryDashboardProps> = ({ proje
       initialDurationDays: initialDuration,
       totalExtensionDays: totalExtensions,
       totalDurationDays: initialDuration + totalExtensions,
-      currentEndDate: finalEndDate.toISOString()
+      currentEndDate: finalEndDate.toISOString(),
+      remainingDays: daysLeft,
     };
   }, [project, contractModifications]);
 
@@ -118,6 +125,7 @@ const ProjectSummaryDashboard: React.FC<ProjectSummaryDashboardProps> = ({ proje
         <KPICard title="Plazo Inicial" value={`${initialDurationDays}`} subValue="días" />
         <KPICard title="Prórrogas" value={`${totalExtensionDays}`} subValue="días" />
         <KPICard title="Plazo Total Vigente" value={`${totalDurationDays}`} subValue="días" className="bg-idu-cyan/5 border-idu-cyan/50" />
+        <KPICard title="Días restantes del plazo" value={`${remainingDays}`} subValue="al día de hoy" className="bg-green-50 border-green-200" />
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
