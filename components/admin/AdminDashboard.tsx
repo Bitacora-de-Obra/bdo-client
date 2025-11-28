@@ -51,6 +51,7 @@ const getFullRoleName = (role: string | UserRole, entity?: string): string => {
 };
 
 type UserAdminPatch = {
+  fullName?: string;
   appRole?: AppRole;
   status?: "active" | "inactive";
   projectRole?: string;
@@ -924,6 +925,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
   onClose,
   onSave,
 }) => {
+  const [fullName, setFullName] = useState<string>("");
   const [appRole, setAppRole] = useState<AppRole>("viewer");
   const [projectRole, setProjectRole] = useState<string>(
     PROJECT_ROLE_OPTIONS[0].value
@@ -937,6 +939,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
 
   useEffect(() => {
     if (user) {
+      setFullName(user.fullName);
       setAppRole(user.appRole);
       setProjectRole(String(user.projectRole));
       setStatus(user.status as "active" | "inactive");
@@ -958,6 +961,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
     setError(null);
     try {
       await onSave({
+        fullName: fullName.trim(),
         appRole,
         projectRole,
         status,
@@ -984,7 +988,12 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
       size="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Input label="Nombre" value={user.fullName} disabled readOnly />
+        <Input
+          label="Nombre"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          placeholder="Nombre completo"
+        />
         <Input label="Email" value={user.email || ""} disabled readOnly />
         <Select
           label="Rol de Aplicación"

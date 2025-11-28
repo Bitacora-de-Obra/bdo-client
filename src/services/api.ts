@@ -605,9 +605,13 @@ export const adminApi = {
   updateUser: async (
     id: string,
     data: Partial<{
+      fullName: string;
       appRole: AppRole;
       status: "active" | "inactive";
       projectRole: string;
+      entity: string | null;
+      cargo: string | null;
+      canDownload: boolean;
     }>
   ): Promise<User> => {
     return apiFetch(`/admin/users/${id}`, {

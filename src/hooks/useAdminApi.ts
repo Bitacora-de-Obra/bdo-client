@@ -16,6 +16,7 @@ type InvitePayload = {
 };
 
 type UpdateUserPayload = Partial<{
+  fullName: string;
   appRole: AppRole;
   status: "active" | "inactive";
   projectRole: string;
