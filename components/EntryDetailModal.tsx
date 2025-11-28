@@ -1350,15 +1350,22 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const workflowStatus = normalizeWorkflowStatusValue(status);
   const statusLabel = workflowStatus as string;
   const entryTypeValue = type as EntryType;
-  const showGeneralSections = [
-    EntryType.GENERAL,
-    EntryType.TECHNICAL,
-    EntryType.ADMINISTRATIVE,
-    EntryType.QUALITY,
-  ].includes(entryTypeValue);
-  const showSafetyPanel = entryTypeValue === EntryType.SAFETY;
-  const showEnvironmentalPanel = entryTypeValue === EntryType.ENVIRONMENTAL;
-  const showSocialPanel = entryTypeValue === EntryType.SOCIAL;
+  const isSpecialType =
+    entryTypeValue === EntryType.SAFETY ||
+    entryTypeValue === EntryType.ENVIRONMENTAL ||
+    entryTypeValue === EntryType.SOCIAL;
+
+  const showGeneralSections = !isSpecialType &&
+    [
+      EntryType.GENERAL,
+      EntryType.TECHNICAL,
+      EntryType.ADMINISTRATIVE,
+      EntryType.QUALITY,
+    ].includes(entryTypeValue);
+  const showSafetyPanel = entryTypeValue === EntryType.SAFETY && !isSpecialType;
+  const showEnvironmentalPanel =
+    entryTypeValue === EntryType.ENVIRONMENTAL && !isSpecialType;
+  const showSocialPanel = entryTypeValue === EntryType.SOCIAL && !isSpecialType;
   const syncEntryState = (updatedEntry: LogEntry) => {
     applyEntryState(updatedEntry);
     setIsEditing(false);
@@ -2457,6 +2464,105 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
               </div>
             )}
           </div>
+          )}
+
+          {isSpecialType && (
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-sm font-semibold text-gray-800 mb-1">
+                  Registro diario de actividades
+                </h4>
+                {isEditing ? (
+                  <textarea
+                    value={activitiesPerformed}
+                    onChange={(e) =>
+                      setEditedEntry((prev) => ({
+                        ...prev,
+                        activitiesPerformed: e.target.value,
+                      }))
+                    }
+                    rows={4}
+                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                    placeholder="Describe las actividades del día"
+                  />
+                ) : (
+                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                    {activitiesPerformed || "Sin registro."}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <h4 className="text-sm font-semibold text-gray-800 mb-1">
+                  Respuesta del contratista
+                </h4>
+                {isEditing ? (
+                  <textarea
+                    value={
+                      entryTypeValue === EntryType.SAFETY
+                        ? safetyContractorResponse
+                        : entryTypeValue === EntryType.ENVIRONMENTAL
+                        ? environmentContractorResponse
+                        : socialContractorResponse
+                    }
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (entryTypeValue === EntryType.SAFETY) {
+                        setEditedEntry((prev) => ({
+                          ...prev,
+                          safetyContractorResponse: val,
+                        }));
+                      } else if (entryTypeValue === EntryType.ENVIRONMENTAL) {
+                        setEditedEntry((prev) => ({
+                          ...prev,
+                          environmentContractorResponse: val,
+                        }));
+                      } else {
+                        setEditedEntry((prev) => ({
+                          ...prev,
+                          socialContractorResponse: val,
+                        }));
+                      }
+                    }}
+                    rows={3}
+                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                    placeholder="Respuesta del contratista"
+                  />
+                ) : (
+                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                    {(entryTypeValue === EntryType.SAFETY
+                      ? safetyContractorResponse
+                      : entryTypeValue === EntryType.ENVIRONMENTAL
+                      ? environmentContractorResponse
+                      : socialContractorResponse) || "Sin respuesta registrada."}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <h4 className="text-sm font-semibold text-gray-800 mb-1">
+                  Observaciones adicionales
+                </h4>
+                {isEditing ? (
+                  <textarea
+                    value={additionalObservations}
+                    onChange={(e) =>
+                      setEditedEntry((prev) => ({
+                        ...prev,
+                        additionalObservations: e.target.value,
+                      }))
+                    }
+                    rows={3}
+                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                    placeholder="Observaciones adicionales"
+                  />
+                ) : (
+                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                    {additionalObservations || "Sin observaciones."}
+                  </p>
+                )}
+              </div>
+            </div>
           )}
 
           {showGeneralSections && (
