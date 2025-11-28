@@ -269,20 +269,29 @@ const LoginScreen: React.FC = () => {
       await login(email, password);
     } catch (error: any) {
       console.error("LoginScreen: Error durante el login", error);
-      // Mejorar mensaje de error para credenciales inválidas
-      const errorMessage = error?.message || "";
-      console.log("LoginScreen: Error message:", errorMessage, "Status:", error?.statusCode);
-      // Limpiar el contextError para que no sobrescriba nuestro mensaje mejorado
+      const rawMessage = error?.message || error?.error || "";
+      const statusCode = error?.statusCode || error?.status || error?.response?.status;
+      const attemptsRemaining = error?.attemptsRemaining;
+
+      const normalized = rawMessage.toLowerCase();
+      let finalMessage =
+        normalized.includes("credenciales") ||
+        normalized.includes("invalid") ||
+        statusCode === 401
+          ? "Credenciales inválidas. Revisa tu correo y contraseña e inténtalo nuevamente."
+          : rawMessage || "Error al iniciar sesión. Intenta nuevamente.";
+
+      if (statusCode === 423) {
+        finalMessage =
+          rawMessage ||
+          "Cuenta bloqueada temporalmente por intentos fallidos. Intenta más tarde o restablece tu contraseña.";
+      }
+
+      if (typeof attemptsRemaining === "number") {
+        finalMessage += ` Intentos restantes: ${attemptsRemaining}.`;
+      }
+
       clearError();
-      const finalMessage = (
-        errorMessage.toLowerCase().includes("credenciales") ||
-        errorMessage.toLowerCase().includes("invalid") ||
-        error?.statusCode === 401
-      ) 
-        ? "Revisa tus datos de acceso e intenta nuevamente."
-        : (errorMessage || "Error al iniciar sesión. Intenta nuevamente.");
-      
-      console.log("LoginScreen: Setting formError to:", finalMessage);
       setFormError(finalMessage);
     }
   };
