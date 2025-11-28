@@ -635,6 +635,162 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             />
           </div>
 
+          {/* Firmantes responsables */}
+          <div>
+            <h4 className="text-sm font-medium text-gray-700 mb-1">
+              Firmantes responsables
+            </h4>
+            <p className="text-xs text-gray-500 mb-2">
+              Selecciona a quienes deben firmar la anotación. Puedes quitar al autor si solo va a cargar la bitácora.
+            </p>
+            <div className="border border-gray-200 rounded-md divide-y max-h-48 overflow-y-auto">
+              {sortedUsers.map((user) => {
+                const isAuthor = currentUser?.id === user.id;
+                const isChecked = selectedSignerIds.includes(user.id);
+                return (
+                  <label
+                    key={user.id}
+                    className="flex items-start gap-3 px-3 py-2 text-sm text-gray-700"
+                  >
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-4 w-4 text-brand-primary border-gray-300 rounded focus:ring-brand-primary"
+                      checked={isChecked}
+                      onChange={(event) =>
+                        toggleSigner(user.id, event.target.checked)
+                      }
+                    />
+                    <span>
+                      <span className="font-semibold text-gray-900">
+                        {user.fullName}
+                      </span>
+                      {user.cargo ? (
+                        <span className="block text-xs text-gray-500">
+                          {user.cargo}
+                        </span>
+                      ) : user.projectRole ? (
+                        <span className="block text-xs text-gray-500">
+                          {getFullRoleName(user.projectRole, user.entity)}
+                        </span>
+                      ) : null}
+                      {isAuthor && (
+                        <span className="block text-xs text-green-600 font-medium">
+                          Autor de la bitácora
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Adjuntar archivos */}
+          <div>
+            <label
+              htmlFor="file-upload-entry"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Adjuntar archivos
+            </label>
+            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+              <div className="space-y-1 text-center">
+                <div className="flex text-sm text-gray-600">
+                  <label
+                    htmlFor="file-upload-entry"
+                    className="relative cursor-pointer bg-white rounded-md font-medium text-brand-primary hover:text-brand-secondary focus-within:outline-none"
+                  >
+                    <span>Selecciona archivos</span>
+                    <input
+                      id="file-upload-entry"
+                      name="file-upload-entry"
+                      type="file"
+                      className="sr-only"
+                      onChange={handleFileChange}
+                      multiple
+                    />
+                  </label>
+                  <p className="pl-1">o arrastra y suelta</p>
+                </div>
+                <p className="text-xs text-gray-500">
+                  PDF, imágenes u otros archivos — máximo 10MB
+                </p>
+              </div>
+            </div>
+            {files.length > 0 && (
+              <div className="mt-2 space-y-2">
+                {files.map((file, index) => (
+                  <div
+                    key={`${file.name}-${index}`}
+                    className="flex items-center justify-between text-sm p-2 bg-gray-50 border rounded"
+                  >
+                    <span className="truncate font-medium">{file.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeFile(file)}
+                      className="text-red-500 hover:text-red-700 ml-2"
+                    >
+                      <XMarkIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Sección de fotos */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Fotos del día
+            </label>
+            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+              <div className="space-y-1 text-center">
+                <div className="flex text-sm text-gray-600">
+                  <label
+                    htmlFor="photo-upload-entry"
+                    className="relative cursor-pointer bg-white rounded-md font-medium text-brand-primary hover:text-brand-secondary focus-within:outline-none"
+                  >
+                    <span>Selecciona fotos</span>
+                    <input
+                      id="photo-upload-entry"
+                      name="photo-upload-entry"
+                      type="file"
+                      className="sr-only"
+                      onChange={handlePhotoChange}
+                      multiple
+                      accept="image/*"
+                    />
+                  </label>
+                  <p className="pl-1">o arrastra y suelta</p>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Solo imágenes — máximo 5MB cada una
+                </p>
+              </div>
+            </div>
+            {photos.length > 0 && (
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {photos.map((photo, index) => (
+                  <div key={`${photo.name}-${index}`} className="relative group">
+                    <img
+                      src={URL.createObjectURL(photo)}
+                      alt={`Foto ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-lg border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(index)}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <XMarkIcon className="h-4 w-4" />
+                    </button>
+                    <p className="text-xs text-gray-500 mt-1 truncate">{photo.name}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="secondary" onClick={onClose}>
               Cancelar
