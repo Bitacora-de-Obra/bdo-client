@@ -84,8 +84,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         const profile = await api.auth.getProfile();
         setUser(profile);
-      } catch (err) {
+      } catch (err: any) {
         setUser(null);
+        const apiErr = err as any;
+        if (apiErr?.message) {
+          console.warn("[Auth] No se pudo cargar el perfil:", apiErr.message);
+        }
       }
     };
 
@@ -93,8 +97,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const response = await api.auth.login(email, password);
-    setUser(response.user);
+    try {
+      const response = await api.auth.login(email, password);
+      setUser(response.user);
+    } catch (err: any) {
+      const apiErr = err as any;
+      // Propaga el mensaje claro para mostrar al usuario
+      throw new Error(apiErr?.message || apiErr?.error || "Error al iniciar sesión");
+    }
   }, []);
 
   const logout = useCallback(async () => {
