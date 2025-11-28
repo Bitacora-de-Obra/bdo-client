@@ -104,6 +104,11 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   );
   const [isSaving, setIsSaving] = useState(false);
 
+  const isSpecialType =
+    entryType === EntryType.SAFETY ||
+    entryType === EntryType.ENVIRONMENTAL ||
+    entryType === EntryType.SOCIAL;
+
   const resetForm = () => {
     setEntryDate("");
     setEntryType(EntryType.GENERAL);
@@ -396,7 +401,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
       )
       .filter((user): user is User => Boolean(user));
 
-    const weatherReport = buildWeatherReport();
+    const weatherReport = isSpecialType ? null : buildWeatherReport();
     const skipAuthorAsSigner =
       Boolean(currentUser) && !selectedSignerIds.includes(currentUser!.id);
 
@@ -419,37 +424,52 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           notes: entry.notes || undefined,
         }));
 
-    const normalizedContractorPersonnel = normalizePersonnelDraft(contractorPersonnel);
-    const normalizedInterventoriaPersonnel = normalizePersonnelDraft(interventoriaPersonnel);
+    const normalizedContractorPersonnel = isSpecialType
+      ? []
+      : normalizePersonnelDraft(contractorPersonnel);
+    const normalizedInterventoriaPersonnel = isSpecialType
+      ? []
+      : normalizePersonnelDraft(interventoriaPersonnel);
 
-    const normalizedEquipmentResources = equipmentResources
-      .map((entry) => ({
-        name: entry.name.trim(),
-        status: entry.status.trim(),
-        notes: entry.notes.trim(),
-      }))
-      .filter((entry) => entry.name)
-      .map((entry) => ({
-        name: entry.name,
-        status: entry.status || undefined,
-        notes: entry.notes || undefined,
-      }));
+    const normalizedEquipmentResources = isSpecialType
+      ? []
+      : equipmentResources
+          .map((entry) => ({
+            name: entry.name.trim(),
+            status: entry.status.trim(),
+            notes: entry.notes.trim(),
+          }))
+          .filter((entry) => entry.name)
+          .map((entry) => ({
+            name: entry.name,
+            status: entry.status || undefined,
+            notes: entry.notes || undefined,
+          }));
 
     // Convertir lista de materiales a texto formateado
-    const normalizedMaterials = materialsUsed
-      .map((entry) => ({
-        material: entry.material.trim(),
-        quantity: entry.quantity.trim(),
-        unit: entry.unit.trim(),
-      }))
-      .filter((entry) => entry.material)
-      .map((entry) => {
-        const parts = [entry.material];
-        if (entry.quantity) parts.push(entry.quantity);
-        if (entry.unit) parts.push(entry.unit);
-        return parts.join(" - ");
-      })
-      .join("\n");
+    const normalizedMaterials = isSpecialType
+      ? ""
+      : materialsUsed
+          .map((entry) => ({
+            material: entry.material.trim(),
+            quantity: entry.quantity.trim(),
+            unit: entry.unit.trim(),
+          }))
+          .filter((entry) => entry.material)
+          .map((entry) => {
+            const parts = [entry.material];
+            if (entry.quantity) parts.push(entry.quantity);
+            if (entry.unit) parts.push(entry.unit);
+            return parts.join(" - ");
+          })
+          .join("\n");
+
+    const contractorResponse =
+      entryType === EntryType.SAFETY
+        ? safetyContractorResponse
+        : entryType === EntryType.ENVIRONMENTAL
+        ? environmentContractorResponse
+        : socialContractorResponse;
 
     setIsSaving(true);
     try {
@@ -469,24 +489,27 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           contractorPersonnel: normalizedContractorPersonnel,
           interventoriaPersonnel: normalizedInterventoriaPersonnel,
           equipmentResources: normalizedEquipmentResources,
-          executedActivities: linesToItems(executedActivitiesText),
-          executedQuantities: linesToItems(executedQuantitiesText),
-          scheduledActivities: linesToItems(scheduledActivitiesText),
-          qualityControls: linesToItems(qualityControlsText),
-          materialsReceived: linesToItems(materialsReceivedText),
-          safetyNotes: linesToItems(safetyNotesText),
-          projectIssues: linesToItems(projectIssuesText),
-          siteVisits: linesToItems(siteVisitsText),
-          contractorObservations: contractorObservations.trim(),
-          interventoriaObservations: interventoriaObservations.trim(),
-          safetyFindings: safetyFindings.trim(),
-          safetyContractorResponse: safetyContractorResponse.trim(),
-          environmentFindings: environmentFindings.trim(),
-          environmentContractorResponse: environmentContractorResponse.trim(),
-          socialActivities: linesToItems(socialActivitiesText),
-          socialObservations: socialObservations.trim(),
-          socialContractorResponse: socialContractorResponse.trim(),
-          socialPhotoSummary: socialPhotoSummary.trim(),
+          executedActivities: isSpecialType ? [] : linesToItems(executedActivitiesText),
+          executedQuantities: isSpecialType ? [] : linesToItems(executedQuantitiesText),
+          scheduledActivities: isSpecialType ? [] : linesToItems(scheduledActivitiesText),
+          qualityControls: isSpecialType ? [] : linesToItems(qualityControlsText),
+          materialsReceived: isSpecialType ? [] : linesToItems(materialsReceivedText),
+          safetyNotes: isSpecialType ? [] : linesToItems(safetyNotesText),
+          projectIssues: isSpecialType ? [] : linesToItems(projectIssuesText),
+          siteVisits: isSpecialType ? [] : linesToItems(siteVisitsText),
+          contractorObservations: isSpecialType ? "" : contractorObservations.trim(),
+          interventoriaObservations: isSpecialType ? "" : interventoriaObservations.trim(),
+          safetyFindings: isSpecialType ? "" : safetyFindings.trim(),
+          safetyContractorResponse:
+            entryType === EntryType.SAFETY ? contractorResponse.trim() : "",
+          environmentFindings: isSpecialType ? "" : environmentFindings.trim(),
+          environmentContractorResponse:
+            entryType === EntryType.ENVIRONMENTAL ? contractorResponse.trim() : "",
+          socialActivities: isSpecialType ? [] : linesToItems(socialActivitiesText),
+          socialObservations: isSpecialType ? "" : socialObservations.trim(),
+          socialContractorResponse:
+            entryType === EntryType.SOCIAL ? contractorResponse.trim() : "",
+          socialPhotoSummary: isSpecialType ? "" : socialPhotoSummary.trim(),
           activityStartDate: startOfDay.toISOString(),
           activityEndDate: endOfDay.toISOString(),
           subject: "",
@@ -511,6 +534,119 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
       setIsSaving(false);
     }
   };
+
+  if (isSpecialType) {
+    const contractorLabel =
+      entryType === EntryType.SAFETY
+        ? "Respuesta del contratista (SST)"
+        : entryType === EntryType.ENVIRONMENTAL
+        ? "Respuesta del contratista (Ambiental)"
+        : "Respuesta del contratista (Social)";
+
+    return (
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Registrar Bitácora Diaria"
+        size="xl"
+      >
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {validationError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
+              {validationError}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Input
+              label="Fecha de la bitácora"
+              type="date"
+              value={entryDate}
+              onChange={(e) => setEntryDate(e.target.value)}
+              required
+            />
+            <Select
+              label="Tipo de bitácora"
+              value={entryType}
+              onChange={(e) => setEntryType(e.target.value as EntryType)}
+            >
+              <option value={EntryType.SAFETY}>SST</option>
+              <option value={EntryType.ENVIRONMENTAL}>Ambiental</option>
+              <option value={EntryType.SOCIAL}>Social</option>
+            </Select>
+          </div>
+
+          <Input
+            label="Título / Asunto"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Ej. Registro diario"
+          />
+
+          <div>
+            <h4 className="text-sm font-semibold text-gray-800 mb-1">
+              Registro diario de actividades
+            </h4>
+            <textarea
+              value={activitiesPerformed}
+              onChange={(e) => setActivitiesPerformed(e.target.value)}
+              rows={4}
+              className="w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+              placeholder="Describe las actividades del día"
+              required
+            />
+          </div>
+
+          <div>
+            <h4 className="text-sm font-semibold text-gray-800 mb-1">
+              {contractorLabel}
+            </h4>
+            <textarea
+              value={
+                entryType === EntryType.SAFETY
+                  ? safetyContractorResponse
+                  : entryType === EntryType.ENVIRONMENTAL
+                  ? environmentContractorResponse
+                  : socialContractorResponse
+              }
+              onChange={(e) => {
+                const val = e.target.value;
+                if (entryType === EntryType.SAFETY) setSafetyContractorResponse(val);
+                else if (entryType === EntryType.ENVIRONMENTAL)
+                  setEnvironmentContractorResponse(val);
+                else setSocialContractorResponse(val);
+              }}
+              rows={3}
+              className="w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+              placeholder="Respuesta del contratista"
+            />
+          </div>
+
+          <div>
+            <h4 className="text-sm font-semibold text-gray-800 mb-1">
+              Observaciones adicionales
+            </h4>
+            <textarea
+              value={additionalObservations}
+              onChange={(e) => setAdditionalObservations(e.target.value)}
+              rows={3}
+              className="w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+              placeholder="Observaciones adicionales"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="secondary" onClick={onClose}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={isSaving}>
+              {isSaving ? "Guardando..." : "Guardar"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+    );
+  }
 
   return (
     <Modal
