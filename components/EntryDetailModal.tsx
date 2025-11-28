@@ -1923,211 +1923,223 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
         </dl>
 
           {/* Summary */}
-          <div>
-            <h4 className="text-md font-semibold text-gray-800">
-              Resumen general del día
-            </h4>
-            {isEditing ? (
-              <textarea
-                name="description"
-                value={description}
-                onChange={handleInputChange}
-                rows={4}
-                className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-              />
-            ) : (
-              <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
-                {description || "Sin resumen registrado."}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <h4 className="text-md font-semibold text-gray-800">
-              Condiciones climáticas
-            </h4>
-            {isEditing ? (
-              <div className="mt-2 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <Input
-                    label="Resumen"
-                    value={weatherSummaryDraft}
-                    onChange={(e) => setWeatherSummaryDraft(e.target.value)}
-                    placeholder="Ej. Cielo parcialmente nublado"
+          {!isSpecialType && (
+            <>
+              <div>
+                <h4 className="text-md font-semibold text-gray-800">
+                  Resumen general del día
+                </h4>
+                {isEditing ? (
+                  <textarea
+                    name="description"
+                    value={description}
+                    onChange={handleInputChange}
+                    rows={4}
+                    className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
                   />
-                  <Input
-                    label="Temperatura"
-                    value={weatherTemperatureDraft}
-                    onChange={(e) => setWeatherTemperatureDraft(e.target.value)}
-                    placeholder="Ej. 22°C"
-                  />
-                </div>
-                <textarea
-                  value={weatherNotesDraft}
-                  onChange={(e) => setWeatherNotesDraft(e.target.value)}
-                  rows={2}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                  placeholder="Observaciones adicionales sobre el clima"
-                />
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-gray-700">
-                      Lluvias registradas
-                    </p>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={addRainEventDraftRow}
-                    >
-                      Añadir intervalo
-                    </Button>
-                  </div>
-                  {rainEventsDraft.map((event, index) => (
-                    <div
-                      key={`rain-edit-${index}`}
-                      className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end"
-                    >
-                      <Input
-                        label={index === 0 ? "Inicio" : undefined}
-                        type="time"
-                        value={event.start}
-                        onChange={(e) =>
-                          updateRainEventDraftRow(index, "start", e.target.value)
-                        }
-                      />
-                      <Input
-                        label={index === 0 ? "Fin" : undefined}
-                        type="time"
-                        value={event.end}
-                        onChange={(e) =>
-                          updateRainEventDraftRow(index, "end", e.target.value)
-                        }
-                      />
-                      {rainEventsDraft.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeRainEventDraftRow(index)}
-                          className="text-red-500 hover:text-red-700 text-xs font-semibold sm:justify-self-start sm:self-center"
-                        >
-                          <span className="inline-flex items-center gap-1">
-                            <XMarkIcon className="h-4 w-4" /> Quitar
-                          </span>
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="mt-2 text-sm text-gray-700 space-y-1">
-                <p>
-                  <span className="font-medium">Resumen: </span>
-                  {weatherReportData.summary || "No registrado"}
-                </p>
-                <p>
-                  <span className="font-medium">Temperatura: </span>
-                  {weatherReportData.temperature || "No registrada"}
-                </p>
-                <div>
-                  <span className="font-medium">Lluvias registradas: </span>
-                  {weatherReportData.rainEvents?.length ? (
-                    <ul className="mt-1 list-disc list-inside space-y-1">
-                      {weatherReportData.rainEvents.map((event, idx) => (
-                        <li key={`rain-${idx}`}>{event.start || "-"} a {event.end || "-"}</li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <span>No registradas.</span>
-                  )}
-                </div>
-                {weatherReportData.notes && (
-                  <p>
-                    <span className="font-medium">Notas: </span>
-                    {weatherReportData.notes}
+                ) : (
+                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                    {description || "Sin resumen registrado."}
                   </p>
                 )}
               </div>
-            )}
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div>
-              <h4 className="text-md font-semibold text-gray-800">
-                Actividades realizadas
-              </h4>
-              {isEditing ? (
-                <textarea
-                  name="activitiesPerformed"
-                  value={activitiesPerformed}
-                  onChange={handleInputChange}
-                  rows={4}
-                  className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                />
-              ) : (
-                <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
-                  {activitiesPerformed || "Sin registro."}
-                </p>
-              )}
-            </div>
-            <div>
-              <h4 className="text-md font-semibold text-gray-800">
-                Materiales utilizados
-              </h4>
-              {isEditing ? (
-                <textarea
-                  name="materialsUsed"
-                  value={materialsUsed}
-                  onChange={handleInputChange}
-                  rows={4}
-                  className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                />
-              ) : (
-                <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
-                  {materialsUsed || "Sin registro."}
-                </p>
-              )}
-            </div>
-          </div>
+              <div>
+                <h4 className="text-md font-semibold text-gray-800">
+                  Condiciones climáticas
+                </h4>
+                {isEditing ? (
+                  <div className="mt-2 space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <Input
+                        label="Resumen"
+                        value={weatherSummaryDraft}
+                        onChange={(e) => setWeatherSummaryDraft(e.target.value)}
+                        placeholder="Ej. Cielo parcialmente nublado"
+                      />
+                      <Input
+                        label="Temperatura"
+                        value={weatherTemperatureDraft}
+                        onChange={(e) =>
+                          setWeatherTemperatureDraft(e.target.value)
+                        }
+                        placeholder="Ej. 22°C"
+                      />
+                    </div>
+                    <textarea
+                      value={weatherNotesDraft}
+                      onChange={(e) => setWeatherNotesDraft(e.target.value)}
+                      rows={2}
+                      className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                      placeholder="Observaciones adicionales sobre el clima"
+                    />
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-medium text-gray-700">
+                          Lluvias registradas
+                        </p>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={addRainEventDraftRow}
+                        >
+                          Añadir intervalo
+                        </Button>
+                      </div>
+                      {rainEventsDraft.map((event, index) => (
+                        <div
+                          key={`rain-edit-${index}`}
+                          className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end"
+                        >
+                          <Input
+                            label={index === 0 ? "Inicio" : undefined}
+                            type="time"
+                            value={event.start}
+                            onChange={(e) =>
+                              updateRainEventDraftRow(
+                                index,
+                                "start",
+                                e.target.value
+                              )
+                            }
+                          />
+                          <Input
+                            label={index === 0 ? "Fin" : undefined}
+                            type="time"
+                            value={event.end}
+                            onChange={(e) =>
+                              updateRainEventDraftRow(index, "end", e.target.value)
+                            }
+                          />
+                          {rainEventsDraft.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeRainEventDraftRow(index)}
+                              className="text-red-500 hover:text-red-700 text-xs font-semibold sm:justify-self-start sm:self-center"
+                            >
+                              <span className="inline-flex items-center gap-1">
+                                <XMarkIcon className="h-4 w-4" /> Quitar
+                              </span>
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-2 text-sm text-gray-700 space-y-1">
+                    <p>
+                      <span className="font-medium">Resumen: </span>
+                      {weatherReportData.summary || "No registrado"}
+                    </p>
+                    <p>
+                      <span className="font-medium">Temperatura: </span>
+                      {weatherReportData.temperature || "No registrada"}
+                    </p>
+                    <div>
+                      <span className="font-medium">Lluvias registradas: </span>
+                      {weatherReportData.rainEvents?.length ? (
+                        <ul className="mt-1 list-disc list-inside space-y-1">
+                          {weatherReportData.rainEvents.map((event, idx) => (
+                            <li key={`rain-${idx}`}>
+                              {event.start || "-"} a {event.end || "-"}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <span>No registradas.</span>
+                      )}
+                    </div>
+                    {weatherReportData.notes && (
+                      <p>
+                        <span className="font-medium">Notas: </span>
+                        {weatherReportData.notes}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <div>
-              <h4 className="text-md font-semibold text-gray-800">
-                Personal en obra
-              </h4>
-              {isEditing ? (
-                <textarea
-                  name="workforce"
-                  value={workforce}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                />
-              ) : (
-                <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
-                  {workforce || "Sin registro."}
-                </p>
-              )}
-            </div>
-            <div>
-              <h4 className="text-md font-semibold text-gray-800">
-                Condiciones climáticas
-              </h4>
-              {isEditing ? (
-                <textarea
-                  name="weatherConditions"
-                  value={weatherConditions}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                />
-              ) : (
-                <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
-                  {weatherConditions || "Sin registro."}
-                </p>
-              )}
-            </div>
-          </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-md font-semibold text-gray-800">
+                    Actividades realizadas
+                  </h4>
+                  {isEditing ? (
+                    <textarea
+                      name="activitiesPerformed"
+                      value={activitiesPerformed}
+                      onChange={handleInputChange}
+                      rows={4}
+                      className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                    />
+                  ) : (
+                    <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                      {activitiesPerformed || "Sin registro."}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <h4 className="text-md font-semibold text-gray-800">
+                    Materiales utilizados
+                  </h4>
+                  {isEditing ? (
+                    <textarea
+                      name="materialsUsed"
+                      value={materialsUsed}
+                      onChange={handleInputChange}
+                      rows={4}
+                      className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                    />
+                  ) : (
+                    <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                      {materialsUsed || "Sin registro."}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-md font-semibold text-gray-800">
+                    Personal en obra
+                  </h4>
+                  {isEditing ? (
+                    <textarea
+                      name="workforce"
+                      value={workforce}
+                      onChange={handleInputChange}
+                      rows={3}
+                      className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                    />
+                  ) : (
+                    <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                      {workforce || "Sin registro."}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <h4 className="text-md font-semibold text-gray-800">
+                    Condiciones climáticas
+                  </h4>
+                  {isEditing ? (
+                    <textarea
+                      name="weatherConditions"
+                      value={weatherConditions}
+                      onChange={handleInputChange}
+                      rows={3}
+                      className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                    />
+                  ) : (
+                    <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                      {weatherConditions || "Sin registro."}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
 
           {showGeneralSections && (
           <div>
@@ -2470,7 +2482,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
             <div className="space-y-4">
               <div>
                 <h4 className="text-sm font-semibold text-gray-800 mb-1">
-                  Resumen general del día
+                  Registro diario de actividades
                 </h4>
                 {isEditing ? (
                   <textarea
@@ -2483,105 +2495,6 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                 ) : (
                   <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
                     {description || "Sin resumen registrado."}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <h4 className="text-sm font-semibold text-gray-800 mb-1">
-                  Respuesta del contratista
-                </h4>
-                {isEditing ? (
-                  <textarea
-                    value={
-                      entryTypeValue === EntryType.SAFETY
-                        ? safetyContractorResponse
-                        : entryTypeValue === EntryType.ENVIRONMENTAL
-                        ? environmentContractorResponse
-                        : socialContractorResponse
-                    }
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (entryTypeValue === EntryType.SAFETY) {
-                        setEditedEntry((prev) => ({
-                          ...prev,
-                          safetyContractorResponse: val,
-                        }));
-                      } else if (entryTypeValue === EntryType.ENVIRONMENTAL) {
-                        setEditedEntry((prev) => ({
-                          ...prev,
-                          environmentContractorResponse: val,
-                        }));
-                      } else {
-                        setEditedEntry((prev) => ({
-                          ...prev,
-                          socialContractorResponse: val,
-                        }));
-                      }
-                    }}
-                    rows={3}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                    placeholder="Respuesta del contratista"
-                  />
-                ) : (
-                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
-                    {(entryTypeValue === EntryType.SAFETY
-                      ? safetyContractorResponse
-                      : entryTypeValue === EntryType.ENVIRONMENTAL
-                      ? environmentContractorResponse
-                      : socialContractorResponse) || "Sin respuesta registrada."}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <h4 className="text-sm font-semibold text-gray-800 mb-1">
-                  Observaciones adicionales
-                </h4>
-                {isEditing ? (
-                  <textarea
-                    value={additionalObservations}
-                    onChange={(e) =>
-                      setEditedEntry((prev) => ({
-                        ...prev,
-                        additionalObservations: e.target.value,
-                      }))
-                    }
-                    rows={3}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                    placeholder="Observaciones adicionales"
-                  />
-                ) : (
-                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
-                    {additionalObservations || "Sin observaciones."}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {isSpecialType && (
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-sm font-semibold text-gray-800 mb-1">
-                  Registro diario de actividades
-                </h4>
-                {isEditing ? (
-                  <textarea
-                    value={activitiesPerformed}
-                    onChange={(e) =>
-                      setEditedEntry((prev) => ({
-                        ...prev,
-                        activitiesPerformed: e.target.value,
-                      }))
-                    }
-                    rows={4}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                    placeholder="Describe las actividades del día"
-                  />
-                ) : (
-                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
-                    {activitiesPerformed || "Sin registro."}
                   </p>
                 )}
               </div>
@@ -2903,9 +2816,10 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
             </div>
           </div>
 
-        <div>
-          <h4 className="text-md font-semibold text-gray-800">
-            Observaciones adicionales
+        {!isSpecialType && (
+          <div>
+            <h4 className="text-md font-semibold text-gray-800">
+              Observaciones adicionales
             </h4>
             {isEditing ? (
               <textarea
@@ -2921,6 +2835,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
               </p>
             )}
           </div>
+        )}
           {isEditing && (
             <div>
               <h4 className="text-md font-semibold text-gray-800">
