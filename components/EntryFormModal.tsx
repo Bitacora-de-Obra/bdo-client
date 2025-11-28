@@ -479,11 +479,11 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           description: summary.trim(),
           entryDate: entryDateIso,
           materialsUsed: normalizedMaterials || "",
-          activitiesPerformed: activitiesPerformed.trim() || "",
-          workforce: "",
-          weatherConditions: "",
+          activitiesPerformed: isSpecialType ? "" : activitiesPerformed.trim(),
+          workforce: isSpecialType ? "" : "",
+          weatherConditions: isSpecialType ? "" : "",
           additionalObservations: additionalObservations.trim(),
-          scheduleDay: scheduleDay.trim(),
+          scheduleDay: isSpecialType ? "" : scheduleDay.trim(),
           locationDetails: locationDetails.trim(),
           weatherReport,
           contractorPersonnel: normalizedContractorPersonnel,
@@ -585,14 +585,14 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
 
           <div>
             <h4 className="text-sm font-semibold text-gray-800 mb-1">
-              Registro diario de actividades
+              Resumen general del día
             </h4>
             <textarea
-              value={activitiesPerformed}
-              onChange={(e) => setActivitiesPerformed(e.target.value)}
+              value={summary}
+              onChange={(e) => setSummary(e.target.value)}
               rows={4}
               className="w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-              placeholder="Describe las actividades del día"
+              placeholder="Describe las actividades y hallazgos del día"
               required
             />
           </div>
