@@ -471,7 +471,7 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
       const semanaNumber = Number(row.semana);
       const key = Number.isFinite(semanaNumber) ? semanaNumber : grouped.size + 1;
       const existing = grouped.get(key) || {
-        label: `Semana ${key}`,
+        label: String(key),
         planned: 0,
         executed: 0,
       };

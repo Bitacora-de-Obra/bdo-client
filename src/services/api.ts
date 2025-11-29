@@ -419,8 +419,8 @@ async function apiFetch(
       throw handleApiError({
         statusCode: response.status,
         message:
-          errorData.error ||
           errorData.message ||
+          errorData.error ||
           `Error HTTP: ${response.status}`,
         details: errorData.details,
         code: errorData.code,
