@@ -420,8 +420,10 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
     }
     const preliminar = contractorProgress.acumulado?.preliminar || { proyectado: 0, ejecutado: 0 };
     const ejecucion = contractorProgress.acumulado?.ejecucion || { proyectado: 0, ejecutado: 0 };
-    const planned = Number((preliminar.proyectado + ejecucion.proyectado).toFixed(2));
-    const executed = Number((preliminar.ejecutado + ejecucion.ejecutado).toFixed(2));
+    const rawPlanned = preliminar.proyectado + ejecucion.proyectado;
+    const rawExecuted = preliminar.ejecutado + ejecucion.ejecutado;
+    const planned = Number(Math.min(100, rawPlanned).toFixed(2));
+    const executed = Number(Math.min(100, rawExecuted).toFixed(2));
     return {
       planned,
       executed,
@@ -494,10 +496,16 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
     }
     const total = {
       proyectado: Number(
-        (contractorSummary.preliminar.proyectado + contractorSummary.ejecucion.proyectado).toFixed(2)
+        Math.min(
+          100,
+          contractorSummary.preliminar.proyectado + contractorSummary.ejecucion.proyectado
+        ).toFixed(2)
       ),
       ejecutado: Number(
-        (contractorSummary.preliminar.ejecutado + contractorSummary.ejecucion.ejecutado).toFixed(2)
+        Math.min(
+          100,
+          contractorSummary.preliminar.ejecutado + contractorSummary.ejecucion.ejecutado
+        ).toFixed(2)
       ),
     };
     return {
