@@ -26,6 +26,12 @@ type ProjectTaskImportPayload = {
   cost?: number;
 };
 
+type SCurvePoint = {
+  label: string; // semana o fecha
+  planned: number;
+  executed: number;
+};
+
 const formatFullDate = (date: Date | null) =>
   date
     ? date.toLocaleDateString('es-CO', {
@@ -144,6 +150,25 @@ const parseMsProjectXml = async (file: File): Promise<ProjectTaskImportPayload[]
   return tasks;
 };
 
+// Parsear CSV simple con columnas: label, planned, executed
+const parseSCurveCsv = async (file: File): Promise<SCurvePoint[]> => {
+  const text = await file.text();
+  const lines = text
+    .split(/\\r?\\n/)
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+  const points: SCurvePoint[] = [];
+  for (const line of lines) {
+    const parts = line.split(/[,;\\t]/).map((p) => p.trim());
+    if (parts.length < 3) continue;
+    const [label, plannedStr, executedStr] = parts;
+    const planned = parseFloat(plannedStr.replace('%', '').replace(',', '.')) || 0;
+    const executed = parseFloat(executedStr.replace('%', '').replace(',', '.')) || 0;
+    points.push({ label, planned, executed });
+  }
+  return points;
+};
+
 // Helper function to build the task tree from a flat list with outline levels
 const buildTaskTree = (tasks: Omit<ProjectTask, 'children'>[]): ProjectTask[] => {
   // Asegúrate de que las tareas estén ordenadas por outlineLevel y luego, idealmente, por su orden original si es posible
@@ -226,6 +251,7 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
   const { canEditContent } = usePermissions();
   const readOnly = !canEditContent;
   const { showToast } = useToast();
+  const [sCurvePoints, setSCurvePoints] = useState<SCurvePoint[]>([]);
 
 
   // Este useEffect reconstruye el árbol cuando flatTasks cambia
@@ -241,6 +267,21 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
       setHierarchicalTasks([]); // Limpia si no hay tareas o no es un array
     }
   }, [flatTasks]);
+
+  const handleSCurveUpload = async (file: File) => {
+    try {
+      const points = await parseSCurveCsv(file);
+      if (!points.length) {
+        setUploadStatus({ type: 'error', message: 'No se encontraron datos válidos en el CSV.' });
+        return;
+      }
+      setSCurvePoints(points);
+      setUploadStatus({ type: 'success', message: `Curva S cargada (${points.length} puntos).` });
+    } catch (err: any) {
+      const message = err?.message || 'No se pudo procesar el CSV de la curva S.';
+      setUploadStatus({ type: 'error', message });
+    }
+  };
 
   const handleUpdateGanttTasks = async (taskId: string, newDates: { startDate: Date; endDate: Date }) => {
     try {
@@ -425,6 +466,102 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
     }
   };
 
+  const renderSCurveChart = () => {
+    if (!sCurvePoints.length) {
+      return (
+        <div className="text-sm text-gray-500 bg-gray-50 border border-dashed border-gray-200 rounded-md p-3">
+          Sube un CSV con columnas: <strong>Semana/Fecha, %Programado, %Ejecutado</strong> (separador coma, punto y coma o tab).
+        </div>
+      );
+    }
+
+    const width = 720;
+    const height = 320;
+    const padding = 50;
+    const values = sCurvePoints.flatMap((p) => [p.planned, p.executed]);
+    const maxValue = Math.max(100, Math.ceil(Math.max(...values)));
+    const minValue = Math.min(0, Math.floor(Math.min(...values)));
+    const xStep = (width - padding * 2) / Math.max(1, sCurvePoints.length - 1);
+
+    const toY = (v: number) =>
+      height - padding - ((v - minValue) / (maxValue - minValue)) * (height - padding * 2);
+    const toX = (idx: number) => padding + idx * xStep;
+
+    const plannedPath = sCurvePoints
+      .map((p, i) => `${i === 0 ? 'M' : 'L'} ${toX(i)} ${toY(p.planned)}`)
+      .join(' ');
+    const executedPath = sCurvePoints
+      .map((p, i) => `${i === 0 ? 'M' : 'L'} ${toX(i)} ${toY(p.executed)}`)
+      .join(' ');
+
+    const yTicks = [];
+    for (let t = minValue; t <= maxValue; t += 10) {
+      yTicks.push(t);
+    }
+
+    return (
+      <div className="space-y-3">
+        <svg viewBox={`0 0 ${width} ${height}`} className="w-full border border-gray-200 rounded-lg bg-white">
+          {/* Grid lines and Y axis labels */}
+          {yTicks.map((val, idx) => {
+            const y = toY(val);
+            return (
+              <g key={idx}>
+                <line x1={padding} y1={y} x2={width - padding} y2={y} stroke="#e5e7eb" strokeDasharray="4 4" />
+                <text x={padding - 10} y={y + 4} fontSize="10" textAnchor="end" fill="#6b7280">
+                  {val}%
+                </text>
+              </g>
+            );
+          })}
+          {/* X labels */}
+          {sCurvePoints.map((p, i) => (
+            <text
+              key={p.label}
+              x={toX(i)}
+              y={height - padding + 20}
+              fontSize="10"
+              textAnchor="middle"
+              fill="#6b7280"
+            >
+              {p.label}
+            </text>
+          ))}
+          {/* Planned line */}
+          <path d={plannedPath} fill="none" stroke="#1d4ed8" strokeWidth={2.5} />
+          {/* Executed line */}
+          <path d={executedPath} fill="none" stroke="#f97316" strokeWidth={2.5} />
+          {/* Legend */}
+          <g transform={`translate(${padding}, ${padding - 20})`}>
+            <rect x={0} y={-10} width={12} height={3} fill="#1d4ed8" />
+            <text x={18} y={-6} fontSize="11" fill="#1f2937">Proyectado</text>
+            <rect x={90} y={-10} width={12} height={3} fill="#f97316" />
+            <text x={106} y={-6} fontSize="11" fill="#1f2937">Ejecutado</text>
+          </g>
+        </svg>
+        <div className="overflow-auto rounded-lg border border-gray-200">
+          <table className="min-w-full text-xs text-left">
+            <thead className="bg-gray-50 text-gray-600 uppercase">
+              <tr>
+                <th className="px-3 py-2">Semana/Fecha</th>
+                <th className="px-3 py-2">% Programado</th>
+                <th className="px-3 py-2">% Ejecutado</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {sCurvePoints.map((p) => (
+                <tr key={p.label} className="hover:bg-gray-50">
+                  <td className="px-3 py-2 font-medium text-gray-800">{p.label}</td>
+                  <td className="px-3 py-2 text-brand-primary font-semibold">{p.planned.toFixed(2)}%</td>
+                  <td className="px-3 py-2 text-orange-500 font-semibold">{p.executed.toFixed(2)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
   const handleDownloadPdf = async () => {
     if (!ganttExportRef.current || isGeneratingPdf) {
       return;
@@ -506,41 +643,74 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
 
       {/* Carga y Exportación */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <div className="p-4">
-              <h3 className="text-lg font-semibold text-gray-800">Cargar Cronograma de Obra</h3>
-              <p className="text-sm text-gray-500 mt-1">
-                Sube tu cronograma directamente desde MS Project en formato <strong>XML (.xml)</strong>. Esto reemplazará el cronograma actual.
-              </p>
-              {canEditContent ? (
-                <FileUpload onFileUpload={handleFileUpload} />
-              ) : (
-                <div className="mt-4 text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-md p-3">
-                  Solo los roles Editor o Admin pueden actualizar el cronograma.
-                </div>
-              )}
-            </div>
-          </Card>
-          <Card>
-            <div className="p-4">
-              <h3 className="text-lg font-semibold text-gray-800">Exportar Cronograma</h3>
-              <p className="text-sm text-gray-500 mt-1">
-                Descarga una vista completa y de alta calidad del cronograma actual en formato PDF para tus informes.
-              </p>
-              <div className="mt-4">
-                  <Button
-                    onClick={handleDownloadPdf}
-                    leftIcon={<DocumentArrowDownIcon />}
-                    // Deshabilita si no hay tareas jerárquicas o se está generando
-                    disabled={isGeneratingPdf || !Array.isArray(hierarchicalTasks) || hierarchicalTasks.length === 0}
-                    className="w-full"
-                  >
-                    {isGeneratingPdf ? 'Generando PDF...' : 'Descargar Cronograma en PDF'}
-                  </Button>
+        <Card>
+          <div className="p-4">
+            <h3 className="text-lg font-semibold text-gray-800">Cargar Cronograma de Obra</h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Sube tu cronograma directamente desde MS Project en formato <strong>XML (.xml)</strong>. Esto reemplazará el cronograma actual.
+            </p>
+            {canEditContent ? (
+              <FileUpload onFileUpload={handleFileUpload} />
+            ) : (
+              <div className="mt-4 text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-md p-3">
+                Solo los roles Editor o Admin pueden actualizar el cronograma.
               </div>
+            )}
+          </div>
+        </Card>
+        <Card>
+          <div className="p-4">
+            <h3 className="text-lg font-semibold text-gray-800">Exportar Cronograma</h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Descarga una vista completa y de alta calidad del cronograma actual en formato PDF para tus informes.
+            </p>
+            <div className="mt-4">
+              <Button
+                onClick={handleDownloadPdf}
+                leftIcon={<DocumentArrowDownIcon />}
+                disabled={isGeneratingPdf || !Array.isArray(hierarchicalTasks) || hierarchicalTasks.length === 0}
+                className="w-full"
+              >
+                {isGeneratingPdf ? 'Generando PDF...' : 'Descargar Cronograma en PDF'}
+              </Button>
             </div>
-          </Card>
+          </div>
+        </Card>
       </div>
+
+      {/* Curva S */}
+      <Card>
+        <div className="p-4 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800">Curva S (Programado vs Ejecutado)</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Importa el CSV desde la hoja <strong>CURVAS S</strong> del informe semanal. Formato: Semana/Fecha, %Programado, %Ejecutado.
+              </p>
+            </div>
+            <div>
+              <input
+                type="file"
+                accept=".csv,text/csv"
+                className="hidden"
+                id="s-curve-upload"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleSCurveUpload(file);
+                }}
+              />
+              <Button
+                leftIcon={<DocumentArrowDownIcon />}
+                onClick={() => document.getElementById("s-curve-upload")?.click()}
+                variant="secondary"
+              >
+                Cargar CSV Curva S
+              </Button>
+            </div>
+          </div>
+          {renderSCurveChart()}
+        </div>
+      </Card>
 
       {uploadStatus && (
         <div
