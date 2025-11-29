@@ -609,6 +609,36 @@ export interface Report {
   updatedAt?: string;
 }
 
+export interface ContractorProgressRow {
+  semana: number;
+  etapa: 'preliminar' | 'ejecucion';
+  proyectado: number;
+  ejecutado: number;
+}
+
+export interface ContractorProgressTotals {
+  proyectado: number;
+  ejecutado: number;
+}
+
+export interface ContractorProgressSnapshot {
+  id: string;
+  tenantId: string;
+  reportId?: string | null;
+  weekNumber?: number | null;
+  weekStart?: string | null;
+  weekEnd?: string | null;
+  source?: string | null;
+  semanal: ContractorProgressRow[];
+  acumulado: {
+    preliminar: ContractorProgressTotals;
+    ejecucion: ContractorProgressTotals;
+  };
+  metadata?: any;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // NOTIFICATIONS
 export interface Notification {
   id: string;

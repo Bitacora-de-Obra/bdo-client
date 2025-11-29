@@ -42,6 +42,10 @@ export function useProjectDetails(): LoadingState<any> {
   return useLoadingState(api.projectDetails.get);
 }
 
+export function useContractorProgress(): LoadingState<any> {
+  return useLoadingState(api.contractorProgress.getLatest);
+}
+
 export function useReports(): LoadingState<any[]> {
   return useLoadingState(api.reports.getAll);
 }
@@ -112,6 +116,7 @@ export const useApi = {
   projectTasks: useProjectTasks,
   contractModifications: useContractModifications,
   projectDetails: useProjectDetails,
+  contractorProgress: useContractorProgress,
   reports: useReports,
   drawings: useDrawings,
   weeklyReports: useWeeklyReports,

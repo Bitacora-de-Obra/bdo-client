@@ -22,6 +22,9 @@ import {
   Attachment,
   Commitment,
   Notification,
+  ContractorProgressSnapshot,
+  ContractorProgressRow,
+  ContractorProgressTotals,
 } from "../../types";
 import { handleApiError, ApiError } from "../utils/error-handling";
 import { offlineQueue } from "./offline/queue";
@@ -1425,6 +1428,74 @@ export const chatbotApi = {
   },
 };
 
+type ContractorProgressPayload = {
+  semanal: ContractorProgressRow[];
+  acumulado?: {
+    preliminar: ContractorProgressTotals;
+    ejecucion: ContractorProgressTotals;
+  };
+  weekNumber?: number;
+  weekStart?: string;
+  weekEnd?: string;
+  reportId?: string;
+  source?: string;
+  metadata?: any;
+};
+
+export const contractorProgressApi = {
+  getLatest: async (): Promise<ContractorProgressSnapshot | null> => {
+    return apiFetch("/contractor-progress/latest");
+  },
+  save: async (payload: ContractorProgressPayload): Promise<ContractorProgressSnapshot> => {
+    return apiFetch("/contractor-progress", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  },
+  importExcel: async (
+    file: File,
+    options: {
+      weekNumber?: number;
+      weekStart?: string;
+      weekEnd?: string;
+      reportId?: string;
+      source?: string;
+      metadata?: any;
+    } = {}
+  ): Promise<ContractorProgressSnapshot> => {
+    const formData = new FormData();
+    formData.append("file", file);
+    if (options.weekNumber !== undefined) {
+      formData.append("weekNumber", String(options.weekNumber));
+    }
+    if (options.weekStart) {
+      formData.append("weekStart", options.weekStart);
+    }
+    if (options.weekEnd) {
+      formData.append("weekEnd", options.weekEnd);
+    }
+    if (options.reportId) {
+      formData.append("reportId", options.reportId);
+    }
+    if (options.source) {
+      formData.append("source", options.source);
+    }
+    if (options.metadata !== undefined) {
+      const metadataValue =
+        typeof options.metadata === "string"
+          ? options.metadata
+          : JSON.stringify(options.metadata);
+      formData.append("metadata", metadataValue);
+    }
+
+    return apiFetch("/contractor-progress/import-excel", {
+      method: "POST",
+      body: formData,
+      headers: {},
+    });
+  },
+};
+
 // Export all API functions
 export const api = Object.assign(
   (endpoint: string, options?: RequestInit) => apiFetch(endpoint, options),
@@ -1450,6 +1521,7 @@ export const api = Object.assign(
     upload: uploadApi,
     notifications: notificationsApi,
     chatbot: chatbotApi, // <-- ¡Añade esto aquí!
+  contractorProgress: contractorProgressApi,
   }
 );
 

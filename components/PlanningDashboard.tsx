@@ -150,25 +150,6 @@ const parseMsProjectXml = async (file: File): Promise<ProjectTaskImportPayload[]
   return tasks;
 };
 
-// Parsear CSV simple con columnas: label, planned, executed
-const parseSCurveCsv = async (file: File): Promise<SCurvePoint[]> => {
-  const text = await file.text();
-  const lines = text
-    .split(/\\r?\\n/)
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0);
-  const points: SCurvePoint[] = [];
-  for (const line of lines) {
-    const parts = line.split(/[,;\\t]/).map((p) => p.trim());
-    if (parts.length < 3) continue;
-    const [label, plannedStr, executedStr] = parts;
-    const planned = parseFloat(plannedStr.replace('%', '').replace(',', '.')) || 0;
-    const executed = parseFloat(executedStr.replace('%', '').replace(',', '.')) || 0;
-    points.push({ label, planned, executed });
-  }
-  return points;
-};
-
 // Helper function to build the task tree from a flat list with outline levels
 const buildTaskTree = (tasks: Omit<ProjectTask, 'children'>[]): ProjectTask[] => {
   // Asegúrate de que las tareas estén ordenadas por outlineLevel y luego, idealmente, por su orden original si es posible
@@ -243,6 +224,12 @@ interface PlanningDashboardProps { // <-- Interfaz de Props actualizada
 
 const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { // <-- Usa la interfaz actualizada
   const { data: flatTasks, isLoading, error, retry: refetchTasks } = useApi.projectTasks();
+  const {
+    data: contractorProgress,
+    isLoading: isLoadingContractorProgress,
+    error: contractorProgressError,
+    retry: refetchContractorProgress,
+  } = useApi.contractorProgress();
   const [hierarchicalTasks, setHierarchicalTasks] = useState<ProjectTask[]>([]);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const ganttGridRef = useRef<HTMLDivElement>(null);
@@ -251,7 +238,7 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
   const { canEditContent } = usePermissions();
   const readOnly = !canEditContent;
   const { showToast } = useToast();
-  const [sCurvePoints, setSCurvePoints] = useState<SCurvePoint[]>([]);
+  const [isUploadingContractorProgress, setIsUploadingContractorProgress] = useState(false);
 
 
   // Este useEffect reconstruye el árbol cuando flatTasks cambia
@@ -268,18 +255,34 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
     }
   }, [flatTasks]);
 
-  const handleSCurveUpload = async (file: File) => {
+  const handleContractorExcelUpload = async (file: File) => {
+    if (readOnly) {
+      showToast({
+        title: 'Acción no permitida',
+        message: 'El perfil Viewer no puede actualizar el avance del contratista.',
+        variant: 'error',
+      });
+      throw new Error('El perfil Viewer no puede actualizar el avance del contratista.');
+    }
+
     try {
-      const points = await parseSCurveCsv(file);
-      if (!points.length) {
-        setUploadStatus({ type: 'error', message: 'No se encontraron datos válidos en el CSV.' });
-        return;
-      }
-      setSCurvePoints(points);
-      setUploadStatus({ type: 'success', message: `Curva S cargada (${points.length} puntos).` });
+      setIsUploadingContractorProgress(true);
+      setUploadStatus({
+        type: 'info',
+        message: `Procesando informe del contratista "${file.name}"...`,
+      });
+      await api.contractorProgress.importExcel(file);
+      await refetchContractorProgress();
+      setUploadStatus({
+        type: 'success',
+        message: `Avance del contratista actualizado con ${file.name}.`,
+      });
     } catch (err: any) {
-      const message = err?.message || 'No se pudo procesar el CSV de la curva S.';
+      const message = err?.message || 'No se pudo procesar el Excel del contratista.';
       setUploadStatus({ type: 'error', message });
+      throw err instanceof Error ? err : new Error(message);
+    } finally {
+      setIsUploadingContractorProgress(false);
     }
   };
 
@@ -378,8 +381,8 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
         }
     }, [hierarchicalTasks]);
 
-  // projectSummary se mantiene igual
-  const projectSummary = useMemo(() => {
+  // Resumen desde MS Project (fallback)
+  const msProjectSummary = useMemo(() => {
      if (!Array.isArray(processedHierarchicalTasks) || processedHierarchicalTasks.length === 0) { // Añade chequeo de array
             return { planned: 0, executed: 0, variance: 0 };
         }
@@ -411,6 +414,25 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
         };
   }, [processedHierarchicalTasks]);
 
+  const contractorSummary = useMemo(() => {
+    if (!contractorProgress) {
+      return null;
+    }
+    const preliminar = contractorProgress.acumulado?.preliminar || { proyectado: 0, ejecutado: 0 };
+    const ejecucion = contractorProgress.acumulado?.ejecucion || { proyectado: 0, ejecutado: 0 };
+    const planned = Number((preliminar.proyectado + ejecucion.proyectado).toFixed(2));
+    const executed = Number((preliminar.ejecutado + ejecucion.ejecutado).toFixed(2));
+    return {
+      planned,
+      executed,
+      variance: Number((executed - planned).toFixed(2)),
+      preliminar,
+      ejecucion,
+    };
+  }, [contractorProgress]);
+
+  const summary = contractorSummary ?? msProjectSummary;
+
   const flattenedTasks = useMemo(() => {
     const tasks: ProjectTask[] = [];
     const traverse = (items: ProjectTask[]) => {
@@ -440,6 +462,54 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
     return { start, end, days };
   }, [flattenedTasks]);
 
+  const aggregatedSCurvePoints = useMemo((): SCurvePoint[] => {
+    if (!contractorProgress) {
+      return [];
+    }
+    const grouped = new Map<number, { label: string; planned: number; executed: number }>();
+    contractorProgress.semanal.forEach((row) => {
+      const semanaNumber = Number(row.semana);
+      const key = Number.isFinite(semanaNumber) ? semanaNumber : grouped.size + 1;
+      const existing = grouped.get(key) || {
+        label: `Semana ${key}`,
+        planned: 0,
+        executed: 0,
+      };
+      existing.planned += row.proyectado;
+      existing.executed += row.ejecutado;
+      grouped.set(key, existing);
+    });
+    return Array.from(grouped.entries())
+      .sort((a, b) => a[0] - b[0])
+      .map(([, value]) => ({
+        label: value.label,
+        planned: Number(value.planned.toFixed(2)),
+        executed: Number(value.executed.toFixed(2)),
+      }));
+  }, [contractorProgress]);
+
+  const contractorStageTotals = useMemo(() => {
+    if (!contractorSummary) {
+      return null;
+    }
+    const total = {
+      proyectado: Number(
+        (contractorSummary.preliminar.proyectado + contractorSummary.ejecucion.proyectado).toFixed(2)
+      ),
+      ejecutado: Number(
+        (contractorSummary.preliminar.ejecutado + contractorSummary.ejecucion.ejecutado).toFixed(2)
+      ),
+    };
+    return {
+      preliminar: contractorSummary.preliminar,
+      ejecucion: contractorSummary.ejecucion,
+      total,
+    };
+  }, [contractorSummary]);
+
+  const formatWeekDate = (value?: string | null) =>
+    formatFullDate(value ? new Date(value) : null);
+
 
   const handleFileUpload = async (file: File) => {
     if (readOnly) {
@@ -466,11 +536,11 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
     }
   };
 
-  const renderSCurveChart = () => {
-    if (!sCurvePoints.length) {
+  const renderSCurveChart = (points: SCurvePoint[]) => {
+    if (!points.length) {
       return (
         <div className="text-sm text-gray-500 bg-gray-50 border border-dashed border-gray-200 rounded-md p-3">
-          Sube un CSV con columnas: <strong>Semana/Fecha, %Programado, %Ejecutado</strong> (separador coma, punto y coma o tab).
+          Sube el Excel del contratista para visualizar la curva S programado vs ejecutado.
         </div>
       );
     }
@@ -478,19 +548,19 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
     const width = 720;
     const height = 320;
     const padding = 50;
-    const values = sCurvePoints.flatMap((p) => [p.planned, p.executed]);
+    const values = points.flatMap((p) => [p.planned, p.executed]);
     const maxValue = Math.max(100, Math.ceil(Math.max(...values)));
     const minValue = Math.min(0, Math.floor(Math.min(...values)));
-    const xStep = (width - padding * 2) / Math.max(1, sCurvePoints.length - 1);
+    const xStep = (width - padding * 2) / Math.max(1, points.length - 1);
 
     const toY = (v: number) =>
       height - padding - ((v - minValue) / (maxValue - minValue)) * (height - padding * 2);
     const toX = (idx: number) => padding + idx * xStep;
 
-    const plannedPath = sCurvePoints
+    const plannedPath = points
       .map((p, i) => `${i === 0 ? 'M' : 'L'} ${toX(i)} ${toY(p.planned)}`)
       .join(' ');
-    const executedPath = sCurvePoints
+    const executedPath = points
       .map((p, i) => `${i === 0 ? 'M' : 'L'} ${toX(i)} ${toY(p.executed)}`)
       .join(' ');
 
@@ -515,7 +585,7 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
             );
           })}
           {/* X labels */}
-          {sCurvePoints.map((p, i) => (
+          {points.map((p, i) => (
             <text
               key={p.label}
               x={toX(i)}
@@ -549,7 +619,7 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {sCurvePoints.map((p) => (
+              {points.map((p) => (
                 <tr key={p.label} className="hover:bg-gray-50">
                   <td className="px-3 py-2 font-medium text-gray-800">{p.label}</td>
                   <td className="px-3 py-2 text-brand-primary font-semibold">{p.planned.toFixed(2)}%</td>
@@ -609,10 +679,15 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
 
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <KPICard title="Avance Programado a la Fecha" value={`${projectSummary.planned.toFixed(1)}%`} />
-        <KPICard title="Avance Ejecutado a la Fecha" value={`${projectSummary.executed.toFixed(1)}%`} progress={projectSummary.executed} />
-        <KPICard title="Estado (Variación)" value={`${projectSummary.variance > 0 ? '+' : ''}${projectSummary.variance.toFixed(1)}%`} variance={projectSummary.variance} />
+        <KPICard title="Avance Programado a la Fecha" value={`${summary.planned.toFixed(1)}%`} />
+        <KPICard title="Avance Ejecutado a la Fecha" value={`${summary.executed.toFixed(1)}%`} progress={summary.executed} />
+        <KPICard title="Estado (Variación)" value={`${summary.variance > 0 ? '+' : ''}${summary.variance.toFixed(1)}%`} variance={summary.variance} />
       </div>
+      <p className="text-xs text-gray-500">
+        {contractorSummary
+          ? "Fuente: Informe semanal del contratista"
+          : "Fuente: Cronograma MS Project"}
+      </p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="p-5 border-brand-primary/20 bg-brand-primary/5">
@@ -685,30 +760,85 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
             <div>
               <h3 className="text-lg font-semibold text-gray-800">Curva S (Programado vs Ejecutado)</h3>
               <p className="text-sm text-gray-500 mt-1">
-                Importa el CSV desde la hoja <strong>CURVAS S</strong> del informe semanal. Formato: Semana/Fecha, %Programado, %Ejecutado.
+                Importa el archivo <strong>Excel del informe semanal (hoja CURVAS S)</strong> para sincronizar los
+                porcentajes reportados por el contratista.
               </p>
             </div>
             <div>
               <input
                 type="file"
-                accept=".csv,text/csv"
+                accept=".xlsx,.xls,.xlsm"
                 className="hidden"
-                id="s-curve-upload"
+                id="contractor-progress-upload"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
-                  if (file) handleSCurveUpload(file);
+                  if (file) handleContractorExcelUpload(file);
                 }}
               />
               <Button
                 leftIcon={<DocumentArrowDownIcon />}
-                onClick={() => document.getElementById("s-curve-upload")?.click()}
+                onClick={() =>
+                  document.getElementById("contractor-progress-upload")?.click()
+                }
                 variant="secondary"
+                disabled={isUploadingContractorProgress}
               >
-                Cargar CSV Curva S
+                {isUploadingContractorProgress ? 'Procesando Excel...' : 'Cargar Excel del contratista'}
               </Button>
             </div>
           </div>
-          {renderSCurveChart()}
+          {isLoadingContractorProgress ? (
+            <div className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-md p-3">
+              Cargando avance del contratista...
+            </div>
+          ) : contractorProgressError ? (
+            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
+              {contractorProgressError.message || 'No se pudo cargar el avance del contratista.'}
+            </div>
+          ) : (
+            <>
+              {renderSCurveChart(aggregatedSCurvePoints)}
+              {contractorStageTotals ? (
+                <div className="space-y-2">
+                  <div className="overflow-auto rounded-lg border border-gray-200">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50 text-gray-600 uppercase text-xs">
+                        <tr>
+                          <th className="px-3 py-2 text-left">Etapa</th>
+                          <th className="px-3 py-2 text-right">% Proyectado</th>
+                          <th className="px-3 py-2 text-right">% Ejecutado</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        <tr>
+                          <td className="px-3 py-2 font-semibold text-gray-800">Preliminar</td>
+                          <td className="px-3 py-2 text-right">{contractorStageTotals.preliminar.proyectado.toFixed(2)}%</td>
+                          <td className="px-3 py-2 text-right">{contractorStageTotals.preliminar.ejecutado.toFixed(2)}%</td>
+                        </tr>
+                        <tr>
+                          <td className="px-3 py-2 font-semibold text-gray-800">Ejecución</td>
+                          <td className="px-3 py-2 text-right">{contractorStageTotals.ejecucion.proyectado.toFixed(2)}%</td>
+                          <td className="px-3 py-2 text-right">{contractorStageTotals.ejecucion.ejecutado.toFixed(2)}%</td>
+                        </tr>
+                        <tr className="bg-gray-50">
+                          <td className="px-3 py-2 font-semibold text-gray-900">Total contrato</td>
+                          <td className="px-3 py-2 text-right">{contractorStageTotals.total.proyectado.toFixed(2)}%</td>
+                          <td className="px-3 py-2 text-right">{contractorStageTotals.total.ejecutado.toFixed(2)}%</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Semana {contractorProgress?.weekNumber ?? '—'} · {formatWeekDate(contractorProgress?.weekStart)} - {formatWeekDate(contractorProgress?.weekEnd)} · Fuente: Excel del contratista
+                  </p>
+                </div>
+              ) : (
+                <div className="text-sm text-gray-500 bg-gray-50 border border-dashed border-gray-200 rounded-md p-3">
+                  Aún no se ha cargado el informe semanal del contratista.
+                </div>
+              )}
+            </>
+          )}
         </div>
       </Card>
 
