@@ -43,9 +43,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const [newEntryDefaultDate, setNewEntryDefaultDate] = useState<string | null>(
     null
   );
-  const [sortBy, setSortBy] = useState<"entryDate" | "folioNumber" | "createdAt">(
-    "entryDate"
-  );
+  const [sortBy, setSortBy] = useState<"entryDate" | "folioNumber" | "folioNumberDesc" | "createdAt">("entryDate");
   const [filters, setFilters] = useState({
     searchTerm: "",
     status: "all",
@@ -126,6 +124,9 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     const sorted = [...filtered].sort((a, b) => {
       if (sortBy === "folioNumber") {
         return (a.folioNumber || 0) - (b.folioNumber || 0);
+      }
+      if (sortBy === "folioNumberDesc") {
+        return (b.folioNumber || 0) - (a.folioNumber || 0);
       }
       if (sortBy === "createdAt") {
         // Más recientes primero
@@ -382,14 +383,21 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
             </label>
             <div className="relative">
               <select
-                value={sortBy}
-                onChange={(e) =>
-                  setSortBy(e.target.value as "entryDate" | "folioNumber" | "createdAt")
+              value={sortBy}
+              onChange={(e) =>
+                  setSortBy(
+                    e.target.value as
+                      | "entryDate"
+                      | "folioNumber"
+                      | "folioNumberDesc"
+                      | "createdAt"
+                  )
                 }
                 className="w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/30"
               >
                 <option value="entryDate">Fecha del diario (ascendente)</option>
                 <option value="folioNumber">No. de folio (ascendente)</option>
+                <option value="folioNumberDesc">No. de folio (descendente)</option>
                 <option value="createdAt">Fecha de creación (recientes primero)</option>
               </select>
               <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-500">
