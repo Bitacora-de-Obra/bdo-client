@@ -43,6 +43,9 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const [newEntryDefaultDate, setNewEntryDefaultDate] = useState<string | null>(
     null
   );
+  const [sortBy, setSortBy] = useState<"entryDate" | "folioNumber" | "createdAt">(
+    "entryDate"
+  );
   const [filters, setFilters] = useState({
     searchTerm: "",
     status: "all",
@@ -74,7 +77,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const filteredEntries = useMemo(() => {
     if (!logEntries) return [];
 
-    return logEntries.filter((entry) => {
+    const filtered = logEntries.filter((entry) => {
       const searchTermMatch =
         entry.title.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
         entry.description
@@ -118,6 +121,21 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
         endDateMatch
       );
     });
+
+    // Ordenar según la selección del usuario
+    const sorted = [...filtered].sort((a, b) => {
+      if (sortBy === "folioNumber") {
+        return (a.folioNumber || 0) - (b.folioNumber || 0);
+      }
+      if (sortBy === "createdAt") {
+        // Más recientes primero
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      // entryDate por defecto (más antiguos primero)
+      return new Date(a.entryDate).getTime() - new Date(b.entryDate).getTime();
+    });
+
+    return sorted;
   }, [logEntries, filters]);
 
   const handleCloseDetail = () => {
@@ -355,6 +373,22 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
           )}
         </div>
         <div className="flex items-center flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <div className="w-full sm:w-auto">
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
+              Ordenar por
+            </label>
+            <select
+              value={sortBy}
+              onChange={(e) =>
+                setSortBy(e.target.value as "entryDate" | "folioNumber" | "createdAt")
+              }
+              className="w-full sm:w-44 rounded-md border-gray-300 text-sm shadow-sm focus:border-brand-primary focus:ring-brand-primary"
+            >
+              <option value="entryDate">Fecha del diario (asc)</option>
+              <option value="folioNumber">No. de folio (asc)</option>
+              <option value="createdAt">Fecha de creación (recientes primero)</option>
+            </select>
+          </div>
           <div className="flex items-center bg-gray-200 rounded-lg p-1">
             <button
               onClick={() => setViewMode("list")}
