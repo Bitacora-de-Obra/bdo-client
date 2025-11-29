@@ -562,6 +562,8 @@ export interface ProjectTask {
   isSummary: boolean; // Is it a summary task?
   dependencies?: string[]; // Array of task IDs
   outlineLevel: number;
+   baselineCost?: number; // costo base (BAC)
+   cost?: number; // costo actual reportado
   children: ProjectTask[];
 }
 

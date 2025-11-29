@@ -22,6 +22,8 @@ type ProjectTaskImportPayload = {
   isSummary: boolean;
   outlineLevel: number;
   dependencies: string[];
+  baselineCost?: number;
+  cost?: number;
 };
 
 const formatFullDate = (date: Date | null) =>
@@ -111,6 +113,8 @@ const parseMsProjectXml = async (file: File): Promise<ProjectTaskImportPayload[]
     const progress = Math.max(0, Math.min(100, Number.isFinite(percentComplete) ? percentComplete : 0));
     const durationText = getTextContent(taskNode, "Duration");
     const duration = computeDurationInDays(durationText, startIso, endIso);
+    const baselineCost = parseFloat(getTextContent(taskNode, "BaselineCost")) || 0;
+    const cost = parseFloat(getTextContent(taskNode, "Cost")) || 0;
 
     const dependencies = Array.from(taskNode.getElementsByTagName("PredecessorLink"))
       .map((link) => getTextContent(link, "PredecessorUID"))
@@ -126,6 +130,8 @@ const parseMsProjectXml = async (file: File): Promise<ProjectTaskImportPayload[]
       isSummary,
       outlineLevel,
       dependencies,
+      baselineCost,
+      cost,
     });
 
     seenIds.add(uid);
@@ -282,15 +288,26 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
                 }
 
                 let actualProgress = task.progress || 0;
-                // Para tareas resumen, calcula progreso ponderado por duración
-                if (task.isSummary && processedChildren.length > 0) {
-                    const totalDuration = processedChildren.reduce((sum, child) => sum + (child.duration || 1), 0);
-                    if (totalDuration > 0) {
-                        const weightedProgress = processedChildren.reduce((sum, child) => sum + (child.progress || 0) * (child.duration || 1), 0);
-                        actualProgress = weightedProgress / totalDuration;
+                const weight = task.baselineCost && task.baselineCost > 0 ? task.baselineCost : (task.duration || 1);
 
-                        const weightedPlannedProgress = processedChildren.reduce((sum, child) => sum + (child.plannedProgress || 0) * (child.duration || 1), 0);
-                        plannedProgress = weightedPlannedProgress / totalDuration;
+                // Para tareas resumen, calcula progreso ponderado por costo (o duración como fallback)
+                if (task.isSummary && processedChildren.length > 0) {
+                    const totalWeight = processedChildren.reduce((sum, child) => {
+                        const w = child.baselineCost && child.baselineCost > 0 ? child.baselineCost : (child.duration || 1);
+                        return sum + w;
+                    }, 0);
+                    if (totalWeight > 0) {
+                        const weightedProgress = processedChildren.reduce((sum, child) => {
+                            const w = child.baselineCost && child.baselineCost > 0 ? child.baselineCost : (child.duration || 1);
+                            return sum + (child.progress || 0) * w;
+                        }, 0);
+                        actualProgress = weightedProgress / totalWeight;
+
+                        const weightedPlannedProgress = processedChildren.reduce((sum, child) => {
+                            const w = child.baselineCost && child.baselineCost > 0 ? child.baselineCost : (child.duration || 1);
+                            return sum + (child.plannedProgress || 0) * w;
+                        }, 0);
+                        plannedProgress = weightedPlannedProgress / totalWeight;
                     } else {
                          actualProgress = processedChildren.length > 0 ? processedChildren.reduce((sum, child) => sum + (child.progress || 0), 0) / processedChildren.length : 0;
                          plannedProgress = processedChildren.length > 0 ? processedChildren.reduce((sum, child) => sum + (child.plannedProgress || 0), 0) / processedChildren.length : 0;
@@ -308,6 +325,8 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
                     plannedProgress,
                     variance,
                     progress: actualProgress,
+                    baselineCost: task.baselineCost ?? 0,
+                    cost: task.cost ?? 0,
                 };
             };
             // Verifica que hierarchicalTasks sea un array antes de mapear
@@ -324,16 +343,25 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
             return { planned: 0, executed: 0, variance: 0 };
         }
         const topLevelTasks = processedHierarchicalTasks;
-        const totalDuration = topLevelTasks.reduce((sum, task) => sum + (task.duration || 1), 0);
+        const totalWeight = topLevelTasks.reduce((sum, task) => {
+            const w = task.baselineCost && task.baselineCost > 0 ? task.baselineCost : (task.duration || 1);
+            return sum + w;
+        }, 0);
 
-        if (totalDuration === 0) {
+        if (totalWeight === 0) {
             const planned = topLevelTasks.length > 0 ? topLevelTasks.reduce((sum, task) => sum + task.plannedProgress, 0) / topLevelTasks.length : 0;
             const executed = topLevelTasks.length > 0 ? topLevelTasks.reduce((sum, task) => sum + task.progress, 0) / topLevelTasks.length : 0;
             return { planned, executed, variance: executed - planned };
         }
 
-        const weightedPlanned = topLevelTasks.reduce((sum, task) => sum + task.plannedProgress * (task.duration || 1), 0) / totalDuration;
-        const weightedExecuted = topLevelTasks.reduce((sum, task) => sum + task.progress * (task.duration || 1), 0) / totalDuration;
+        const weightedPlanned = topLevelTasks.reduce((sum, task) => {
+            const w = task.baselineCost && task.baselineCost > 0 ? task.baselineCost : (task.duration || 1);
+            return sum + task.plannedProgress * w;
+        }, 0) / totalWeight;
+        const weightedExecuted = topLevelTasks.reduce((sum, task) => {
+            const w = task.baselineCost && task.baselineCost > 0 ? task.baselineCost : (task.duration || 1);
+            return sum + task.progress * w;
+        }, 0) / totalWeight;
 
         return {
             planned: weightedPlanned,

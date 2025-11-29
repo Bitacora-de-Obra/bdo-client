@@ -1190,6 +1190,8 @@ export const projectTasksApi = {
       isSummary: boolean;
       outlineLevel: number;
       dependencies: string[];
+      baselineCost?: number;
+      cost?: number;
     }>
   ) => {
     return apiFetch("/project-tasks/import", {
