@@ -459,21 +459,47 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
     return { start, end, days };
   }, [flattenedTasks]);
 
-  // Calcular valores semanales de la última semana reportada
+  // Calcular valores semanales (incrementales) y acumulados del informe
   const weeklyProgressData = useMemo(() => {
     if (!contractorProgress || !contractorProgress.semanal.length) {
       return null;
     }
     
-    // Encontrar la última semana reportada
-    const maxSemana = Math.max(...contractorProgress.semanal.map(r => r.semana));
-    const lastWeekRows = contractorProgress.semanal.filter(r => r.semana === maxSemana);
-    
-    const preliminarSemanal = lastWeekRows.find(r => r.etapa === 'preliminar') || { proyectado: 0, ejecutado: 0 };
-    const ejecucionSemanal = lastWeekRows.find(r => r.etapa === 'ejecucion') || { proyectado: 0, ejecutado: 0 };
-    
+    // Obtener valores acumulados directamente del snapshot
     const preliminarAcumulado = contractorProgress.acumulado?.preliminar || { proyectado: 0, ejecutado: 0 };
     const ejecucionAcumulado = contractorProgress.acumulado?.ejecucion || { proyectado: 0, ejecutado: 0 };
+    
+    // Ordenar por semana para cada etapa
+    const preliminarRows = [...contractorProgress.semanal]
+      .filter(r => r.etapa === 'preliminar')
+      .sort((a, b) => a.semana - b.semana);
+    
+    const ejecucionRows = [...contractorProgress.semanal]
+      .filter(r => r.etapa === 'ejecucion')
+      .sort((a, b) => a.semana - b.semana);
+    
+    // Calcular valores semanales como diferencia entre última y penúltima semana
+    const calcWeekly = (rows: typeof preliminarRows, field: 'proyectado' | 'ejecutado') => {
+      if (rows.length === 0) return 0;
+      if (rows.length === 1) {
+        // Si solo hay una semana, el semanal es igual al acumulado de esa semana
+        return rows[0][field];
+      }
+      // Diferencia entre última y penúltima semana (valores ya están en porcentaje)
+      const last = rows[rows.length - 1][field];
+      const prev = rows[rows.length - 2][field];
+      return Math.max(0, Number((last - prev).toFixed(2)));
+    };
+    
+    const preliminarSemanal = {
+      proyectado: calcWeekly(preliminarRows, 'proyectado'),
+      ejecutado: calcWeekly(preliminarRows, 'ejecutado'),
+    };
+    
+    const ejecucionSemanal = {
+      proyectado: calcWeekly(ejecucionRows, 'proyectado'),
+      ejecutado: calcWeekly(ejecucionRows, 'ejecutado'),
+    };
     
     const totalSemanal = {
       proyectado: Number((preliminarSemanal.proyectado + ejecucionSemanal.proyectado).toFixed(2)),
@@ -489,13 +515,15 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
       ),
     };
     
+    const maxSemana = Math.max(...contractorProgress.semanal.map(r => r.semana));
+    
     return {
       preliminar: {
-        semanal: { proyectado: preliminarSemanal.proyectado, ejecutado: preliminarSemanal.ejecutado },
+        semanal: preliminarSemanal,
         acumulado: preliminarAcumulado,
       },
       ejecucion: {
-        semanal: { proyectado: ejecucionSemanal.proyectado, ejecutado: ejecucionSemanal.ejecutado },
+        semanal: ejecucionSemanal,
         acumulado: ejecucionAcumulado,
       },
       total: {
