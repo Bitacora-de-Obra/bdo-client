@@ -26,11 +26,6 @@ type ProjectTaskImportPayload = {
   cost?: number;
 };
 
-type SCurvePoint = {
-  label: string; // semana o fecha
-  planned: number;
-  executed: number;
-};
 
 const formatFullDate = (date: Date | null) =>
   date
@@ -464,56 +459,52 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
     return { start, end, days };
   }, [flattenedTasks]);
 
-  const aggregatedSCurvePoints = useMemo((): SCurvePoint[] => {
-    if (!contractorProgress) {
-      return [];
-    }
-    const grouped = new Map<number, { label: string; planned: number; executed: number }>();
-    contractorProgress.semanal.forEach((row) => {
-      const semanaNumber = Number(row.semana);
-      const key = Number.isFinite(semanaNumber) ? semanaNumber : grouped.size + 1;
-      const existing = grouped.get(key) || {
-        label: String(key),
-        planned: 0,
-        executed: 0,
-      };
-      existing.planned += row.proyectado;
-      existing.executed += row.ejecutado;
-      grouped.set(key, existing);
-    });
-    return Array.from(grouped.entries())
-      .sort((a, b) => a[0] - b[0])
-      .map(([, value]) => ({
-        label: value.label,
-        planned: Number(value.planned.toFixed(2)),
-        executed: Number(value.executed.toFixed(2)),
-      }));
-  }, [contractorProgress]);
-
-  const contractorStageTotals = useMemo(() => {
-    if (!contractorSummary) {
+  // Calcular valores semanales de la última semana reportada
+  const weeklyProgressData = useMemo(() => {
+    if (!contractorProgress || !contractorProgress.semanal.length) {
       return null;
     }
-    const total = {
+    
+    // Encontrar la última semana reportada
+    const maxSemana = Math.max(...contractorProgress.semanal.map(r => r.semana));
+    const lastWeekRows = contractorProgress.semanal.filter(r => r.semana === maxSemana);
+    
+    const preliminarSemanal = lastWeekRows.find(r => r.etapa === 'preliminar') || { proyectado: 0, ejecutado: 0 };
+    const ejecucionSemanal = lastWeekRows.find(r => r.etapa === 'ejecucion') || { proyectado: 0, ejecutado: 0 };
+    
+    const preliminarAcumulado = contractorProgress.acumulado?.preliminar || { proyectado: 0, ejecutado: 0 };
+    const ejecucionAcumulado = contractorProgress.acumulado?.ejecucion || { proyectado: 0, ejecutado: 0 };
+    
+    const totalSemanal = {
+      proyectado: Number((preliminarSemanal.proyectado + ejecucionSemanal.proyectado).toFixed(2)),
+      ejecutado: Number((preliminarSemanal.ejecutado + ejecucionSemanal.ejecutado).toFixed(2)),
+    };
+    
+    const totalAcumulado = {
       proyectado: Number(
-        Math.min(
-          100,
-          contractorSummary.preliminar.proyectado + contractorSummary.ejecucion.proyectado
-        ).toFixed(2)
+        Math.min(100, preliminarAcumulado.proyectado + ejecucionAcumulado.proyectado).toFixed(2)
       ),
       ejecutado: Number(
-        Math.min(
-          100,
-          contractorSummary.preliminar.ejecutado + contractorSummary.ejecucion.ejecutado
-        ).toFixed(2)
+        Math.min(100, preliminarAcumulado.ejecutado + ejecucionAcumulado.ejecutado).toFixed(2)
       ),
     };
+    
     return {
-      preliminar: contractorSummary.preliminar,
-      ejecucion: contractorSummary.ejecucion,
-      total,
+      preliminar: {
+        semanal: { proyectado: preliminarSemanal.proyectado, ejecutado: preliminarSemanal.ejecutado },
+        acumulado: preliminarAcumulado,
+      },
+      ejecucion: {
+        semanal: { proyectado: ejecucionSemanal.proyectado, ejecutado: ejecucionSemanal.ejecutado },
+        acumulado: ejecucionAcumulado,
+      },
+      total: {
+        semanal: totalSemanal,
+        acumulado: totalAcumulado,
+      },
+      semana: maxSemana,
     };
-  }, [contractorSummary]);
+  }, [contractorProgress]);
 
   const formatWeekDate = (value?: string | null) =>
     formatFullDate(value ? new Date(value) : null);
@@ -544,102 +535,6 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
     }
   };
 
-  const renderSCurveChart = (points: SCurvePoint[]) => {
-    if (!points.length) {
-      return (
-        <div className="text-sm text-gray-500 bg-gray-50 border border-dashed border-gray-200 rounded-md p-3">
-          Sube el Excel del contratista para visualizar la curva S programado vs ejecutado.
-        </div>
-      );
-    }
-
-    const width = 720;
-    const height = 320;
-    const padding = 50;
-    const values = points.flatMap((p) => [p.planned, p.executed]);
-    const maxValue = Math.max(100, Math.ceil(Math.max(...values)));
-    const minValue = Math.min(0, Math.floor(Math.min(...values)));
-    const xStep = (width - padding * 2) / Math.max(1, points.length - 1);
-
-    const toY = (v: number) =>
-      height - padding - ((v - minValue) / (maxValue - minValue)) * (height - padding * 2);
-    const toX = (idx: number) => padding + idx * xStep;
-
-    const plannedPath = points
-      .map((p, i) => `${i === 0 ? 'M' : 'L'} ${toX(i)} ${toY(p.planned)}`)
-      .join(' ');
-    const executedPath = points
-      .map((p, i) => `${i === 0 ? 'M' : 'L'} ${toX(i)} ${toY(p.executed)}`)
-      .join(' ');
-
-    const yTicks = [];
-    for (let t = minValue; t <= maxValue; t += 10) {
-      yTicks.push(t);
-    }
-
-    return (
-      <div className="space-y-3">
-        <svg viewBox={`0 0 ${width} ${height}`} className="w-full border border-gray-200 rounded-lg bg-white">
-          {/* Grid lines and Y axis labels */}
-          {yTicks.map((val, idx) => {
-            const y = toY(val);
-            return (
-              <g key={idx}>
-                <line x1={padding} y1={y} x2={width - padding} y2={y} stroke="#e5e7eb" strokeDasharray="4 4" />
-                <text x={padding - 10} y={y + 4} fontSize="10" textAnchor="end" fill="#6b7280">
-                  {val}%
-                </text>
-              </g>
-            );
-          })}
-          {/* X labels */}
-          {points.map((p, i) => (
-            <text
-              key={p.label}
-              x={toX(i)}
-              y={height - padding + 20}
-              fontSize="10"
-              textAnchor="middle"
-              fill="#6b7280"
-            >
-              {p.label}
-            </text>
-          ))}
-          {/* Planned line */}
-          <path d={plannedPath} fill="none" stroke="#1d4ed8" strokeWidth={2.5} />
-          {/* Executed line */}
-          <path d={executedPath} fill="none" stroke="#f97316" strokeWidth={2.5} />
-          {/* Legend */}
-          <g transform={`translate(${padding}, ${padding - 20})`}>
-            <rect x={0} y={-10} width={12} height={3} fill="#1d4ed8" />
-            <text x={18} y={-6} fontSize="11" fill="#1f2937">Proyectado</text>
-            <rect x={90} y={-10} width={12} height={3} fill="#f97316" />
-            <text x={106} y={-6} fontSize="11" fill="#1f2937">Ejecutado</text>
-          </g>
-        </svg>
-        <div className="overflow-auto rounded-lg border border-gray-200">
-          <table className="min-w-full text-xs text-left">
-            <thead className="bg-gray-50 text-gray-600 uppercase">
-              <tr>
-                <th className="px-3 py-2">Semana/Fecha</th>
-                <th className="px-3 py-2">% Programado</th>
-                <th className="px-3 py-2">% Ejecutado</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {points.map((p) => (
-                <tr key={p.label} className="hover:bg-gray-50">
-                  <td className="px-3 py-2 font-medium text-gray-800">{p.label}</td>
-                  <td className="px-3 py-2 text-brand-primary font-semibold">{p.planned.toFixed(2)}%</td>
-                  <td className="px-3 py-2 text-orange-500 font-semibold">{p.executed.toFixed(2)}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
-  };
   const handleDownloadPdf = async () => {
     if (!ganttExportRef.current || isGeneratingPdf) {
       return;
@@ -761,12 +656,12 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
         </Card>
       </div>
 
-      {/* Curva S */}
+      {/* Avances del Proyecto - Capítulo 2 */}
       <Card>
         <div className="p-4 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h3 className="text-lg font-semibold text-gray-800">Curva S (Programado vs Ejecutado)</h3>
+              <h3 className="text-lg font-semibold text-gray-800">2. Avances del Proyecto</h3>
               <p className="text-sm text-gray-500 mt-1">
                 Importa el archivo <strong>Excel del informe semanal (hoja CURVAS S)</strong> para sincronizar los
                 porcentajes reportados por el contratista.
@@ -803,49 +698,57 @@ const PlanningDashboard: React.FC<PlanningDashboardProps> = ({ project }) => { /
             <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
               {contractorProgressError.message || 'No se pudo cargar el avance del contratista.'}
             </div>
+          ) : weeklyProgressData ? (
+            <div className="space-y-2">
+              <div className="overflow-auto rounded-lg border border-gray-200">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-600 uppercase text-xs">
+                    <tr>
+                      <th className="px-4 py-3 text-left border-r border-gray-200">Etapa/Fase</th>
+                      <th colSpan={2} className="px-4 py-3 text-center border-r border-gray-200">Programado</th>
+                      <th colSpan={2} className="px-4 py-3 text-center">Ejecutado</th>
+                    </tr>
+                    <tr>
+                      <th className="px-4 py-2 text-left border-r border-gray-200"></th>
+                      <th className="px-4 py-2 text-center border-r border-gray-200">Semanal</th>
+                      <th className="px-4 py-2 text-center border-r border-gray-200">Acumulado</th>
+                      <th className="px-4 py-2 text-center border-r border-gray-200">Semanal</th>
+                      <th className="px-4 py-2 text-center">Acumulado</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    <tr>
+                      <td className="px-4 py-3 font-semibold text-gray-800 border-r border-gray-200">Total Contrato</td>
+                      <td className="px-4 py-3 text-right border-r border-gray-200">{weeklyProgressData.total.semanal.proyectado.toFixed(2)}%</td>
+                      <td className="px-4 py-3 text-right border-r border-gray-200">{weeklyProgressData.total.acumulado.proyectado.toFixed(2)}%</td>
+                      <td className="px-4 py-3 text-right border-r border-gray-200">{weeklyProgressData.total.semanal.ejecutado.toFixed(2)}%</td>
+                      <td className="px-4 py-3 text-right">{weeklyProgressData.total.acumulado.ejecutado.toFixed(2)}%</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-3 font-semibold text-gray-800 border-r border-gray-200">Etapa/Fase Preliminar</td>
+                      <td className="px-4 py-3 text-right border-r border-gray-200">{weeklyProgressData.preliminar.semanal.proyectado.toFixed(2)}%</td>
+                      <td className="px-4 py-3 text-right border-r border-gray-200">{weeklyProgressData.preliminar.acumulado.proyectado.toFixed(2)}%</td>
+                      <td className="px-4 py-3 text-right border-r border-gray-200">{weeklyProgressData.preliminar.semanal.ejecutado.toFixed(2)}%</td>
+                      <td className="px-4 py-3 text-right">{weeklyProgressData.preliminar.acumulado.ejecutado.toFixed(2)}%</td>
+                    </tr>
+                    <tr>
+                      <td className="px-4 py-3 font-semibold text-gray-800 border-r border-gray-200">Etapa/Fase Construcción</td>
+                      <td className="px-4 py-3 text-right border-r border-gray-200">{weeklyProgressData.ejecucion.semanal.proyectado.toFixed(2)}%</td>
+                      <td className="px-4 py-3 text-right border-r border-gray-200">{weeklyProgressData.ejecucion.acumulado.proyectado.toFixed(2)}%</td>
+                      <td className="px-4 py-3 text-right border-r border-gray-200">{weeklyProgressData.ejecucion.semanal.ejecutado.toFixed(2)}%</td>
+                      <td className="px-4 py-3 text-right">{weeklyProgressData.ejecucion.acumulado.ejecutado.toFixed(2)}%</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-gray-500">
+                Semana {contractorProgress?.weekNumber ?? weeklyProgressData.semana} · {formatWeekDate(contractorProgress?.weekStart)} - {formatWeekDate(contractorProgress?.weekEnd)} · Fuente: Excel del contratista
+              </p>
+            </div>
           ) : (
-            <>
-              {renderSCurveChart(aggregatedSCurvePoints)}
-              {contractorStageTotals ? (
-                <div className="space-y-2">
-                  <div className="overflow-auto rounded-lg border border-gray-200">
-                    <table className="w-full text-sm">
-                      <thead className="bg-gray-50 text-gray-600 uppercase text-xs">
-                        <tr>
-                          <th className="px-3 py-2 text-left">Etapa</th>
-                          <th className="px-3 py-2 text-right">% Proyectado</th>
-                          <th className="px-3 py-2 text-right">% Ejecutado</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        <tr>
-                          <td className="px-3 py-2 font-semibold text-gray-800">Preliminar</td>
-                          <td className="px-3 py-2 text-right">{contractorStageTotals.preliminar.proyectado.toFixed(2)}%</td>
-                          <td className="px-3 py-2 text-right">{contractorStageTotals.preliminar.ejecutado.toFixed(2)}%</td>
-                        </tr>
-                        <tr>
-                          <td className="px-3 py-2 font-semibold text-gray-800">Ejecución</td>
-                          <td className="px-3 py-2 text-right">{contractorStageTotals.ejecucion.proyectado.toFixed(2)}%</td>
-                          <td className="px-3 py-2 text-right">{contractorStageTotals.ejecucion.ejecutado.toFixed(2)}%</td>
-                        </tr>
-                        <tr className="bg-gray-50">
-                          <td className="px-3 py-2 font-semibold text-gray-900">Total contrato</td>
-                          <td className="px-3 py-2 text-right">{contractorStageTotals.total.proyectado.toFixed(2)}%</td>
-                          <td className="px-3 py-2 text-right">{contractorStageTotals.total.ejecutado.toFixed(2)}%</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    Semana {contractorProgress?.weekNumber ?? '—'} · {formatWeekDate(contractorProgress?.weekStart)} - {formatWeekDate(contractorProgress?.weekEnd)} · Fuente: Excel del contratista
-                  </p>
-                </div>
-              ) : (
-                <div className="text-sm text-gray-500 bg-gray-50 border border-dashed border-gray-200 rounded-md p-3">
-                  Aún no se ha cargado el informe semanal del contratista.
-                </div>
-              )}
-            </>
+            <div className="text-sm text-gray-500 bg-gray-50 border border-dashed border-gray-200 rounded-md p-3">
+              Aún no se ha cargado el informe semanal del contratista.
+            </div>
           )}
         </div>
       </Card>
