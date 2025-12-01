@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Acta,
   ActaStatus,
@@ -13,6 +13,8 @@ import Button from "./ui/Button";
 import Input from "./ui/Input";
 import Select from "./ui/Select";
 import { PlusIcon, XMarkIcon } from "./icons/Icon";
+
+const AUTOSAVE_KEY = "actaFormDraft";
 
 interface ActaFormModalProps {
   isOpen: boolean;
@@ -35,6 +37,40 @@ const ActaFormModal: React.FC<ActaFormModalProps> = ({
   const [status, setStatus] = useState<ActaStatus>(ActaStatus.DRAFT);
   const [commitments, setCommitments] = useState<Omit<Commitment, "id">[]>([]);
   const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    // Restaurar borrador si existe
+    const draft = localStorage.getItem(AUTOSAVE_KEY);
+    if (draft) {
+      try {
+        const data = JSON.parse(draft);
+        setNumber(data.number || "");
+        setTitle(data.title || "");
+        setDate(data.date || "");
+        setSummary(data.summary || "");
+        setArea(data.area || ActaArea.COMITE_OBRA);
+        setStatus(data.status || ActaStatus.DRAFT);
+        setCommitments(data.commitments || []);
+        // No restaurar archivos adjuntos por seguridad
+      } catch {}
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    // Guardar borrador cada vez que cambie el formulario
+    const draft = {
+      number,
+      title,
+      date,
+      summary,
+      area,
+      status,
+      commitments,
+    };
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(draft));
+  }, [number, title, date, summary, area, status, commitments, isOpen]);
 
   const handleCommitmentChange = (
     index: number,
@@ -118,6 +154,8 @@ const ActaFormModal: React.FC<ActaFormModalProps> = ({
       signatures: [],
     });
 
+    localStorage.removeItem(AUTOSAVE_KEY);
+
     // Reset form
     setNumber("");
     setTitle("");
@@ -127,6 +165,11 @@ const ActaFormModal: React.FC<ActaFormModalProps> = ({
     setStatus(ActaStatus.DRAFT);
     setCommitments([]);
     setAttachmentFile(null);
+  };
+
+  const handleCancel = () => {
+    localStorage.removeItem(AUTOSAVE_KEY);
+    onClose();
   };
 
   return (
@@ -337,7 +380,7 @@ const ActaFormModal: React.FC<ActaFormModalProps> = ({
         </div>
 
         <div className="flex justify-end gap-2 pt-4 border-t mt-4">
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button type="button" variant="secondary" onClick={handleCancel}>
             Cancelar
           </Button>
           <Button type="submit">Guardar Acta</Button>
