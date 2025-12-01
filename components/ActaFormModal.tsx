@@ -40,18 +40,18 @@ const ActaFormModal: React.FC<ActaFormModalProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
-    // Restaurar borrador si existe
+    // Restaurar borrador solo si los campos están vacíos
     const draft = localStorage.getItem(AUTOSAVE_KEY);
     if (draft) {
       try {
         const data = JSON.parse(draft);
-        setNumber(data.number || "");
-        setTitle(data.title || "");
-        setDate(data.date || "");
-        setSummary(data.summary || "");
-        setArea(data.area || ActaArea.COMITE_OBRA);
-        setStatus(data.status || ActaStatus.DRAFT);
-        setCommitments(data.commitments || []);
+        if (!number && data.number) setNumber(data.number);
+        if (!title && data.title) setTitle(data.title);
+        if (!date && data.date) setDate(data.date);
+        if (!summary && data.summary) setSummary(data.summary);
+        if (!area && data.area) setArea(data.area);
+        if (!status && data.status) setStatus(data.status);
+        if (commitments.length === 0 && data.commitments) setCommitments(data.commitments);
         // No restaurar archivos adjuntos por seguridad
       } catch {}
     }
