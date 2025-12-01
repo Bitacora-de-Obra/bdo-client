@@ -150,6 +150,56 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     setSelectedSignerIds(currentUser ? [currentUser.id] : []);
   };
 
+  // AUTOSAVE: Guardar y restaurar borrador en localStorage
+  const AUTOSAVE_KEY = "logEntryFormDraft";
+
+  useEffect(() => {
+    if (!isOpen) return;
+    // Restaurar borrador solo si los campos principales están vacíos
+    const draft = localStorage.getItem(AUTOSAVE_KEY);
+    if (draft) {
+      try {
+        const data = JSON.parse(draft);
+        if (!entryDate && data.entryDate) setEntryDate(data.entryDate);
+        if (!entryType && data.entryType) setEntryType(data.entryType);
+        if (!title && data.title) setTitle(data.title);
+        if (!summary && data.summary) setSummary(data.summary);
+        if (materialsUsed.length === 1 && !materialsUsed[0].material && data.materialsUsed) setMaterialsUsed(data.materialsUsed);
+        if (!activitiesPerformed && data.activitiesPerformed) setActivitiesPerformed(data.activitiesPerformed);
+        if (!additionalObservations && data.additionalObservations) setAdditionalObservations(data.additionalObservations);
+        if (!scheduleDay && data.scheduleDay) setScheduleDay(data.scheduleDay);
+        if (!locationDetails && data.locationDetails) setLocationDetails(data.locationDetails);
+        if (!weatherSummary && data.weatherSummary) setWeatherSummary(data.weatherSummary);
+        if (!weatherTemperature && data.weatherTemperature) setWeatherTemperature(data.weatherTemperature);
+        if (!weatherNotes && data.weatherNotes) setWeatherNotes(data.weatherNotes);
+        if (rainEvents.length === 1 && !rainEvents[0].start && data.rainEvents) setRainEvents(data.rainEvents);
+        // Puedes agregar más campos si lo necesitas
+      } catch {}
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    // Guardar borrador cada vez que cambie el formulario
+    const draft = {
+      entryDate,
+      entryType,
+      title,
+      summary,
+      materialsUsed,
+      activitiesPerformed,
+      additionalObservations,
+      scheduleDay,
+      locationDetails,
+      weatherSummary,
+      weatherTemperature,
+      weatherNotes,
+      rainEvents,
+      // Puedes agregar más campos si lo necesitas
+    };
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(draft));
+  }, [entryDate, entryType, title, summary, materialsUsed, activitiesPerformed, additionalObservations, scheduleDay, locationDetails, weatherSummary, weatherTemperature, weatherNotes, rainEvents, isOpen]);
+
   // Calcular día del plazo automáticamente basado en la fecha de inicio del proyecto
   const calculateScheduleDay = (entryDate: string) => {
     if (!entryDate || !projectStartDate) return "";
@@ -524,6 +574,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
         },
         [...files, ...photos]
       );
+      localStorage.removeItem(AUTOSAVE_KEY);
     } catch (err) {
       setValidationError(
         err instanceof Error
@@ -533,6 +584,11 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleCancel = () => {
+    localStorage.removeItem(AUTOSAVE_KEY);
+    onClose();
   };
 
   if (isSpecialType) {
@@ -792,7 +848,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="secondary" onClick={onClose}>
+            <Button type="button" variant="secondary" onClick={handleCancel}>
               Cancelar
             </Button>
             <Button type="submit" disabled={isSaving}>
@@ -1576,7 +1632,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           <Button 
             type="button" 
             variant="secondary" 
-            onClick={onClose}
+            onClick={handleCancel}
             disabled={isSaving}
           >
             Cancelar
