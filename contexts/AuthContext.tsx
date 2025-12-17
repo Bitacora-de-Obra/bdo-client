@@ -93,6 +93,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       setError(null);
       setVerificationEmailSent(false);
       setIsChatReady(false);
+      localStorage.removeItem('user'); // Also clear stored user
       try {
         await logoutCometChat();
       } catch (chatLogoutError) {
@@ -115,6 +116,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
       const profile = await api.auth.getProfile();
       setUser(profile);
+      // Persist user for offline access
+      localStorage.setItem('user', JSON.stringify(profile));
       setVerificationEmailSent(false);
     } catch (profileError: any) {
       // Si es un error 401, simplemente no hay sesión activa
@@ -122,7 +125,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         console.log("AuthProvider: No active session found");
         setUser(null);
         localStorage.removeItem('accessToken'); // Limpiar token inválido
+        localStorage.removeItem('user'); // Clear stored user
         return;
+      }
+
+      // Try to recover from local storage (offline mode)
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const user = JSON.parse(storedUser);
+          console.log("AuthProvider: Loaded user from local storage (offline mode)");
+          setUser(user);
+          return;
+        } catch (e) {
+          console.warn("AuthProvider: Failed to parse stored user", e);
+        }
       }
       
       console.error(
@@ -205,6 +222,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     try {
       const result = await api.auth.login(email, password);
       setUser(result.user);
+      localStorage.setItem('user', JSON.stringify(result.user));
     } catch (loginError: any) {
       console.error("AuthProvider: Error durante el login:", loginError);
       setUser(null);
@@ -231,6 +249,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         } = response as User & { verificationEmailSent?: boolean };
 
         setVerificationEmailSent(Boolean(verificationFlag));
+
+        localStorage.setItem('user', JSON.stringify(userData));
+        setUser(userData); // Update state
 
         return {
           user: userData,

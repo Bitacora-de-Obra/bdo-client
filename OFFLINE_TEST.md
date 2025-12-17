@@ -74,6 +74,23 @@ import('./src/services/offline/test').then(m => {
    - Número de operaciones pendientes
    - Botón para sincronizar manualmente (si hay conexión)
 
+### 7. Verificar Autenticación Offline
+
+1. **Preparación:**
+   - Estando online, inicia sesión normalmente.
+   - Verifica que puedas ver el dashboard.
+
+2. **Prueba Offline:**
+   - Desconecta internet o activa modo Offline en DevTools.
+   - Recarga la página (F5).
+   - **Esperado:** Deberías entrar directamente al dashboard SIN pasar por login.
+   - Verifica en la consola el mensaje: `[AuthProvider] Loaded user from local storage (offline mode)`.
+
+3. **Prueba Logout:**
+   - Cierra sesión (Logout).
+   - Estando offline, intenta recargar.
+   - **Esperado:** Deberías quedarte en la pantalla de Login (no hay usuario guardado).
+
 ## Comandos útiles en la consola
 
 ```javascript
