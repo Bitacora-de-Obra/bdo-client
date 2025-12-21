@@ -732,7 +732,7 @@ const LoginScreen: React.FC = () => {
         <img
           src="/manual_usuario/logo.png"
           alt="Logo de la empresa"
-          className="h-10 w-auto object-contain"
+          className="h-40 w-auto object-contain"
         />
       </div>
     </div>
