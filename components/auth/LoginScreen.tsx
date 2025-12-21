@@ -692,7 +692,7 @@ const LoginScreen: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <div className="relative flex items-center justify-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
         <div className="text-center">
           <div className="h-64 w-64 mx-auto">
@@ -725,6 +725,15 @@ const LoginScreen: React.FC = () => {
         {renderModeLinks()}
 
         {/* Sección de Accesos de Prueba deshabilitada */}
+      </div>
+
+      <div className="fixed bottom-4 right-4 flex items-center gap-2 text-xs text-gray-500">
+        <span className="font-medium">by</span>
+        <img
+          src="/manual_usuario/logo.png"
+          alt="Logo de la empresa"
+          className="h-6 w-auto object-contain"
+        />
       </div>
     </div>
   );
