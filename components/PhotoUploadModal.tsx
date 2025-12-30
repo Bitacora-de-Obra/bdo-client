@@ -3,6 +3,7 @@ import { ControlPoint, PhotoEntry } from '../types';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
 import { CameraIcon } from './icons/Icon';
+import imageCompression from 'browser-image-compression';
 
 interface PhotoUploadModalProps {
   isOpen: boolean;
@@ -191,7 +192,7 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
         if (blob) {
           const fileName = `foto_${controlPoint.name.replace(/\s+/g, '_')}_${Date.now()}.jpg`;
           const file = new File([blob], fileName, { type: 'image/jpeg' });
-          const preview = canvas.toDataURL('image/jpeg');
+          const preview = URL.createObjectURL(file);
           setFiles(prev => [...prev, { file, preview, notes: '' }]);
           stopCamera();
           setCaptureMode('file'); // Cambiar a modo archivo después de capturar
@@ -203,24 +204,13 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
     if (selectedFiles.length > 0) {
-      const newFiles: FileWithPreview[] = [];
-      
-      selectedFiles.forEach((file) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          newFiles.push({
-            file,
-            preview: reader.result as string,
-            notes: ''
-          });
-          
-          // Cuando todos los archivos se hayan leído, actualizar el estado
-          if (newFiles.length === selectedFiles.length) {
-            setFiles(prev => [...prev, ...newFiles]);
-          }
-        };
-        reader.readAsDataURL(file);
-      });
+      // CAMBIO: Usar createObjectURL para preview instantáneo (O(1)) en lugar de leer todo el archivo
+      const newFiles = selectedFiles.map(file => ({
+        file,
+        preview: URL.createObjectURL(file),
+        notes: ''
+      }));
+      setFiles(prev => [...prev, ...newFiles]);
     }
   };
 
@@ -242,46 +232,72 @@ const PhotoUploadModal: React.FC<PhotoUploadModalProps> = ({ isOpen, onClose, on
     }
     
     setIsUploading(true);
-    setUploadedCount(0);
     setUploadErrors([]);
-    setUploadProgress(`Subiendo 0 de ${files.length} fotos...`);
+    setUploadedCount(0);
+    setUploadProgress(`Iniciando subida de ${files.length} fotos...`);
     
-    try {
-      // Subir todas las fotos en secuencia
-      for (let i = 0; i < files.length; i++) {
-        const fileWithPreview = files[i];
-        setUploadProgress(`Subiendo ${i + 1} de ${files.length}: ${fileWithPreview.file.name}...`);
+    // 1. Preparamos las promesas "envueltas" para manejar errores individualmente
+    const uploadPromises = files.map(async (fileWithPreview, index) => {
+      try {
+        const photoNotes = fileWithPreview.notes || notes;
+
+        // Compress image before upload
+        const options = {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1920,
+          useWebWorker: true
+        };
         
+        let fileToUpload = fileWithPreview.file;
         try {
-          // Usar las notas específicas de la foto, o las notas generales si no hay
-          const photoNotes = fileWithPreview.notes || notes;
-          await onSave({ notes: photoNotes, url: '' }, fileWithPreview.file);
-          setUploadedCount(i + 1);
-        } catch (error: any) {
-          const errorMessage = error?.message || `Error al subir ${fileWithPreview.file.name}`;
-          setUploadErrors(prev => [...prev, errorMessage]);
-          console.error(`Error al guardar foto ${i + 1}:`, error);
-          // Continuar con las siguientes fotos aunque una falle
+          // Only compress if it's an image
+          if (fileToUpload.type.startsWith('image/')) {
+            fileToUpload = await imageCompression(fileToUpload, options);
+          }
+        } catch (compressionError) {
+          console.warn('Error compressing image, proceeding with original:', compressionError);
         }
+
+        // Disparamos la subida
+        await onSave({ notes: photoNotes, url: '' }, fileToUpload);
+
+        // Actualizamos contador atómicamente para la barra de progreso
+        setUploadedCount(prev => {
+          const newCount = prev + 1;
+          return newCount;
+        });
+
+        return { status: 'fulfilled', fileName: fileWithPreview.file.name };
+
+      } catch (error: any) {
+        console.error(`Error subiendo ${fileWithPreview.file.name}:`, error);
+        return {
+          status: 'rejected',
+          reason: error?.message || 'Error desconocido',
+          fileName: fileWithPreview.file.name
+        };
       }
-      
-      if (uploadErrors.length === 0) {
-        setUploadProgress(`¡Todas las fotos se subieron exitosamente!`);
-        // Cerrar el modal después de un breve delay
-        setTimeout(() => {
-          onClose();
-        }, 1500);
-      } else if (uploadedCount > 0) {
-        setUploadProgress(`${uploadedCount} de ${files.length} fotos subidas. ${uploadErrors.length} error(es).`);
-      } else {
-        setUploadProgress('Error al subir las fotos.');
-        setIsUploading(false);
-      }
-    } catch (error) {
-      console.error('Error general al guardar fotos:', error);
-      setUploadProgress('');
-      setIsUploading(false);
+    });
+
+    // 2. Ejecutamos TODAS en paralelo (esperamos a que todas terminen, bien o mal)
+    const results = await Promise.all(uploadPromises);
+
+    // 3. Analizamos resultados finales
+    const failures = results.filter(r => r.status === 'rejected');
+
+    if (failures.length > 0) {
+      const errorMsgs = failures.map(f => `${f.fileName}: ${(f as any).reason}`);
+      setUploadErrors(errorMsgs);
+      setUploadProgress(`Finalizado con ${failures.length} errores.`);
+      // Opcional: No cerramos el modal si hubo errores para que el usuario los vea
+    } else {
+      setUploadProgress('¡Carga completa exitosa!');
+      setTimeout(() => {
+        onClose();
+      }, 1000);
     }
+
+    setIsUploading(false);
   };
 
   return (
