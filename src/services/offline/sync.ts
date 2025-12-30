@@ -24,16 +24,23 @@ class SyncManager {
       const operations = await offlineDB.getPendingOperations();
       console.log(`[Sync] Found ${operations.length} pending operations`);
 
-      for (const operation of operations) {
-        try {
-          await this.syncOperation(operation);
-        } catch (error) {
-          console.error(`[Sync] Failed to sync operation ${operation.id}:`, error);
-          // Si falla después de varios intentos, marcar como fallido
-          if (operation.retries >= 3) {
-            await offlineDB.updateOperationStatus(operation.id, 'FAILED');
+      // Process in chunks of 3
+      const CHUNK_SIZE = 3;
+      for (let i = 0; i < operations.length; i += CHUNK_SIZE) {
+        const chunk = operations.slice(i, i + CHUNK_SIZE);
+
+        // Execute chunk in parallel
+        await Promise.all(chunk.map(async (operation) => {
+          try {
+            await this.syncOperation(operation);
+          } catch (error) {
+            console.error(`[Sync] Failed to sync operation ${operation.id}:`, error);
+            // Si falla después de varios intentos, marcar como fallido
+            if (operation.retries >= 3) {
+              await offlineDB.updateOperationStatus(operation.id, 'FAILED');
+            }
           }
-        }
+        }));
       }
 
       // Limpiar cache expirado
@@ -127,6 +134,3 @@ class SyncManager {
 }
 
 export const syncManager = new SyncManager();
-
-
-
