@@ -163,6 +163,17 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     if (diffDays === 0) return "Día 1 del proyecto";
     return `Día ${diffDays + 1} del proyecto`;
   };
+
+  // Effect to recalculate schedule day when date changes during edit
+  useEffect(() => {
+    if (isEditing && formEntryDate && projectStartDate) {
+      const calculated = calculateScheduleDay(formEntryDate);
+      if (calculated && calculated !== editedEntry.scheduleDay) {
+        setEditedEntry(prev => ({ ...prev, scheduleDay: calculated }));
+      }
+    }
+  }, [formEntryDate, isEditing, projectStartDate]);
+
   const [editedEntry, setEditedEntry] = useState<LogEntry>(entry);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [newComment, setNewComment] = useState("");
