@@ -16,15 +16,25 @@ const statusColorMap: Record<EntryStatus, string> = {
   [EntryStatus.SIGNED]: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20',
 };
 
+const statusLabelMap: Record<EntryStatus, string> = {
+  [EntryStatus.APPROVED]: 'Listo para firmas',
+  [EntryStatus.NEEDS_REVIEW]: 'Revisión final',
+  [EntryStatus.SUBMITTED]: 'Revisión contratista',
+  [EntryStatus.REJECTED]: 'Rechazado',
+  [EntryStatus.DRAFT]: 'Borrador',
+  [EntryStatus.SIGNED]: 'Firmado',
+};
+
 
 const Badge: React.FC<BadgeProps> = ({ status }) => {
   const colorClasses = statusColorMap[status] || 'bg-gray-200 text-gray-800';
+  const label = statusLabelMap[status] || status;
   
   return (
     <span
       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${colorClasses}`}
     >
-      {status}
+      {label}
     </span>
   );
 };
