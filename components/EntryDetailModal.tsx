@@ -1869,9 +1869,14 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                 {isReadyForSignaturesStatus && (
                   <>
                     <p>
-                      ✍️ <strong>Listo para firmas:</strong> el contenido está
+                      ✍️ <strong>Listo para firmas:</strong> el contenido está 
                       cerrado y solo resta recolectar firmas.
                     </p>
+                    {canEdit && (
+                      <p>
+                        ✓ Puedes editar hasta que las firmas estén completadas.
+                      </p>
+                    )}
                     {canSign ? (
                       <p>✓ Puedes firmar si estás en la lista de firmantes.</p>
                     ) : (
