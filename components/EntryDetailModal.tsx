@@ -1451,9 +1451,9 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   // 3. Es un responsable (firmante) y el autor no ha firmado
   // 4. Es admin
   // Permitir editar hasta que haya firmas completadas
-  // DRAFT, SUBMITTED y NEEDS_REVIEW son editables
+  // DRAFT, SUBMITTED, APPROVED (deprecated pero aún existe) y NEEDS_REVIEW son editables
   const isStatusEditableForInterventoria =
-    isDraftStatus || isSubmittedStatus || isFinalReviewStatus;
+    isDraftStatus || isSubmittedStatus || isReadyForSignaturesStatus || isFinalReviewStatus;
 
   const canEdit =
     !effectiveReadOnly &&
