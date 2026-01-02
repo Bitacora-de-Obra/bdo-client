@@ -164,15 +164,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     return `Día ${diffDays + 1} del proyecto`;
   };
 
-  // Effect to recalculate schedule day when date changes during edit
-  useEffect(() => {
-    if (isEditing && formEntryDate && projectStartDate) {
-      const calculated = calculateScheduleDay(formEntryDate);
-      if (calculated && calculated !== editedEntry.scheduleDay) {
-        setEditedEntry(prev => ({ ...prev, scheduleDay: calculated }));
-      }
-    }
-  }, [formEntryDate, isEditing, projectStartDate]);
+
 
   const [editedEntry, setEditedEntry] = useState<LogEntry>(entry);
   const [newFiles, setNewFiles] = useState<File[]>([]);
@@ -183,6 +175,16 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [formEntryDate, setFormEntryDate] = useState<string>("");
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+
+  // Effect to recalculate schedule day when date changes during edit
+  useEffect(() => {
+    if (isEditing && formEntryDate && projectStartDate) {
+      const calculated = calculateScheduleDay(formEntryDate);
+      if (calculated && calculated !== editedEntry.scheduleDay) {
+        setEditedEntry(prev => ({ ...prev, scheduleDay: calculated }));
+      }
+    }
+  }, [formEntryDate, isEditing, projectStartDate]);
   const [isApproving, setIsApproving] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
