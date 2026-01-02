@@ -8,6 +8,7 @@ import { XMarkIcon } from "./icons/Icon";
 import { getFullRoleName } from "../src/utils/roleDisplay";
 import { useApi } from "../src/hooks/useApi";
 import api from "../src/services/api";
+import ProgressIndicator from "./ui/ProgressIndicator";
 
 interface EntryFormModalProps {
   isOpen: boolean;
@@ -103,6 +104,14 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     () => (currentUser ? [currentUser.id] : [])
   );
   const [isSaving, setIsSaving] = useState(false);
+  const [saveProgress, setSaveProgress] = useState(0);
+
+  const SAVE_STEPS = [
+    { message: 'Validando datos...', percentage: 20 },
+    { message: 'Subiendo archivos...', percentage: 50 },
+    { message: 'Guardando anotación...', percentage: 85 },
+    { message: '¡Guardado exitoso!', percentage: 100 },
+  ];
 
   const isSpecialType =
     entryType === EntryType.SAFETY ||
@@ -522,7 +531,24 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
         : socialContractorResponse;
 
     setIsSaving(true);
+    setSaveProgress(0);
+    
+    // Simulate progress steps
+    const simulateProgress = async () => {
+      // Step 1: Validating (20%)
+      setSaveProgress(0);
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Step 2: Uploading files (50%)
+      setSaveProgress(1);
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      // Step 3: Saving (85%) - actual save happens here
+      setSaveProgress(2);
+    };
+    
     try {
+      await simulateProgress();
       await onSave(
         {
           title: title.trim(),
@@ -575,12 +601,17 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
         [...files, ...photos]
       );
       localStorage.removeItem(AUTOSAVE_KEY);
+      
+      // Step 4: Complete (100%)
+      setSaveProgress(3);
+      await new Promise(resolve => setTimeout(resolve, 500));
     } catch (err) {
       setValidationError(
         err instanceof Error
           ? err.message
           : "No se pudo guardar la bitácora. Intenta nuevamente."
       );
+      setSaveProgress(0);
     } finally {
       setIsSaving(false);
     }
@@ -606,7 +637,19 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
         title="Registrar Bitácora Diaria"
         size="xl"
       >
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-6 pb-4">
+          {isSaving && (
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+              <ProgressIndicator
+                currentStep={saveProgress}
+                steps={SAVE_STEPS}
+                className="mb-2"
+              />
+              <p className="text-center text-sm text-gray-600 mt-2">
+                Por favor espera mientras guardamos tu anotación...
+              </p>
+            </div>
+          )}
           {validationError && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
               {validationError}
@@ -1641,7 +1684,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             type="submit"
             disabled={isSaving}
           >
-            {isSaving ? (
+            {isSaving && saveProgress < SAVE_STEPS.length - 1 ? (
               <>
                 <svg 
                   className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" 
