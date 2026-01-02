@@ -1423,6 +1423,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     normalizedCurrentProjectRole === UserRole.CONTRACTOR_REP;
   const effectiveReadOnly = readOnly && !isContractorUser;
   const isDraftStatus = workflowStatus === EntryStatus.DRAFT;
+  const isSubmittedStatus = workflowStatus === EntryStatus.SUBMITTED;
   const isContractorReviewStatus = workflowStatus === EntryStatus.SUBMITTED;
   const isFinalReviewStatus = workflowStatus === EntryStatus.NEEDS_REVIEW;
   const isReadyForSignaturesStatus = workflowStatus === EntryStatus.APPROVED;
@@ -1444,10 +1445,6 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   // 2. Es un asignado y el autor no ha firmado
   // 3. Es un responsable (firmante) y el autor no ha firmado
   // 4. Es admin
-  const isDraftStatus = workflowStatus === EntryStatus.DRAFT;
-  const isSubmittedStatus = workflowStatus === EntryStatus.SUBMITTED;
-  const isFinalReviewStatus = workflowStatus === EntryStatus.NEEDS_REVIEW;
-
   // Permitir editar hasta que haya firmas completadas
   // DRAFT, SUBMITTED y NEEDS_REVIEW son editables
   const isStatusEditableForInterventoria =
