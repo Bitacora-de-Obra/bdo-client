@@ -1435,9 +1435,9 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       (task) => task.signer?.id === currentUser.id
   ) || false;
   
-  // Verificar si el autor ya ha firmado
+  // Verificar si el autor ya ha firmado (completó su firma, no solo asignado)
   const authorHasSigned = entry.signatureTasks?.some(
-    (task) => task.signer?.id === author?.id
+    (task) => task.signer?.id === author?.id && task.status === "SIGNED"
   ) || false;
   
   // Permitir editar si:
