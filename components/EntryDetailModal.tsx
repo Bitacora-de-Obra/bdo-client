@@ -1435,6 +1435,11 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       (task) => task.signer?.id === currentUser.id
   ) || false;
   
+  // Verificar si hay firmas completadas
+  const hasCompletedSignatures = entry.signatureTasks?.some(
+    (task) => task.status === "SIGNED"
+  ) || false;
+  
   // Verificar si el autor ya ha firmado (completó su firma, no solo asignado)
   const authorHasSigned = entry.signatureTasks?.some(
     (task) => task.signer?.id === author?.id && task.status === "SIGNED"
@@ -1452,12 +1457,12 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
 
   const canEdit =
     !effectiveReadOnly &&
-    (!isContractorUser || isAdmin) &&
     isStatusEditableForInterventoria &&
-    (isAuthor ||
-      isAdmin ||
-      (isAssignee && !authorHasSigned) ||
-      (isRequiredSigner && !authorHasSigned));
+    (isAdmin ||  // Admins always can edit in editable statuses
+     ((!isContractorUser || isAdmin) &&
+      (isAuthor ||
+       (isAssignee && !authorHasSigned) ||
+       (isRequiredSigner && !authorHasSigned))));
   
   const canSendToContractor =
     !effectiveReadOnly && isDraftStatus && (isAuthor || isAdmin);
@@ -1598,7 +1603,16 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                     <Badge status={statusLabel as EntryStatus} />
                     {!isStatusEditableForInterventoria && (
                       <span className="text-xs text-gray-500">
-                        (No editable)
+                        {isSignedStatus 
+                          ? '(No editable, anotación firmada)' 
+                          : hasCompletedSignatures
+                          ? '(No editable, tiene firmas completadas)'
+                          : '(No editable)'}
+                      </span>
+                    )}
+                    {isStatusEditableForInterventoria && !canEdit && (
+                      <span className="text-xs text-gray-500">
+                        (No editable, no eres el autor)
                       </span>
                     )}
                   </>
