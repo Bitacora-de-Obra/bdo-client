@@ -56,22 +56,15 @@ const SignatureModal: React.FC<SignatureModalProps> = ({
   }, [isOpen]);
 
   const simulateProgress = async (callback: () => Promise<any>) => {
-    const delays = [200, 300, 400, 500, 300]; 
+    // Go directly to signing step (no delays before actual operation)
+    setCurrentStep(3); // "Aplicando firma manuscrita..."
     
-    for (let i = 0; i < SIGNATURE_STEPS.length - 1; i++) {
-      setCurrentStep(i);
-      
-      // Execute actual signing on step 3 (applying signature)
-      if (i === 3) {
-        await callback();
-      } else {
-        await new Promise(resolve => setTimeout(resolve, delays[i]));
-      }
-    }
+    // Execute actual signing immediately
+    await callback();
     
-    // Final step
-    setCurrentStep(SIGNATURE_STEPS.length - 1);
-    await new Promise(resolve => setTimeout(resolve, 400));
+    // Quick completion animation after success
+    setCurrentStep(SIGNATURE_STEPS.length - 1); // "¡Firma completada!"
+    await new Promise(resolve => setTimeout(resolve, 300));
   };
 
   const handleConfirm = async () => {
