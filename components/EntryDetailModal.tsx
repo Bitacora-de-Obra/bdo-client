@@ -57,6 +57,7 @@ interface EntryDetailModalProps {
   availableUsers: User[];
   onRefresh?: () => void;
   readOnly?: boolean;
+  projectStartDate?: string; // Fecha de inicio del proyecto para calcular días
 }
 
 const DetailRow: React.FC<{ label: string; value: React.ReactNode }> = ({
@@ -1936,7 +1937,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
           ) : (
             <DetailRow
               label="Día del plazo"
-              value={scheduleDay || "No registrado"}
+              value={scheduleDay || (projectStartDate ? calculateScheduleDay(entryDateIso) : "No registrado")}
             />
           )}
           {isEditing ? (

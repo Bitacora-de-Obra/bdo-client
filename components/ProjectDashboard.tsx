@@ -503,6 +503,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
           isOpen={isDetailModalOpen}
           onClose={handleCloseDetail}
           entry={selectedEntry}
+          projectStartDate={project?.startDate}
           onUpdate={handleUpdateEntry}
           onAddComment={handleAddComment}
           onSign={(docId, docType, signer, payload) =>
