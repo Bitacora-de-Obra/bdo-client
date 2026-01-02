@@ -1458,11 +1458,10 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const canEdit =
     !effectiveReadOnly &&
     isStatusEditableForInterventoria &&
-    (isAdmin ||  // Admins always can edit in editable statuses
-     ((!isContractorUser || isAdmin) &&
-      (isAuthor ||
-       (isAssignee && !authorHasSigned) ||
-       (isRequiredSigner && !authorHasSigned))));
+    (!isContractorUser || isAdmin) &&
+    (isAuthor ||
+     (isAssignee && !authorHasSigned) ||
+     (isRequiredSigner && !authorHasSigned));
   
   const canSendToContractor =
     !effectiveReadOnly && isDraftStatus && (isAuthor || isAdmin);
