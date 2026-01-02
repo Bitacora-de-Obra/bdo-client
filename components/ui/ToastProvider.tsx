@@ -93,7 +93,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="fixed inset-x-0 top-4 z-[1000] flex flex-col items-center gap-3 px-4 pointer-events-none">
+      <div className="fixed inset-x-0 top-4 z-[9999] flex flex-col items-center gap-3 px-4 pointer-events-none">
         {toasts.map((toast) => {
           const styles = VARIANT_STYLES[toast.variant ?? "info"];
           return (
