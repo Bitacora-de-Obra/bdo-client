@@ -1431,12 +1431,12 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   
   // Verificar si el usuario es un responsable (firmante requerido)
   const isRequiredSigner = entry.signatureTasks?.some(
-    (task) => task.signer?.id === currentUser.id
+      (task) => task.signer?.id === currentUser.id
   ) || false;
   
   // Verificar si el autor ya ha firmado
   const authorHasSigned = entry.signatureTasks?.some(
-    (task) => task.signer?.id === author?.id && task.status === "SIGNED"
+    (task) => task.signer?.id === author?.id
   ) || false;
   
   // Permitir editar si:
@@ -1444,8 +1444,14 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   // 2. Es un asignado y el autor no ha firmado
   // 3. Es un responsable (firmante) y el autor no ha firmado
   // 4. Es admin
+  const isDraftStatus = workflowStatus === EntryStatus.DRAFT;
+  const isSubmittedStatus = workflowStatus === EntryStatus.SUBMITTED;
+  const isFinalReviewStatus = workflowStatus === EntryStatus.NEEDS_REVIEW;
+
+  // Permitir editar hasta que haya firmas completadas
+  // DRAFT, SUBMITTED y NEEDS_REVIEW son editables
   const isStatusEditableForInterventoria =
-    isDraftStatus || isFinalReviewStatus;
+    isDraftStatus || isSubmittedStatus || isFinalReviewStatus;
 
   const canEdit =
     !effectiveReadOnly &&
