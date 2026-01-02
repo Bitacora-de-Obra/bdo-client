@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { ProjectDetails, LogEntry, User, SignatureConsentPayload, UserRole, Comment } from "../types";
+import { ProjectDetails, LogEntry, User, SignatureConsentPayload, UserRole, Comment, EntryStatus } from "../types";
 import api from "../src/services/api";
 import FilterBar from "./FilterBar";
 import EntryCard from "./EntryCard";
