@@ -97,8 +97,12 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
           .toLowerCase()
           .includes(filters.searchTerm.toLowerCase()) ||
         String(entry.folioNumber).includes(filters.searchTerm);
+      
+      // Normalize entry status for comparison (handle English API keys vs Spanish filter values)
+      const normalizedStatus = EntryStatus[entry.status as keyof typeof EntryStatus] || entry.status;
       const statusMatch =
-        filters.status === "all" || entry.status === filters.status;
+        filters.status === "all" || normalizedStatus === filters.status;
+      
       const typeMatch = filters.type === "all" || entry.type === filters.type;
       const userMatch =
         filters.user === "all" ||
