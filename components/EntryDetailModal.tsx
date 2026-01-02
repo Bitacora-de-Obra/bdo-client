@@ -128,6 +128,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   availableUsers,
   onRefresh = () => {},
   readOnly = false,
+  projectStartDate,
 }) => {
   const { user: authUser } = useAuth();
   const canDownload = authUser?.canDownload ?? true;
@@ -149,6 +150,19 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   };
 
   const [isEditing, setIsEditing] = useState(false);
+
+  // Calcular día del plazo automáticamente
+  const calculateScheduleDay = (entryDateVal: string) => {
+    if (!entryDateVal || !projectStartDate) return "";
+    const entryDateObj = new Date(entryDateVal.includes('T') ? entryDateVal : `${entryDateVal}T12:00:00`);
+    const projectStartDateObj = new Date(projectStartDate);
+    const diffTime = entryDateObj.getTime() - projectStartDateObj.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) return `Día ${Math.abs(diffDays)} antes del inicio del proyecto`;
+    if (diffDays === 0) return "Día 1 del proyecto";
+    return `Día ${diffDays + 1} del proyecto`;
+  };
   const [editedEntry, setEditedEntry] = useState<LogEntry>(entry);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [newComment, setNewComment] = useState("");
