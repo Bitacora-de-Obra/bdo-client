@@ -39,18 +39,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const [prefetchedPage, setPrefetchedPage] = useState<number | null>(null);
   const [prefetchedData, setPrefetchedData] = useState<any>(null);
   const [sortBy, setSortBy] = useState<"entryDate" | "folioNumber" | "folioNumberDesc" | "createdAt">("createdAt");
-  
-  // Filters state - must be declared before using in hook
-  const [filters, setFilters] = useState({
-    searchTerm: "",
-    status: "all",
-    type: "all",
-    user: "all",
-    startDate: "",
-    endDate: "",
-  });
-  
-  const { data: logEntriesResponse, isLoading: isLogEntriesLoading, error } = useApi.logEntries(
+  const { data: logEntriesResponse, isLoading: isLogEntriesLoading, error, refetch: refetchLogEntries } = useApi.logEntries(
     currentPage, 
     ENTRIES_PER_PAGE, 
     sortBy,
@@ -61,6 +50,36 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     }
   );
   const { data: users, isLoading: isUsersLoading } = useApi.users();
+
+  // Use prefetched data if available, otherwise use fresh data
+  const actualLogEntriesResponse = prefetchedPage === currentPage && prefetchedData
+    ? prefetchedData
+    : logEntriesResponse;
+
+  // Extraer entries y pagination del response (backward compatible)
+  const logEntries = Array.isArray(actualLogEntriesResponse) 
+    ? actualLogEntriesResponse 
+    : actualLogEntriesResponse?.entries || [];
+  const pagination = !Array.isArray(actualLogEntriesResponse) 
+    ? actualLogEntriesResponse?.pagination 
+    : null;
+
+  const [selectedEntry, setSelectedEntry] = useState<LogEntry | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
+  const [newEntryDefaultDate, setNewEntryDefaultDate] = useState<string | null>(
+    null
+  );
+  const [filters, setFilters] = useState({
+    searchTerm: "",
+    status: "all",
+    type: "all",
+    user: "all",
+    startDate: "",
+    endDate: "",
+  });
   const { canEditContent } = usePermissions();
   const isContractorRep = user?.projectRole === UserRole.CONTRACTOR_REP;
   const readOnly = !canEditContent && !isContractorRep;
