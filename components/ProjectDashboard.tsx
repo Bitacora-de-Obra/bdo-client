@@ -7,6 +7,7 @@ import EntryDetailModal from "./EntryDetailModal";
 import EntryFormModal from "./EntryFormModal";
 import Button from "./ui/Button";
 import EmptyState from "./ui/EmptyState";
+import Pagination from "./ui/Pagination";
 import {
   PlusIcon,
   Squares2X2Icon,
@@ -32,8 +33,18 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
 }) => {
   const { user } = useAuth();
   const { data: project, isLoading: isProjectLoading } = useApi.projectDetails();
-  const { data: logEntries, isLoading: isLogEntriesLoading, error, retry: refetchLogEntries } = useApi.logEntries();
+  const [currentPage, setCurrentPage] = useState(1);
+  const ENTRIES_PER_PAGE = 50;
+  const { data: logEntriesResponse, isLoading: isLogEntriesLoading, error, retry: refetchLogEntries } = useApi.logEntries(currentPage, ENTRIES_PER_PAGE);
   const { data: users, isLoading: isUsersLoading } = useApi.users();
+
+  // Extraer entries y pagination del response (backward compatible)
+  const logEntries = Array.isArray(logEntriesResponse) 
+    ? logEntriesResponse 
+    : logEntriesResponse?.entries || [];
+  const pagination = !Array.isArray(logEntriesResponse) 
+    ? logEntriesResponse?.pagination 
+    : null;
 
   const [selectedEntry, setSelectedEntry] = useState<LogEntry | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -66,6 +77,11 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
       clearInitialItem();
     }
   }, [initialItemToOpen, logEntries, clearInitialItem]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, sortBy]);
 
   const handleOpenDetail = (entry: LogEntry) => {
     setSelectedEntry(entry);
