@@ -38,7 +38,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const ENTRIES_PER_PAGE = 20;
   const [prefetchedPage, setPrefetchedPage] = useState<number | null>(null);
   const [prefetchedData, setPrefetchedData] = useState<any>(null);
-  const [sortBy, setSortBy] = useState<"entryDate" | "folioNumber" | "folioNumberDesc" | "createdAt">("entryDate");
+  const [sortBy, setSortBy] = useState<"entryDate" | "folioNumber" | "folioNumberDesc" | "createdAt">("createdAt");
   const { data: logEntriesResponse, isLoading: isLogEntriesLoading, error, retry: refetchLogEntries } = useApi.logEntries(currentPage, ENTRIES_PER_PAGE, sortBy);
   const { data: users, isLoading: isUsersLoading } = useApi.users();
 
@@ -168,27 +168,9 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
       );
     });
 
-    // Ordenar según la selección del usuario
-    const sorted = [...filtered].sort((a, b) => {
-      if (sortBy === "folioNumber") {
-        return (a.folioNumber || 0) - (b.folioNumber || 0);
-      }
-      if (sortBy === "folioNumberDesc") {
-        return (b.folioNumber || 0) - (a.folioNumber || 0);
-      }
-      if (sortBy === "createdAt") {
-        // Más recientes primero
-        return (
-          new Date(b.createdAt || b.entryDate).getTime() -
-          new Date(a.createdAt || a.entryDate).getTime()
-        );
-      }
-      // entryDate por defecto (más antiguos primero)
-      return new Date(a.entryDate).getTime() - new Date(b.entryDate).getTime();
-    });
-
-    return sorted;
-  }, [logEntries, filters, sortBy]);
+    // Backend now handles sorting - return filtered results as-is
+    return filtered;
+  }, [logEntries, filters]);
 
   const handleCloseDetail = () => {
     setIsDetailModalOpen(false);
