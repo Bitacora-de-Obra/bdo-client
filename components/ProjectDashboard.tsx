@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { ProjectDetails, LogEntry, User, SignatureConsentPayload, UserRole, Comment, EntryStatus, EntryType } from "../types";
+import { ProjectDetails, LogEntry, User, SignatureConsentPayload, UserRole, Comment as EntryComment, EntryStatus, EntryType } from "../types";
 import api from "../src/services/api";
 import FilterBar from "./FilterBar";
 import EntryCard from "./EntryCard";
@@ -295,7 +295,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     entryId: string,
     commentText: string,
     files: File[]
-  ): Promise<Comment> => {
+  ): Promise<EntryComment> => {
     if (readOnly) {
       showToast({
         title: "Acción no permitida",
