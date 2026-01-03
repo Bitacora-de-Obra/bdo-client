@@ -42,6 +42,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   currentUser,
   projectStartDate
 }) => {
+  const MAX_PHOTOS = 20; // Maximum number of photos per entry
   const [entryDate, setEntryDate] = useState<string>("");
   const [entryType, setEntryType] = useState<EntryType>(EntryType.GENERAL);
   const [title, setTitle] = useState<string>("");
@@ -280,6 +281,13 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
       const newPhotos = Array.from(e.target.files).filter(file => 
         file.type.startsWith('image/')
       );
+      const totalPhotos = photos.length + newPhotos.length;
+      
+      if (totalPhotos > MAX_PHOTOS) {
+        alert(`Solo puedes subir un máximo de ${MAX_PHOTOS} fotos. Actualmente tienes ${photos.length} foto(s).`);
+        return;
+      }
+      
       setPhotos((prev) => [...prev, ...newPhotos]);
     }
   };
