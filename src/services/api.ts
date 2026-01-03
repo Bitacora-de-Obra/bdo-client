@@ -662,8 +662,14 @@ export const adminApi = {
 
 // API Functions for Log Entries
 export const logEntriesApi = {
-  getAll: async (page?: number, limit?: number) => {
-    const params = page && limit ? `?page=${page}&limit=${limit}` : '';
+  getAll: async (page?: number, limit?: number, sortBy?: string) => {
+    let params = '';
+    if (page && limit) {
+      params = `?page=${page}&limit=${limit}`;
+      if (sortBy) params += `&sortBy=${sortBy}`;
+    } else if (sortBy) {
+      params = `?sortBy=${sortBy}`;
+    }
     return apiFetch(`/log-entries${params}`);
   },
   getById: async (id: string) => {

@@ -38,7 +38,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const ENTRIES_PER_PAGE = 20;
   const [prefetchedPage, setPrefetchedPage] = useState<number | null>(null);
   const [prefetchedData, setPrefetchedData] = useState<any>(null);
-  const { data: logEntriesResponse, isLoading: isLogEntriesLoading, error, retry: refetchLogEntries } = useApi.logEntries(currentPage, ENTRIES_PER_PAGE);
+  const { data: logEntriesResponse, isLoading: isLogEntriesLoading, error, retry: refetchLogEntries } = useApi.logEntries(currentPage, ENTRIES_PER_PAGE, sortBy);
   const { data: users, isLoading: isUsersLoading } = useApi.users();
 
   // Use prefetched data if available, otherwise use fresh data

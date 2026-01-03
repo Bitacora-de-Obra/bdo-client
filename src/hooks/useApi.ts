@@ -3,7 +3,7 @@ import api from '../services/api';
 import { useState, useEffect, useCallback } from 'react';
 
 // Custom hook for paginated log entries
-export function useLogEntries(page?: number, limit?: number): LoadingState<any> {
+export function useLogEntries(page?: number, limit?: number, sortBy?: string): LoadingState<any> {
   const [data, setData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<any>(null);
@@ -12,7 +12,7 @@ export function useLogEntries(page?: number, limit?: number): LoadingState<any> 
     setIsLoading(true);
     setError(null);
     try {
-      const result = await api.logEntries.getAll(page, limit);
+      const result = await api.logEntries.getAll(page, limit, sortBy);
       setData(result);
     } catch (err) {
       console.error('Error fetching log entries:', err);
@@ -20,7 +20,7 @@ export function useLogEntries(page?: number, limit?: number): LoadingState<any> 
     } finally {
       setIsLoading(false);
     }
-  }, [page, limit]);
+  }, [page, limit, sortBy]);
 
   useEffect(() => {
     fetchData();
