@@ -112,7 +112,7 @@ export const ChatbotWidget: React.FC = () => {
         const attachment = await api.upload.uploadFile(selectedPhoto, "photo");
         
         // 2. Analyze photo
-        const { analysis,_interactionId } = await api.chatbot.analyzePhoto(
+        const { analysis, interactionId: _interactionId } = await api.chatbot.analyzePhoto(
           attachment.url, 
           sanitizedInput || undefined
         );
