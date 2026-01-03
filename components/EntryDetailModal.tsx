@@ -34,6 +34,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { getFullRoleName } from "../src/utils/roleDisplay";
 import { getUserAvatarUrl } from "../src/utils/avatar";
 import MentionTextarea from "./ui/MentionTextarea";
+import LazyImage from "./ui/LazyImage";
 import { convertInputMentionsToPayload, renderCommentWithMentions } from "../src/utils/mentions";
 
 interface EntryDetailModalProps {
