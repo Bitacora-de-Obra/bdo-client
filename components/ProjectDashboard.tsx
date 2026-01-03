@@ -63,7 +63,6 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const [newEntryDefaultDate, setNewEntryDefaultDate] = useState<string | null>(
     null
   );
-  const [sortBy, setSortBy] = useState<"entryDate" | "folioNumber" | "folioNumberDesc" | "createdAt">("entryDate");
   const [filters, setFilters] = useState({
     searchTerm: "",
     status: "all",
