@@ -36,6 +36,7 @@ import { getUserAvatarUrl } from "../src/utils/avatar";
 import MentionTextarea from "./ui/MentionTextarea";
 import LazyImage from "./ui/LazyImage";
 import { convertInputMentionsToPayload, renderCommentWithMentions } from "../src/utils/mentions";
+import AttachmentSections from "./AttachmentSections";
 
 interface EntryDetailModalProps {
   isOpen: boolean;
@@ -3045,74 +3046,12 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
               </div>
             </div>
           ) : (
-            attachments.length > 0 && (
-              <div>
-                <h4 className="text-md font-semibold text-gray-800">
-                  Archivos Adjuntos
-                </h4>
-                <div className="mt-2 space-y-3">
-                  {attachments.map((att) => {
-                    const isImage = att.type?.startsWith("image/");
-                    if (isImage) {
-                      return (
-                        <div key={att.id} className="p-2 border rounded-lg">
-                          <a
-                            href={att.url || att.downloadUrl || att.previewUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <img
-                              src={att.url || att.previewUrl}
-                              alt={att.fileName}
-                              className="max-h-80 w-auto rounded-md border cursor-pointer hover:opacity-90"
-                              onError={(e) => {
-                                console.error('Error cargando imagen:', att.fileName, att.url);
-                                // Intentar con previewUrl si url falla
-                                if (att.previewUrl && att.previewUrl !== att.url) {
-                                  (e.target as HTMLImageElement).src = att.previewUrl;
-                                } else if (att.downloadUrl && att.downloadUrl !== att.url) {
-                                  (e.target as HTMLImageElement).src = att.downloadUrl;
-                                }
-                              }}
-                            />
-                          </a>
-                          <div className="mt-2 flex items-center justify-between text-sm">
-                            <p className="font-medium text-gray-700 truncate">
-                              {att.fileName}
-                            </p>
-                            <div className="flex items-center gap-3 ml-4 flex-shrink-0">
-                              <span className="text-gray-500">
-                                {formatBytes(att.size)}
-                              </span>
-                              {canDownload ? (
-                                <a
-                                  href={att.url}
-                                  download={att.fileName}
-                                  className="font-medium text-brand-primary hover:text-brand-secondary"
-                                >
-                                  Descargar
-                                </a>
-                              ) : (
-                                <span className="text-gray-400 text-xs italic">Solo previsualización</span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-                    const isPdf =
-                      typeof att.type === "string" &&
-                      att.type.toLowerCase().includes("pdf");
-                    return (
-                      <AttachmentItem
-                        key={att.id}
-                        attachment={att}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            )
+            <AttachmentSections 
+              attachments={attachments}
+              signedPdf={entry.signedPdf}
+              canDownload={canDownload}
+              formatBytes={formatBytes}
+            />
           )}
           
           {/* Review Tasks Block */}
