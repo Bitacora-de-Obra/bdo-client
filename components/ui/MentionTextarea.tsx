@@ -225,7 +225,7 @@ const MentionTextarea: React.FC<MentionTextareaProps> = ({
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
-        className={`relative z-10 block w-full rounded-md border border-gray-300 bg-transparent p-2 text-transparent caret-brand-primary focus:border-brand-primary focus:ring-brand-primary focus:ring-1 sm:text-sm ${className || ""}`}
+        className={`relative z-10 block w-full rounded-md border border-gray-300 bg-transparent p-2 text-transparent caret-brand-primary placeholder-gray-500 placeholder:opacity-100 focus:border-brand-primary focus:ring-brand-primary focus:ring-1 sm:text-sm ${className || ""}`}
         style={{
           ...(style || {}),
           resize: style?.resize ?? ("vertical" as React.CSSProperties["resize"]),
