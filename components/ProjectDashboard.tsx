@@ -485,13 +485,26 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
           {viewMode === "list" && (
             <div className="space-y-4">
               {filteredEntries.length > 0 ? (
-                filteredEntries.map((entry) => (
-                  <EntryCard
-                    key={entry.id}
-                    entry={entry}
-                    onSelect={handleOpenDetail}
-                  />
-                ))
+                <>
+                  {filteredEntries.map((entry) => (
+                    <EntryCard
+                      key={entry.id}
+                      entry={entry}
+                      onSelect={handleOpenDetail}
+                    />
+                  ))}
+                  {/* Paginación */}
+                  {pagination && (
+                    <Pagination
+                      currentPage={pagination.currentPage}
+                      totalPages={pagination.pages}
+                      total={pagination.total}
+                      limit={pagination.limit}
+                      onPageChange={setCurrentPage}
+                      isLoading={isLogEntriesLoading}
+                    />
+                  )}
+                </>
               ) : (
                 <EmptyState
                   icon={<Squares2X2Icon />}
