@@ -69,18 +69,24 @@ const MentionTextarea: React.FC<MentionTextareaProps> = ({
         parts.push(rawValue.substring(lastIndex, atIndex));
       }
 
-      // Extraer nombre - todo desde @ hasta el primer marcador
+      // Extraer las partes
+      const atSymbol = '@';
       const displayName = rawValue.substring(atIndex + 1, firstMarkerIndex);
+      const firstMarker = rawValue.substring(firstMarkerIndex, firstMarkerIndex + 1);
+      const encodedId = rawValue.substring(firstMarkerIndex + 1, secondMarkerIndex);
+      const secondMarker = rawValue.substring(secondMarkerIndex, secondMarkerIndex + 1);
       
-      // Renderizar SOLO el nombre visible con fondo azul, sin los marcadores
-      // Los marcadores son invisibles así que no los mostramos
+      // Renderizar cada parte con su propio estilo
+      // El @ y nombre con fondo azul, los marcadores e ID con font-size 0
       parts.push(
-        <span
-          key={`mention-${keyCounter++}`}
-          className="bg-blue-100 text-blue-800"
-        >
-          @{displayName}
-        </span>
+        <React.Fragment key={`mention-${keyCounter++}`}>
+          <span className="bg-blue-100 text-blue-800">
+            {atSymbol}{displayName}
+          </span>
+          <span style={{ fontSize: 0, lineHeight: 0, display: 'inline-block', width: 0, overflow: 'hidden' }}>
+            {firstMarker}{encodedId}{secondMarker}
+          </span>
+        </React.Fragment>
       );
 
       lastIndex = secondMarkerIndex + 1;
