@@ -39,7 +39,16 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const [prefetchedPage, setPrefetchedPage] = useState<number | null>(null);
   const [prefetchedData, setPrefetchedData] = useState<any>(null);
   const [sortBy, setSortBy] = useState<"entryDate" | "folioNumber" | "folioNumberDesc" | "createdAt">("createdAt");
-  const { data: logEntriesResponse, isLoading: isLogEntriesLoading, error, retry: refetchLogEntries } = useApi.logEntries(currentPage, ENTRIES_PER_PAGE, sortBy);
+  const { data: logEntriesResponse, isLoading: isLogEntriesLoading, error, refetch: refetchLogEntries } = useApi.logEntries(
+    currentPage, 
+    ENTRIES_PER_PAGE, 
+    sortBy,
+    {
+      status: filters.status !== 'all' ? filters.status : undefined,
+      type: filters.type !== 'all' ? filters.type : undefined,
+      userId: filters.user !== 'all' ? filters.user : undefined
+    }
+  );
   const { data: users, isLoading: isUsersLoading } = useApi.users();
 
   // Use prefetched data if available, otherwise use fresh data
