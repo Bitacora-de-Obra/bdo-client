@@ -138,6 +138,13 @@ const SignatureBlock: React.FC<SignatureBlockProps> = ({
           ? (task.signedAt || signatureRecord?.signedAt || undefined)
           : undefined;
         
+        console.log(`[SignatureBlock] Task for ${task.signer.fullName}:`, {
+          taskStatus: task.status,
+          taskSignedAt: task.signedAt,
+          signatureRecordSignedAt: signatureRecord?.signedAt,
+          finalSignedAt: signedAt
+        });
+        
         upsertParticipant({
           id: task.signer.id,
           fullName: task.signer.fullName,
