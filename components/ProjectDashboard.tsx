@@ -39,6 +39,17 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const [prefetchedPage, setPrefetchedPage] = useState<number | null>(null);
   const [prefetchedData, setPrefetchedData] = useState<any>(null);
   const [sortBy, setSortBy] = useState<"entryDate" | "folioNumber" | "folioNumberDesc" | "createdAt">("createdAt");
+  
+  // Filters state - must be declared before using in hook
+  const [filters, setFilters] = useState({
+    searchTerm: "",
+    status: "all",
+    type: "all",
+    user: "all",
+    startDate: "",
+    endDate: "",
+  });
+  
   const { data: logEntriesResponse, isLoading: isLogEntriesLoading, error, refetch: refetchLogEntries } = useApi.logEntries(
     currentPage, 
     ENTRIES_PER_PAGE, 
@@ -72,14 +83,6 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const [newEntryDefaultDate, setNewEntryDefaultDate] = useState<string | null>(
     null
   );
-  const [filters, setFilters] = useState({
-    searchTerm: "",
-    status: "all",
-    type: "all",
-    user: "all",
-    startDate: "",
-    endDate: "",
-  });
   const { canEditContent } = usePermissions();
   const isContractorRep = user?.projectRole === UserRole.CONTRACTOR_REP;
   const readOnly = !canEditContent && !isContractorRep;
