@@ -4,18 +4,21 @@ import AttachmentItem from './AttachmentItem';
 
 interface AttachmentSectionsProps {
   attachments: Attachment[];
-  signedPdf?: Attachment | null;
   canDownload: boolean;
   formatBytes: (bytes: number) => string;
 }
 
 const AttachmentSections: React.FC<AttachmentSectionsProps> = ({
   attachments,
-  signedPdf,
   canDownload,
   formatBytes
 }) => {
-  // Classify attachments by type
+  // Detect signed PDF from attachments (usually has 'firmado' in filename)
+  const signedPdf = attachments.find(att => 
+    att.type?.toLowerCase().includes('pdf') && att.fileName?.toLowerCase().includes('firmado')
+  );
+  
+  // Classify other attachments by type (excluding signed PDF)
   const photoAttachments = attachments.filter(att => att.type?.startsWith("image/"));
   const pdfAttachments = attachments.filter(att => att.type?.toLowerCase().includes("pdf"));
   const otherAttachments = attachments.filter(att => 
