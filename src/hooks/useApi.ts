@@ -2,8 +2,8 @@ import { useLoadingState, LoadingState } from './useLoadingState';
 import api from '../services/api';
 
 // Hooks para cada tipo de dato
-export function useLogEntries(): LoadingState<any[]> {
-  return useLoadingState(api.logEntries.getAll);
+export function useLogEntries(page?: number, limit?: number): LoadingState<any> {
+  return useLoadingState(() => api.logEntries.getAll(page, limit));
 }
 
 export function useCommunications(): LoadingState<any[]> {
