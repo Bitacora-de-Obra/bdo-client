@@ -1,9 +1,141 @@
-import React, { useState, useRef, useEffect } from "react";
-import { api } from "../../src/services/api";
-import { Icon } from "../../components/icons/Icon";
-import { HardHatIcon, XMarkIcon, PaperAirplaneIcon } from "../icons/Icon";
+import { jsPDF } from "jspdf";
 
-type Message = {
+// ... existing imports ...
+
+export const ChatbotWidget: React.FC = () => {
+  // ... existing state ...
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+
+  // ... existing effects ...
+
+  const handleExportPDF = () => {
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 15;
+      const contentWidth = pageWidth - (margin * 2);
+      let y = 20;
+
+      // Header
+      doc.setFontSize(16);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Bitácora Virtual - Historial de Chat`, margin, y);
+      y += 10;
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Generado el: ${new Date().toLocaleString()}`, margin, y);
+      y += 15;
+
+      // Messages
+      messages.forEach((msg) => {
+        if (y > 270) {
+          doc.addPage();
+          y = 20;
+        }
+
+        const role = msg.sender === 'user' ? 'Usuario' : 'Aurora (IA)';
+        const color = msg.sender === 'user' ? [0, 0, 255] : [0, 128, 0]; // Blue / Green
+        
+        doc.setFontSize(11);
+        doc.setTextColor(color[0], color[1], color[2]);
+        doc.setFont("helvetica", "bold");
+        doc.text(`${role}:`, margin, y);
+        y += 6;
+
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(0, 0, 0);
+        
+        const cleanText = msg.text.replace(/<[^>]*>?/gm, ''); // Remove HTML if any
+        const splitText = doc.splitTextToSize(cleanText, contentWidth);
+        doc.text(splitText, margin, y);
+        
+        y += (splitText.length * 5) + 8; // Line height + spacing
+      });
+
+      doc.save(`aurora-chat-${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (err) {
+      console.error("Error exporting PDF:", err);
+    }
+  };
+
+  const copyToClipboard = async (text: string, msgId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedMessageId(msgId);
+      setTimeout(() => setCopiedMessageId(null), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
+  // ... existing handlers ...
+
+  return (
+    <div style={styles.container}>
+      {isOpen && (
+        <div style={styles.chatWindow}>
+          <div style={styles.header}>
+            <div style={styles.headerTitle}>
+              <HardHatIcon className="w-5 h-5 text-blue-600" />
+              <span>Asistente Aurora</span>
+            </div>
+            <div className="flex gap-2">
+               <button
+                  onClick={handleExportPDF}
+                  title="Exportar chat a PDF"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
+                >
+                  <DocumentArrowDownIcon className="w-5 h-5 text-gray-500 hover:text-blue-600" />
+               </button>
+               <button onClick={() => setIsOpen(false)} style={styles.closeButton}>
+                  <XMarkIcon className="w-5 h-5" />
+               </button>
+            </div>
+          </div>
+          
+          {/* ... existing messageList ... */}
+            {messages.map((msg) => {
+              const isBot = msg.sender === "bot";
+              // ... inside map ...
+              return (
+                <div
+                  key={msg.id}
+                  style={{
+                    ...styles.message,
+                    ...(isBot ? styles.botMessage : styles.userMessage),
+                    position: 'relative' // For copy button positioning if needed, or structured layout
+                  }}
+                  className="group" // For hover effect
+                >
+                   {/* Message content */}
+                   <div style={{ whiteSpace: "pre-wrap", paddingRight: '20px' }}>{msg.text}</div>
+                   
+                   {/* Copy Button (visible on hover or always small) */}
+                   <button
+                     onClick={() => copyToClipboard(msg.text, msg.id)}
+                     style={{
+                       position: 'absolute',
+                       top: 4,
+                       right: 4,
+                       background: 'transparent',
+                       border: 'none',
+                       cursor: 'pointer',
+                       opacity: 0.5
+                     }}
+                     title="Copiar texto"
+                   >
+                      {copiedMessageId === msg.id ? (
+                        <CheckCircleIcon className="w-4 h-4 text-green-600" />
+                      ) : (
+                        <ClipboardDocumentListIcon className="w-4 h-4 text-gray-500 hover:text-blue-500" />
+                      )}
+                   </button>
+
+                  {/* ... existing feedback & tags ... */}
+                </div>
+              );
+            })}
+            {/* ... rest of existing JSX ... */}
   id: string;
   text: string;
   sender: "user" | "bot";
