@@ -1441,6 +1441,15 @@ export const chatbotApi = {
       body: JSON.stringify({ photoUrl, question, context }),
     });
   },
+  getInsights: async (projectId?: string): Promise<any[]> => {
+    const query = projectId ? `?projectId=${projectId}` : "";
+    return apiFetch(`/chatbot/insights${query}`);
+  },
+  markInsightRead: async (id: string): Promise<void> => {
+    return apiFetch(`/chatbot/insights/${id}/read`, {
+      method: "PATCH",
+    });
+  },
   feedback: async (payload: {
     interactionId: string;
     rating: "POSITIVE" | "NEGATIVE";
