@@ -21,6 +21,11 @@ export const ChatbotWidget: React.FC = () => {
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [feedbackSubmitting, setFeedbackSubmitting] = useState<string | null>(null);
+  
+  // New state for photo analysis
+  const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const quickActions = [
     "¿Cuál es el estado actual del proyecto?",
@@ -63,39 +68,87 @@ export const ChatbotWidget: React.FC = () => {
     }
   }, [isOpen, messages.length]);
 
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+      if (file.type.startsWith('image/')) {
+        setSelectedPhoto(file);
+        const url = URL.createObjectURL(file);
+        setPreviewUrl(url);
+      }
+    }
+  };
+
+  const clearPhoto = () => {
+    setSelectedPhoto(null);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputValue.trim() || isLoading) return;
+    if ((!inputValue.trim() && !selectedPhoto) || isLoading) return;
 
     const sanitizedInput = inputValue.trim();
     const userMessage: Message = {
       id: `msg-${Date.now()}`,
-      text: sanitizedInput,
+      text: sanitizedInput || (selectedPhoto ? "Imagen adjunta para análisis" : "Mensaje vacío"),
       sender: "user",
     };
-
-    const historyPayload = buildHistoryPayload(messages);
 
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
     setIsLoading(true);
 
     try {
-      // Llamamos al backend
-      const {
-        response,
-        interactionId,
-        contextSections,
-      } = await api.chatbot.query(userMessage.text, historyPayload);
+      if (selectedPhoto) {
+        // Flow with photo
+        // 1. Upload photo
+        const attachment = await api.upload.uploadFile(selectedPhoto, "photo");
+        
+        // 2. Analyze photo
+        const { analysis,_interactionId } = await api.chatbot.analyzePhoto(
+          attachment.url, 
+          sanitizedInput || undefined
+        );
+         // Note: interactionId from analyzePhoto isn't used in Message structure yet properly or we need to adapt
+        
+        const botMessage: Message = {
+          id: `msg-${Date.now() + 1}`,
+          text: analysis,
+          sender: "bot",
+          interactionId: _interactionId,
+        };
+        setMessages((prev) => [...prev, botMessage]);
+        
+        // Cleanup
+        clearPhoto();
+        
+      } else {
+        // Standard text flow
+        const historyPayload = buildHistoryPayload(messages);
+        
+        const {
+            response,
+            interactionId,
+            contextSections,
+        } = await api.chatbot.query(userMessage.text, historyPayload);
 
-      const botMessage: Message = {
-        id: `msg-${Date.now() + 1}`,
-        text: response,
-        sender: "bot",
-        interactionId,
-        contextSections,
-      };
-      setMessages((prev) => [...prev, botMessage]);
+        const botMessage: Message = {
+            id: `msg-${Date.now() + 1}`,
+            text: response,
+            sender: "bot",
+            interactionId,
+            contextSections,
+        };
+        setMessages((prev) => [...prev, botMessage]);
+      }
+
     } catch (error: any) {
       console.error("Error al contactar al chatbot:", error);
       const errorMessage: Message = {
