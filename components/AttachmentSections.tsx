@@ -13,10 +13,19 @@ const AttachmentSections: React.FC<AttachmentSectionsProps> = ({
   canDownload,
   formatBytes
 }) => {
-  // Detect signed PDF from attachments (usually has 'firmado' in filename)
-  const signedPdf = attachments.find(att => 
+  // Detect signed PDF from attachments - find the most recent one by timestamp
+  const signedPdfCandidates = attachments.filter(att => 
     att.type?.toLowerCase().includes('pdf') && att.fileName?.toLowerCase().includes('firmado')
   );
+  
+  // Sort by timestamp in filename (format: -TIMESTAMP.pdf) and get the most recent
+  const signedPdf = signedPdfCandidates.length > 0 
+    ? signedPdfCandidates.sort((a, b) => {
+        const timestampA = parseInt(a.fileName?.match(/-([0-9]+)\.pdf$/)?.[1] || '0');
+        const timestampB = parseInt(b.fileName?.match(/-([0-9]+)\.pdf$/)?.[1] || '0');
+        return timestampB - timestampA;
+      })[0]
+    : null;
   
   // Classify other attachments by type (excluding signed PDF)
   const photoAttachments = attachments.filter(att => att.type?.startsWith("image/"));
