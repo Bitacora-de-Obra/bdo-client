@@ -1431,6 +1431,16 @@ export const chatbotApi = {
       body: JSON.stringify({ query, history }),
     });
   },
+  analyzePhoto: async (
+    photoUrl: string,
+    question?: string,
+    context?: string
+  ): Promise<{ analysis: string; interactionId: string }> => {
+    return apiFetch("/chatbot/analyze-photo", {
+      method: "POST",
+      body: JSON.stringify({ photoUrl, question, context }),
+    });
+  },
   feedback: async (payload: {
     interactionId: string;
     rating: "POSITIVE" | "NEGATIVE";
