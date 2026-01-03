@@ -6,6 +6,7 @@ export interface LoadingState<T> {
   isLoading: boolean;
   error: ApiError | null;
   retry: () => Promise<void>;
+  refetch?: () => Promise<void>;
 }
 
 type AnyFetchFn = () => Promise<any>;
