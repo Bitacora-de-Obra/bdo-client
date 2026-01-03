@@ -6,6 +6,7 @@ import Input from "./ui/Input";
 import Select from "./ui/Select";
 import { XMarkIcon } from "./icons/Icon";
 import { getFullRoleName } from "../src/utils/roleDisplay";
+import { compressImages } from "../src/utils/compressImage";
 import { useApi } from "../src/hooks/useApi";
 import api from "../src/services/api";
 import ProgressIndicator from "./ui/ProgressIndicator";
@@ -43,6 +44,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   projectStartDate
 }) => {
   const MAX_PHOTOS = 20; // Maximum number of photos per entry
+  const [isCompressing, setIsCompressing] = useState(false);
   const [entryDate, setEntryDate] = useState<string>("");
   const [entryType, setEntryType] = useState<EntryType>(EntryType.GENERAL);
   const [title, setTitle] = useState<string>("");
@@ -276,7 +278,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     }
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newPhotos = Array.from(e.target.files).filter(file => 
         file.type.startsWith('image/')
@@ -288,7 +290,22 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
         return;
       }
       
-      setPhotos((prev) => [...prev, ...newPhotos]);
+      // Compress images before adding to state
+      setIsCompressing(true);
+      try {
+        const compressedPhotos = await compressImages(newPhotos, {
+          maxWidth: 1920,
+          maxHeight: 1920,
+          quality: 0.8
+        });
+        setPhotos((prev) => [...prev, ...compressedPhotos]);
+      } catch (error) {
+        console.error('Error compressing images:', error);
+        // Fall back to original photos if compression fails
+        setPhotos((prev) => [...prev, ...newPhotos]);
+      } finally {
+        setIsCompressing(false);
+      }
     }
   };
 
