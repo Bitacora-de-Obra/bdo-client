@@ -36,15 +36,22 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const { data: project, isLoading: isProjectLoading } = useApi.projectDetails();
   const [currentPage, setCurrentPage] = useState(1);
   const ENTRIES_PER_PAGE = 20;
+  const [prefetchedPage, setPrefetchedPage] = useState<number | null>(null);
+  const [prefetchedData, setPrefetchedData] = useState<any>(null);
   const { data: logEntriesResponse, isLoading: isLogEntriesLoading, error, retry: refetchLogEntries } = useApi.logEntries(currentPage, ENTRIES_PER_PAGE);
   const { data: users, isLoading: isUsersLoading } = useApi.users();
 
+  // Use prefetched data if available, otherwise use fresh data
+  const actualLogEntriesResponse = prefetchedPage === currentPage && prefetchedData
+    ? prefetchedData
+    : logEntriesResponse;
+
   // Extraer entries y pagination del response (backward compatible)
-  const logEntries = Array.isArray(logEntriesResponse) 
-    ? logEntriesResponse 
-    : logEntriesResponse?.entries || [];
-  const pagination = !Array.isArray(logEntriesResponse) 
-    ? logEntriesResponse?.pagination 
+  const logEntries = Array.isArray(actualLogEntriesResponse) 
+    ? actualLogEntriesResponse 
+    : actualLogEntriesResponse?.entries || [];
+  const pagination = !Array.isArray(actualLogEntriesResponse) 
+    ? actualLogEntriesResponse?.pagination 
     : null;
 
   const [selectedEntry, setSelectedEntry] = useState<LogEntry | null>(null);
@@ -83,6 +90,25 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   useEffect(() => {
     setCurrentPage(1);
   }, [filters, sortBy]);
+
+  // Prefetch next page in background
+  useEffect(() => {
+    // Only prefetch if there's a next page and we haven't already prefetched it
+    if (pagination?.hasNext && pagination.currentPage !== prefetchedPage) {
+      const nextPage = pagination.currentPage + 1;
+      
+      // Prefetch in background
+      api.logEntries.getAll(nextPage, ENTRIES_PER_PAGE)
+        .then(data => {
+          setPrefetchedData(data);
+          setPrefetchedPage(nextPage);
+        })
+        .catch(err => {
+          // Silent fail - prefetch is a nice-to-have
+          console.log('Prefetch failed (this is OK):', err);
+        });
+    }
+  }, [pagination?.currentPage, pagination?.hasNext, prefetchedPage]);
 
   const handleOpenDetail = (entry: LogEntry) => {
     setSelectedEntry(entry);
