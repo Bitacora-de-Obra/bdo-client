@@ -3257,19 +3257,10 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                                     target="_blank"
                                     rel="noopener noreferrer"
                                   >
-                                    <img
+                                    <LazyImage
                                       src={att.url || att.previewUrl}
                                       alt={att.fileName}
                                       className="max-h-40 rounded border cursor-pointer hover:opacity-90"
-                                      onError={(e) => {
-                                        console.error('Error cargando imagen en comentario:', att.fileName, att.url);
-                                        // Intentar con previewUrl si url falla
-                                        if (att.previewUrl && att.previewUrl !== att.url) {
-                                          (e.target as HTMLImageElement).src = att.previewUrl;
-                                        } else if (att.downloadUrl && att.downloadUrl !== att.url) {
-                                          (e.target as HTMLImageElement).src = att.downloadUrl;
-                                        }
-                                      }}
                                     />
                                   </a>
                                   <div className="text-xs text-gray-500 mt-1">
