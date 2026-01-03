@@ -3,7 +3,7 @@ import api from '../services/api';
 
 // Hooks para cada tipo de dato
 export function useLogEntries(page?: number, limit?: number): LoadingState<any> {
-  return useLoadingState(() => api.logEntries.getAll(page, limit));
+  return useLoadingState(() => api.logEntries.getAll(page, limit), [page, limit]);
 }
 
 export function useCommunications(): LoadingState<any[]> {
