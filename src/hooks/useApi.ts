@@ -1,9 +1,38 @@
+```
 import { useLoadingState, LoadingState } from './useLoadingState';
 import api from '../services/api';
 
-// Hooks para cada tipo de dato
+import { useState, useEffect, useCallback } from 'react';
+
+// Custom hook for paginated log entries
 export function useLogEntries(page?: number, limit?: number): LoadingState<any> {
-  return useLoadingState(() => api.logEntries.getAll(page, limit), [page, limit]);
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<any>(null);
+
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await api.logEntries.getAll(page, limit);
+      setData(result);
+    } catch (err) {
+      console.error('Error fetching log entries:', err);
+      setError(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [page, limit]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const retry = useCallback(() => {
+    return fetchData();
+  }, [fetchData]);
+
+  return { data, isLoading, error, retry };
 }
 
 export function useCommunications(): LoadingState<any[]> {
