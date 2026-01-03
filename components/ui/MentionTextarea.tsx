@@ -102,10 +102,15 @@ const MentionTextarea: React.FC<MentionTextareaProps> = ({
     onChange(syntheticEvent);
 
     // Actualizar la posición del cursor
+    // Actualizar la posición del cursor
     setTimeout(() => {
       if (textareaRef.current) {
-        textareaRef.current.selectionStart = mentionStart + mentionText.length + 1;
-        textareaRef.current.selectionEnd = mentionStart + mentionText.length + 1;
+        // La longitud real del nuevo texto insertado es (beforeMention + mentionText + ' ').length
+        // El espacio ya está incluido en newText en la línea 91: beforeMention + mentionText + ' ' + afterMention
+        // Así que la posición correcta es justo después del espacio extra
+        const newCursorPos = beforeMention.length + mentionText.length + 1;
+        textareaRef.current.selectionStart = newCursorPos;
+        textareaRef.current.selectionEnd = newCursorPos;
         textareaRef.current.focus();
       }
     }, 0);
