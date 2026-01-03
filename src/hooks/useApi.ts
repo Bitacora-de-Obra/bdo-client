@@ -30,7 +30,7 @@ export function useLogEntries(page?: number, limit?: number, sortBy?: string, fi
     return fetchData();
   }, [fetchData]);
 
-  return { data, isLoading, error, retry };
+  return { data, isLoading, error, retry, refetch: retry };
 }
 
 export function useCommunications(): LoadingState<any[]> {
