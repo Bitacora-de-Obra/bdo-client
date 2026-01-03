@@ -1,6 +1,6 @@
-```
 import { useLoadingState, LoadingState } from './useLoadingState';
 import api from '../services/api';
+import { useState, useEffect, useCallback } from 'react';
 
 import { useState, useEffect, useCallback } from 'react';
 
