@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
-import { ProjectDetails, LogEntry, User, SignatureConsentPayload, UserRole, Comment, EntryStatus } from "../types";
+import { LogEntry, UserRole, Project, EntryStatus, EntryType } from "../types";
 import api from "../src/services/api";
 import FilterBar from "./FilterBar";
 import EntryCard from "./EntryCard";
@@ -40,6 +40,14 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const [prefetchedData, setPrefetchedData] = useState<any>(null);
   const [sortBy, setSortBy] = useState<"entryDate" | "folioNumber" | "folioNumberDesc" | "createdAt">("createdAt");
   
+  // Helper: Convert Spanish UI labels to DB enum keys
+  const convertFilterToDbValue = (label: string, enumObj: any): string | undefined => {
+    if (!label || label === 'all') return undefined;
+    // Find enum key where value matches label
+    const key = Object.keys(enumObj).find(k => enumObj[k] === label);
+    return key;
+  };
+  
   // Filters state - must be declared before using in hook
   const [filters, setFilters] = useState({
     searchTerm: "",
@@ -55,8 +63,8 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     ENTRIES_PER_PAGE, 
     sortBy,
     {
-      status: filters.status !== 'all' ? filters.status : undefined,
-      type: filters.type !== 'all' ? filters.type : undefined,
+      status: convertFilterToDbValue(filters.status, EntryStatus),
+      type: convertFilterToDbValue(filters.type, EntryType),
       userId: filters.user !== 'all' ? filters.user : undefined
     }
   );
