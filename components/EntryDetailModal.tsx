@@ -3048,7 +3048,6 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
           ) : (
             <AttachmentSections 
               attachments={attachments}
-              signedPdf={entry.signedPdf}
               canDownload={canDownload}
               formatBytes={formatBytes}
             />
