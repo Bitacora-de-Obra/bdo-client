@@ -218,7 +218,7 @@ const MentionTextarea: React.FC<MentionTextareaProps> = ({
         aria-hidden="true"
       >
         {value ? (
-          renderCommentWithMentions(convertInputMentionsToPayload(value), users)
+          renderMentionsFromRawInput(value)
         ) : (
           <span className="text-gray-400">{placeholder}</span>
         )}
