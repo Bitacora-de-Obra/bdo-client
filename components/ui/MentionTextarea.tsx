@@ -27,6 +27,80 @@ const MentionTextarea: React.FC<MentionTextareaProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
+  // Renderizar menciones directamente desde el valor raw del textarea (sin convertir)
+  // para mantener la alineación exacta carácter por carácter con el textarea
+  const renderMentionsFromRawInput = (rawValue: string): React.ReactNode => {
+    if (!rawValue) return null;
+    
+    const marker = MENTION_ID_MARKER;
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let searchIndex = 0;
+    let keyCounter = 0;
+
+    while (searchIndex < rawValue.length) {
+      const atIndex = rawValue.indexOf('@', searchIndex);
+      if (atIndex === -1) {
+        // No más menciones, agregar texto restante
+        if (lastIndex < rawValue.length) {
+          parts.push(rawValue.substring(lastIndex));
+        }
+        break;
+      }
+
+      // Buscar el patrón @Name[MARKER]id[MARKER]
+      const firstMarkerIndex = rawValue.indexOf(marker, atIndex + 1);
+      if (firstMarkerIndex === -1) {
+        // No es una mención completa, continuar buscando
+        searchIndex = atIndex + 1;
+        continue;
+      }
+
+      const secondMarkerIndex = rawValue.indexOf(marker, firstMarkerIndex + 1);
+      if (secondMarkerIndex === -1) {
+        // Mención incompleta, continuar buscando
+        searchIndex = firstMarkerIndex + 1;
+        continue;
+      }
+
+      // Tenemos una mención completa
+      // Agregar texto antes de la mención
+      if (atIndex > lastIndex) {
+        parts.push(rawValue.substring(lastIndex, atIndex));
+      }
+
+      // Extraer nombre y ID
+      const displayName = rawValue.substring(atIndex + 1, firstMarkerIndex);
+      const encodedId = rawValue.substring(firstMarkerIndex + 1, secondMarkerIndex);
+      
+      // Renderizar la mención completa CON los marcadores invisibles
+      // para mantener la longitud exacta del texto
+      const fullMentionText = rawValue.substring(atIndex, secondMarkerIndex + 1);
+      
+      parts.push(
+        <span
+          key={`mention-${keyCounter++}`}
+          className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-blue-100 text-blue-800"
+          style={{ letterSpacing: 'normal' }}
+        >
+          @{displayName}
+        </span>
+      );
+      
+      // Los marcadores invisibles se renderizan como espacios invisibles para mantener longitud
+      parts.push(
+        <span key={`markers-${keyCounter++}`} style={{ opacity: 0, fontSize: 0, width: 0, display: 'inline' }}>
+          {marker + encodedId + marker}
+        </span>
+      );
+
+      lastIndex = secondMarkerIndex + 1;
+      searchIndex = secondMarkerIndex + 1;
+    }
+
+    return parts.length > 0 ? <>{parts}</> : rawValue;
+  };
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
