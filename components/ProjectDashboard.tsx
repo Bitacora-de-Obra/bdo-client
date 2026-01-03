@@ -8,6 +8,7 @@ import EntryFormModal from "./EntryFormModal";
 import Button from "./ui/Button";
 import EmptyState from "./ui/EmptyState";
 import Pagination from "./ui/Pagination";
+import EntryCardSkeleton from "./ui/EntryCardSkeleton";
 import {
   PlusIcon,
   Squares2X2Icon,
@@ -484,7 +485,14 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
         <>
           {viewMode === "list" && (
             <div className="space-y-4">
-              {filteredEntries.length > 0 ? (
+              {isLogEntriesLoading && filteredEntries.length === 0 ? (
+                // Show skeletons during initial load
+                <>
+                  {[...Array(ENTRIES_PER_PAGE)].map((_, index) => (
+                    <EntryCardSkeleton key={`skeleton-${index}`} />
+                  ))}
+                </>
+              ) : filteredEntries.length > 0 ? (
                 <>
                   {filteredEntries.map((entry) => (
                     <EntryCard
