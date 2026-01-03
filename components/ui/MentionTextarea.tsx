@@ -69,28 +69,17 @@ const MentionTextarea: React.FC<MentionTextareaProps> = ({
         parts.push(rawValue.substring(lastIndex, atIndex));
       }
 
-      // Extraer nombre y ID
+      // Extraer nombre - todo desde @ hasta el primer marcador
       const displayName = rawValue.substring(atIndex + 1, firstMarkerIndex);
-      const encodedId = rawValue.substring(firstMarkerIndex + 1, secondMarkerIndex);
       
-      // Renderizar la mención completa CON los marcadores invisibles
-      // para mantener la longitud exacta del texto
-      const fullMentionText = rawValue.substring(atIndex, secondMarkerIndex + 1);
-      
+      // Renderizar SOLO el nombre visible con fondo azul, sin los marcadores
+      // Los marcadores son invisibles así que no los mostramos
       parts.push(
         <span
           key={`mention-${keyCounter++}`}
-          className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-blue-100 text-blue-800"
-          style={{ letterSpacing: 'normal' }}
+          className="bg-blue-100 text-blue-800"
         >
           @{displayName}
-        </span>
-      );
-      
-      // Los marcadores invisibles se renderizan como espacios invisibles para mantener longitud
-      parts.push(
-        <span key={`markers-${keyCounter++}`} style={{ opacity: 0, fontSize: 0, width: 0, display: 'inline' }}>
-          {marker + encodedId + marker}
         </span>
       );
 
