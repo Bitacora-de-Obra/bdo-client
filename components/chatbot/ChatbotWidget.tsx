@@ -27,6 +27,52 @@ export const ChatbotWidget: React.FC = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Insights State
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingInsights, setPendingInsights] = useState<any[]>([]);
+
+  useEffect(() => {
+    const checkInsights = async () => {
+      try {
+        const insights = await api.chatbot.getInsights();
+        const unread = insights.filter((i: any) => !i.isRead);
+        if (unread.length > 0) {
+          setUnreadCount(unread.length);
+          setPendingInsights(unread);
+        }
+      } catch (e) {
+        console.error("Error fetching insights:", e);
+      }
+    };
+    // Fetch immediately
+    checkInsights();
+    // Optional: Poll every 5 minutes
+    const interval = setInterval(checkInsights, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && pendingInsights.length > 0) {
+        const insightsText = pendingInsights.map((i: any) => `• ${i.title}: ${i.content.replace(/<[^>]*>?/gm, '').substring(0, 100)}...`).join('\n');
+        
+        const botMsg: Message = {
+             id: `insight-${Date.now()}`,
+             text: `👋 ¡Hola! Tengo un resumen diario y actualizaciones importantes para ti:\n\n${insightsText}`,
+             sender: 'bot'
+        };
+        
+        // Add message
+        setMessages(prev => [...prev, botMsg]);
+        
+        // Mark as read in backend
+        pendingInsights.forEach((i: any) => api.chatbot.markInsightRead(i.id).catch(console.error));
+        
+        // Reset local state
+        setPendingInsights([]);
+        setUnreadCount(0);
+    }
+  }, [isOpen, pendingInsights]);
+
   const quickActions = [
     "¿Cuál es el estado actual del proyecto?",
     "¿Qué comunicaciones hay pendientes?",
@@ -598,7 +644,29 @@ export const ChatbotWidget: React.FC = () => {
         {isOpen ? (
           <XMarkIcon className="w-7 h-7" />
         ) : (
-          <HardHatIcon className="w-7 h-7" />
+          <div style={{ position: 'relative' }}>
+             <HardHatIcon className="w-7 h-7" />
+             {unreadCount > 0 && (
+               <div style={{
+                 position: 'absolute',
+                 top: -6,
+                 right: -6,
+                 backgroundColor: '#ef4444',
+                 color: 'white',
+                 fontSize: '10px',
+                 fontWeight: 'bold',
+                 width: '18px',
+                 height: '18px',
+                 borderRadius: '50%',
+                 display: 'flex',
+                 alignItems: 'center',
+                 justifyContent: 'center',
+                 border: '2px solid white'
+               }}>
+                 {unreadCount}
+               </div>
+             )}
+          </div>
         )}
       </button>
     </div>
