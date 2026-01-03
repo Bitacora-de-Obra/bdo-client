@@ -34,7 +34,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const { user } = useAuth();
   const { data: project, isLoading: isProjectLoading } = useApi.projectDetails();
   const [currentPage, setCurrentPage] = useState(1);
-  const ENTRIES_PER_PAGE = 50;
+  const ENTRIES_PER_PAGE = 20;
   const { data: logEntriesResponse, isLoading: isLogEntriesLoading, error, retry: refetchLogEntries } = useApi.logEntries(currentPage, ENTRIES_PER_PAGE);
   const { data: users, isLoading: isUsersLoading } = useApi.users();
 
