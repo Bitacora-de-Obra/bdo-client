@@ -2,8 +2,6 @@ import { useLoadingState, LoadingState } from './useLoadingState';
 import api from '../services/api';
 import { useState, useEffect, useCallback } from 'react';
 
-import { useState, useEffect, useCallback } from 'react';
-
 // Custom hook for paginated log entries
 export function useLogEntries(page?: number, limit?: number): LoadingState<any> {
   const [data, setData] = useState<any>(null);
