@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ProjectDetails, ContractModification, ModificationType } from '../types';
 import Card from './ui/Card';
 import TimelineVisual from './TimelineVisual';
+import CivMap from './CivMap';
 import api from '../src/services/api';
 
 interface ProjectSummaryDashboardProps {
@@ -152,16 +153,10 @@ const ProjectSummaryDashboard: React.FC<ProjectSummaryDashboardProps> = ({ proje
         <div className="p-5">
             <h3 className="text-lg font-semibold text-gray-800">Ubicación del Proyecto y Zona de Intervención</h3>
             <div className="mt-4 aspect-video bg-gray-200 rounded-lg overflow-hidden border">
-                <iframe
-                    src="https://www.google.com/maps?q=Avenida+José+Celestino+Mutis+AC+63+entre+Transversal+112B+Bis+A+y+Carrera+112+Bogotá+Colombia&output=embed&zoom=15&maptype=roadmap&markers=color:red%7Clabel:Proyecto%7C4.705,-74.12"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen={true}
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    title="Mapa de Ubicación del Proyecto - Avenida José Celestino Mutis entre Transversal 112B Bis A y Carrera 112"
-                ></iframe>
+                <CivMap 
+                    elements={project.corredorVialElements || []} 
+                    className="w-full h-full min-h-[400px]"
+                />
             </div>
         </div>
       </Card>
