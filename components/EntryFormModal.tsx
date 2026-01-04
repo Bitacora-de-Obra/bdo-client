@@ -241,7 +241,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     }
   };
 
-  const capturePhoto = () => {
+  const capturePhoto = async () => {
     if (!videoRef.current || !isCameraActive) return;
 
     const video = videoRef.current;
@@ -250,17 +250,68 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
     
-    if (ctx) {
-      ctx.drawImage(video, 0, 0);
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const fileName = `foto_bitacora_${Date.now()}.jpg`;
-          const file = new File([blob], fileName, { type: 'image/jpeg' });
-          setPhotos(prev => [...prev, file]);
-          stopCamera();
-        }
-      }, 'image/jpeg', 0.9);
+    if (!ctx) return;
+
+    // Draw the video frame
+    ctx.drawImage(video, 0, 0);
+
+    // Get current date/time
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('es-CO', { 
+      year: 'numeric', 
+      month: '2-digit', 
+      day: '2-digit' 
+    });
+    const timeStr = now.toLocaleTimeString('es-CO', { 
+      hour: '2-digit', 
+      minute: '2-digit', 
+      second: '2-digit' 
+    });
+
+    // Try to get geolocation
+    let locationText = 'Ubicación no disponible';
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0
+        });
+      });
+      const lat = position.coords.latitude.toFixed(6);
+      const lng = position.coords.longitude.toFixed(6);
+      locationText = `📍 ${lat}°, ${lng}°`;
+    } catch {
+      locationText = '📍 Ubicación no disponible';
     }
+
+    // Draw watermark background
+    const watermarkHeight = 60;
+    const padding = 10;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.fillRect(0, canvas.height - watermarkHeight, canvas.width, watermarkHeight);
+
+    // Draw watermark text
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${Math.max(14, canvas.width / 50)}px Arial`;
+    ctx.textAlign = 'left';
+    ctx.fillText(locationText, padding, canvas.height - watermarkHeight + 25);
+    ctx.fillText(`📅 ${dateStr}  🕐 ${timeStr}`, padding, canvas.height - watermarkHeight + 48);
+
+    // Draw project identifier on right side
+    ctx.textAlign = 'right';
+    ctx.font = `${Math.max(12, canvas.width / 60)}px Arial`;
+    ctx.fillText('Bitácora de Obra Digital', canvas.width - padding, canvas.height - watermarkHeight + 25);
+
+    // Convert to blob and save
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const fileName = `foto_bitacora_${Date.now()}.jpg`;
+        const file = new File([blob], fileName, { type: 'image/jpeg' });
+        setPhotos(prev => [...prev, file]);
+        stopCamera();
+      }
+    }, 'image/jpeg', 0.9);
   };
 
   // AUTOSAVE: Guardar y restaurar borrador en localStorage
