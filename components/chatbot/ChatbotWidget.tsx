@@ -2,7 +2,8 @@ import { jsPDF } from "jspdf";
 import React, { useState, useRef, useEffect } from "react";
 import { api } from "../../src/services/api";
 import { Icon } from "../../components/icons/Icon";
-import { HardHatIcon, XMarkIcon, PaperAirplaneIcon, DocumentArrowDownIcon, ClipboardDocumentListIcon, CheckCircleIcon } from "../icons/Icon";
+import { HardHatIcon, XMarkIcon, PaperAirplaneIcon, DocumentArrowDownIcon, ClipboardDocumentListIcon, CheckCircleIcon, Cog6ToothIcon } from "../icons/Icon";
+import { PreferencesModal } from "./PreferencesModal";
 
 type Message = {
   id: string;
@@ -19,6 +20,8 @@ type HistoryPayloadItem = { role: "user" | "assistant"; content: string };
 export const ChatbotWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  // Preferences Modal State
+  const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [feedbackSubmitting, setFeedbackSubmitting] = useState<string | null>(null);
@@ -512,6 +515,13 @@ export const ChatbotWidget: React.FC = () => {
             Asistente de Bitácora
             <div className="flex gap-2">
                <button
+                  onClick={() => setIsPreferencesOpen(true)}
+                  title="Configuración"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
+                >
+                  <Cog6ToothIcon className="w-5 h-5 text-gray-500 hover:text-blue-600" />
+               </button>
+               <button
                   onClick={handleExportPDF}
                   title="Exportar chat a PDF"
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
@@ -771,6 +781,11 @@ export const ChatbotWidget: React.FC = () => {
           </div>
         )}
       </button>
+
+      <PreferencesModal
+        isOpen={isPreferencesOpen}
+        onClose={() => setIsPreferencesOpen(false)}
+      />
     </div>
   );
 };

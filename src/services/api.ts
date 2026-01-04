@@ -1461,6 +1461,15 @@ export const chatbotApi = {
       body: JSON.stringify(payload),
     });
   },
+  getPreferences: async () => {
+    return apiFetch("/preferences");
+  },
+  setPreference: async (key: string, value: string) => {
+    return apiFetch("/preferences", {
+      method: "POST",
+      body: JSON.stringify({ key, value }),
+    });
+  },
 };
 
 type ContractorProgressPayload = {
