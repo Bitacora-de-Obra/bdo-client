@@ -32,6 +32,7 @@ interface EntryFormModalProps {
   availableUsers: User[];
   currentUser: User | null;
   projectStartDate?: string; // Fecha de inicio del proyecto
+  contractNumber?: string; // Número de contrato para marca de agua
 }
 
 const EntryFormModal: React.FC<EntryFormModalProps> = ({
@@ -41,7 +42,8 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   initialDate,
   availableUsers,
   currentUser,
-  projectStartDate
+  projectStartDate,
+  contractNumber
 }) => {
   const MAX_PHOTOS = 20; // Maximum number of photos per entry
   const [isCompressing, setIsCompressing] = useState(false);
@@ -286,22 +288,25 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     }
 
     // Draw watermark background
-    const watermarkHeight = 60;
-    const padding = 10;
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    const watermarkHeight = 80;
+    const padding = 15;
+    const lineSpacing = 28;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
     ctx.fillRect(0, canvas.height - watermarkHeight, canvas.width, watermarkHeight);
 
-    // Draw watermark text
+    // Draw watermark text with better spacing
     ctx.fillStyle = '#ffffff';
-    ctx.font = `bold ${Math.max(14, canvas.width / 50)}px Arial`;
+    const fontSize = Math.max(16, canvas.width / 45);
+    ctx.font = `bold ${fontSize}px Arial`;
     ctx.textAlign = 'left';
-    ctx.fillText(locationText, padding, canvas.height - watermarkHeight + 25);
-    ctx.fillText(`📅 ${dateStr}  🕐 ${timeStr}`, padding, canvas.height - watermarkHeight + 48);
+    ctx.fillText(locationText, padding, canvas.height - watermarkHeight + lineSpacing);
+    ctx.fillText(`📅 ${dateStr}  🕐 ${timeStr}`, padding, canvas.height - watermarkHeight + lineSpacing * 2);
 
-    // Draw project identifier on right side
+    // Draw contract number on right side
     ctx.textAlign = 'right';
-    ctx.font = `${Math.max(12, canvas.width / 60)}px Arial`;
-    ctx.fillText('Bitácora de Obra Digital', canvas.width - padding, canvas.height - watermarkHeight + 25);
+    ctx.font = `bold ${Math.max(14, canvas.width / 55)}px Arial`;
+    const contractLabel = contractNumber ? `Contrato: ${contractNumber}` : 'Bitácora de Obra Digital';
+    ctx.fillText(contractLabel, canvas.width - padding, canvas.height - watermarkHeight + lineSpacing + 10);
 
     // Convert to blob and save
     canvas.toBlob((blob) => {

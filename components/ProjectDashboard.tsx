@@ -594,6 +594,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
           availableUsers={users || []}
           currentUser={user}
           projectStartDate={project?.startDate}
+          contractNumber={project?.contractId}
         />
       )}
       <ExportModal
