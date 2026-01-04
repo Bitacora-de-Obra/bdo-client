@@ -22,26 +22,22 @@ interface CivMapProps {
   className?: string;
 }
 
-// Coordenadas aproximadas basadas en el punto del proyecto (4.705, -74.12)
-// CIV 10010528 (TV 112 B Bis A e/ CL 63 y 64): Segmento Norte-Sur aprox.
-// CIV 10004446 (CL 63 e/ Cr 112 y TV 112 B Bis A): Segmento Este-Oeste aprox (Av Mutis).
+// Coordenadas REALES obtenidas de Google Maps
+// CIV 10010528 (TV 112 B Bis A e/ CL 63 y 64): Segmento Norte-Sur
+// CIV 10004446 (CL 63 e/ Cr 112 y TV 112 B Bis A): Segmento Este-Oeste (Av Mutis)
 
-// Definimos geometrías aproximadas
 const CIV_COORDINATES: Record<string, [number, number][]> = {
-  // CIV 10010528: TV 112 B Bis A (Vertical)
-  // Desde Cl 63 (4.705, -74.12) hacia el norte a Cl 64
+  // CIV 10010528: TV 112 B Bis A (Vertical - Norte/Sur)
+  // Desde Cl 63 hacia Cl 64
   '10010528': [
-    [4.7050, -74.1200], // Intersección Cl 63
-    [4.7065, -74.1205]  // Intersección Cl 64 (Aprox 150m norte ligeramente oeste)
+    [4.70457, -74.13699], // Intersección approx Cl 63 con TV 112b Bis A
+    [4.70501, -74.13640]  // Hacia Cl 64 / Kr 112 Bis
   ],
-  // CIV 10004446: Calle 63 (Horizontal)
-  // Desde TV 112B Bis A (4.705, -74.12) hacia Cr 112 (Oeste/Este?)
-  // Cr 112 suele estar al este o oeste dependiendo de la numeración. En esta zona (Engativá), la carrera aumenta hacia el oeste.
-  // Así que Cr 112 estaría al este de Tv 112B Bis A? No, Transversal suele ser diagonal.
-  // Asumiremos un segmento horizontal sobre la Av Mutis (Cl 63).
+  // CIV 10004446: Calle 63 (Horizontal - Este/Oeste)
+  // Desde TV 112B Bis A hacia Cr 112
   '10004446': [
-    [4.7050, -74.1200], // Intersección Tv 112B Bis A
-    [4.7048, -74.1180]  // Intersección Cr 112 (Aprox 200m este)
+    [4.70457, -74.13699], // Intersección TV 112b Bis A
+    [4.70350, -74.13500]  // Hacia el este por Calle 63
   ]
 };
 
@@ -54,9 +50,9 @@ const COLORS = [
 ];
 
 const CivMap: React.FC<CivMapProps> = ({ elements, className = "h-96 w-full" }) => {
-  // Center map on the project anchor
-  const center: [number, number] = [4.705, -74.119]; 
-  const zoom = 16;
+  // Center map on the real project location
+  const center: [number, number] = [4.7048, -74.1365]; 
+  const zoom = 17; // Zoom más cercano para ver mejor los segmentos
 
   // Agrupar elementos por CIV para dibujar una sola línea por CIV (aunque tengan varios PKs/lados)
   const civsToDraw = useMemo(() => {
@@ -99,9 +95,9 @@ const CivMap: React.FC<CivMapProps> = ({ elements, className = "h-96 w-full" }) 
                     </Polyline>
                 )
             ))}
-            <Marker position={[4.705, -74.12]}>
+            <Marker position={[4.70457, -74.13699]}>
                 <Popup>
-                   Punto de Referencia del Proyecto
+                   TV 112b Bis A - Punto de Referencia
                 </Popup>
             </Marker>
         </MapContainer>
