@@ -1798,36 +1798,96 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           )}
         </div>
 
-        {/* Sección de fotos */}
+        {/* Sección de fotos con cámara */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Fotos del día
-          </label>
-          <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-            <div className="space-y-1 text-center">
-              <div className="flex text-sm text-gray-600">
-                <label
-                  htmlFor="photo-upload-entry"
-                  className="relative cursor-pointer bg-white rounded-md font-medium text-brand-primary hover:text-brand-secondary focus-within:outline-none"
-                >
-                  <span>Selecciona fotos</span>
-                  <input
-                    id="photo-upload-entry"
-                    name="photo-upload-entry"
-                    type="file"
-                    className="sr-only"
-                    onChange={handlePhotoChange}
-                    multiple
-                    accept="image/*"
-                  />
-                </label>
-                <p className="pl-1">o arrastra y suelta</p>
-              </div>
-              <p className="text-xs text-gray-500">
-                Solo imágenes — máximo 5MB cada una
-              </p>
-            </div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Fotos del día
+            </label>
+            {cameraAvailable && !showCamera && (
+              <button
+                type="button"
+                onClick={startCamera}
+                className="flex items-center gap-1 px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+              >
+                <CameraIcon className="h-4 w-4" />
+                Tomar foto
+              </button>
+            )}
           </div>
+
+          {cameraError && (
+            <div className="mb-2 p-2 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-xs text-red-600">{cameraError}</p>
+            </div>
+          )}
+
+          {showCamera ? (
+            <div className="border-2 border-blue-300 border-dashed rounded-md p-4">
+              <div className="relative bg-black rounded-lg overflow-hidden" style={{ minHeight: '250px' }}>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-contain"
+                  style={{ minHeight: '250px', backgroundColor: '#000' }}
+                />
+                {!isCameraActive && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75">
+                    <div className="text-center text-white">
+                      <CameraIcon className="mx-auto h-12 w-12 mb-2 opacity-50" />
+                      <p className="text-sm">Iniciando cámara...</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              {isCameraActive && (
+                <div className="flex justify-center gap-3 mt-3">
+                  <Button type="button" variant="secondary" onClick={stopCamera}>
+                    Cancelar
+                  </Button>
+                  <Button type="button" onClick={capturePhoto} className="flex items-center gap-2">
+                    <CameraIcon className="h-5 w-5" />
+                    Capturar
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+              <div className="space-y-1 text-center">
+                <CameraIcon className="mx-auto h-12 w-12 text-gray-400" />
+                <div className="flex text-sm text-gray-600">
+                  <label
+                    htmlFor="photo-upload-general"
+                    className="relative cursor-pointer bg-white rounded-md font-medium text-brand-primary hover:text-brand-secondary focus-within:outline-none"
+                  >
+                    <span>Selecciona fotos</span>
+                    <input
+                      id="photo-upload-general"
+                      name="photo-upload-general"
+                      type="file"
+                      className="sr-only"
+                      onChange={handlePhotoChange}
+                      multiple
+                      accept="image/*"
+                    />
+                  </label>
+                  <p className="pl-1">o arrastra y suelta</p>
+                </div>
+                <p className="text-xs text-gray-500">
+                  Solo imágenes — máximo 5MB cada una
+                </p>
+                {cameraAvailable && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    O usa el botón "Tomar foto" para capturar con la cámara
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
           {photos.length > 0 && (
             <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
               {photos.map((photo, index) => (
