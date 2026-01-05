@@ -78,9 +78,11 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   
   const { data: users, isLoading: isUsersLoading } = useApi.users();
 
-  // Reset page to 1 when filters or sort change
+  // Reset page to 1 and clear prefetch when filters or sort change
   useEffect(() => {
     setCurrentPage(1);
+    setPrefetchedPage(null);
+    setPrefetchedData(null);
   }, [filters.status, filters.type, filters.user, filters.searchTerm, filters.startDate, filters.endDate, sortBy]);
 
   // Use prefetched data if available, otherwise use fresh data
@@ -110,23 +112,24 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const { showToast } = useToast();
 
   useEffect(() => {
-    if (initialItemToOpen && initialItemToOpen.type === "logEntry" && logEntries) {
-      const entryToOpen = logEntries.find((e) => e.id === initialItemToOpen.id);
-      if (entryToOpen) {
-        handleOpenDetail(entryToOpen);
+    if (initialItemToOpen) {
+      // Find in current list
+      const entry = logEntries.find(e => e.id === initialItemToOpen.id);
+      if (entry) {
+        setSelectedEntry(entry);
+        setIsDetailModalOpen(true);
+        // Clear param
         clearInitialItem();
       } else if (!isLogEntriesLoading) {
-        // Entry not in current page - fetch directly from API
-        api.logEntries.getById(initialItemToOpen.id)
-          .then((fetchedEntry) => {
-            if (fetchedEntry) {
-              handleOpenDetail(fetchedEntry);
-            }
+         // If not found in current list (maybe on another page), fetch it directly
+         api.logEntries.getById(initialItemToOpen.id)
+          .then(entry => {
+            setSelectedEntry(entry);
+            setIsDetailModalOpen(true);
+            clearInitialItem();
           })
-          .catch((err) => {
-            console.error("Error fetching entry for deep link:", err);
-          })
-          .finally(() => {
+          .catch(err => {
+            console.error("Could not fetch linked entry:", err);
             clearInitialItem();
           });
       }
@@ -139,8 +142,16 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     if (pagination?.hasNext && pagination.currentPage !== prefetchedPage) {
       const nextPage = pagination.currentPage + 1;
       
-      // Prefetch in background
-      api.logEntries.getAll(nextPage, ENTRIES_PER_PAGE)
+      // Prepare filters for API call
+      const apiFilters = {
+        status: convertFilterToDbValue(filters.status, EntryStatus),
+        type: convertFilterToDbValue(filters.type, EntryType),
+        userId: filters.user !== 'all' ? filters.user : undefined,
+        search: filters.searchTerm || undefined
+      };
+
+      // Prefetch in background with current filters!
+      api.logEntries.getAll(nextPage, ENTRIES_PER_PAGE, sortBy, apiFilters)
         .then(data => {
           setPrefetchedData(data);
           setPrefetchedPage(nextPage);
