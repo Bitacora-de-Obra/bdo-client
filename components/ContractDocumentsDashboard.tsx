@@ -227,9 +227,11 @@ const ContractDocumentsDashboard: React.FC = () => {
   const fetchDocuments = async () => {
     try {
       const res = await axios.get('/api/documents');
-      setDocuments(res.data);
+      // Asegurar que siempre sea un array
+      setDocuments(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Error fetching documents:', err);
+      setDocuments([]); // En caso de error, array vacío
     } finally {
       setIsLoading(false);
     }
@@ -238,9 +240,10 @@ const ContractDocumentsDashboard: React.FC = () => {
   const fetchUsers = async () => {
     try {
       const res = await axios.get('/api/users');
-      setUsers(res.data);
+      setUsers(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Error fetching users:', err);
+      setUsers([]);
     }
   };
 
