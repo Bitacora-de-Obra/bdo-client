@@ -186,6 +186,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [formEntryDate, setFormEntryDate] = useState<string>("");
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isRegeneratingPdf, setIsRegeneratingPdf] = useState(false);
 
   // Effect to recalculate schedule day when date changes during edit
   useEffect(() => {
@@ -1345,6 +1346,36 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       });
     } finally {
       setIsGeneratingPdf(false);
+    }
+  };
+
+  const handleRegeneratePdf = async () => {
+    if (!window.confirm('¿Estás seguro de regenerar el PDF? Esto reconstruirá el documento con las firmas en las posiciones correctas.')) {
+      return;
+    }
+    setIsRegeneratingPdf(true);
+    setValidationError(null);
+    try {
+      const response = await api.logEntries.regeneratePdf(entry.id);
+      if (response?.entry) {
+        applyEntryState(response.entry as LogEntry);
+      }
+      await onRefresh();
+      showToast({
+        variant: 'success',
+        title: 'PDF regenerado',
+        message: response?.message || 'El PDF se regeneró correctamente con las firmas en posiciones correctas.',
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No se pudo regenerar el PDF.';
+      setValidationError(message);
+      showToast({
+        variant: 'error',
+        title: 'Error al regenerar PDF',
+        message,
+      });
+    } finally {
+      setIsRegeneratingPdf(false);
     }
   };
 
@@ -3455,6 +3486,16 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                 {canEdit && (
                   <Button variant="primary" onClick={() => setIsEditing(true)}>
                     Modificar Anotación
+                  </Button>
+                )}
+                {isAdmin && (
+                  <Button
+                    variant="secondary"
+                    onClick={handleRegeneratePdf}
+                    disabled={isRegeneratingPdf}
+                    title="Regenerar PDF con firmas en posiciones correctas (solo admin)"
+                  >
+                    {isRegeneratingPdf ? 'Regenerando...' : 'Regenerar PDF'}
                   </Button>
                 )}
               </>

@@ -896,6 +896,11 @@ export const logEntriesApi = {
 
     return response.json();
   },
+  regeneratePdf: async (entryId: string) => {
+    return apiFetch(`/log-entries/${entryId}/regenerate-pdf`, {
+      method: "POST",
+    });
+  },
   exportZip: async (filters: {
     startDate?: string;
     endDate?: string;
