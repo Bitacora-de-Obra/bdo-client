@@ -77,10 +77,10 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   
   const { data: users, isLoading: isUsersLoading } = useApi.users();
 
-  // Reset page to 1 when filters change
+  // Reset page to 1 when filters or sort change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters.status, filters.type, filters.user, filters.searchTerm, filters.startDate, filters.endDate]);
+  }, [filters.status, filters.type, filters.user, filters.searchTerm, filters.startDate, filters.endDate, sortBy]);
 
   // Use prefetched data if available, otherwise use fresh data
   const actualLogEntriesResponse = prefetchedPage === currentPage && prefetchedData
@@ -131,11 +131,6 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
       }
     }
   }, [initialItemToOpen, logEntries, isLogEntriesLoading, clearInitialItem]);
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filters, sortBy]);
 
   // Prefetch next page in background
   useEffect(() => {
