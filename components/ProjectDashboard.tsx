@@ -101,10 +101,24 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
       const entryToOpen = logEntries.find((e) => e.id === initialItemToOpen.id);
       if (entryToOpen) {
         handleOpenDetail(entryToOpen);
+        clearInitialItem();
+      } else if (!isLogEntriesLoading) {
+        // Entry not in current page - fetch directly from API
+        api.logEntries.getById(initialItemToOpen.id)
+          .then((fetchedEntry) => {
+            if (fetchedEntry) {
+              handleOpenDetail(fetchedEntry);
+            }
+          })
+          .catch((err) => {
+            console.error("Error fetching entry for deep link:", err);
+          })
+          .finally(() => {
+            clearInitialItem();
+          });
       }
-      clearInitialItem();
     }
-  }, [initialItemToOpen, logEntries, clearInitialItem]);
+  }, [initialItemToOpen, logEntries, isLogEntriesLoading, clearInitialItem]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
