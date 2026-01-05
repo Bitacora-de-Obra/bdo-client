@@ -65,7 +65,8 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     {
       status: convertFilterToDbValue(filters.status, EntryStatus),
       type: convertFilterToDbValue(filters.type, EntryType),
-      userId: filters.user !== 'all' ? filters.user : undefined
+      userId: filters.user !== 'all' ? filters.user : undefined,
+      search: filters.searchTerm || undefined
     }
   );
   
@@ -159,30 +160,18 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const filteredEntries = useMemo(() => {
     if (!logEntries) return [];
 
-    // Only filter by searchTerm and date range (frontend-only filters)
-    // status, type, user filters are handled by backend
+    // Only filter by date range (frontend-only since backend doesn't have these params yet)
+    // status, type, user, search filters are handled by backend
     const filtered = logEntries.filter((entry) => {
-      // Search term filter (frontend only)
-      const searchTermMatch = !filters.searchTerm || 
-        entry.title.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        entry.description.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        entry.activitiesPerformed.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        entry.materialsUsed.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        entry.workforce.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        entry.weatherConditions.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        entry.additionalObservations.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        String(entry.folioNumber).includes(filters.searchTerm);
-      
-      // Date range filter (frontend only)
       const entryDateOnly = entry.entryDate.substring(0, 10);
       const startDateMatch = !filters.startDate || entryDateOnly >= filters.startDate;
       const endDateMatch = !filters.endDate || entryDateOnly <= filters.endDate;
 
-      return searchTermMatch && startDateMatch && endDateMatch;
+      return startDateMatch && endDateMatch;
     });
 
     return filtered;
-  }, [logEntries, filters.searchTerm, filters.startDate, filters.endDate]);
+  }, [logEntries, filters.startDate, filters.endDate]);
 
   const handleCloseDetail = () => {
     setIsDetailModalOpen(false);

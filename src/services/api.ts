@@ -662,7 +662,7 @@ export const adminApi = {
 
 // API Functions for Log Entries
 export const logEntriesApi = {
-  getAll: async (page?: number, limit?: number, sortBy?: string, filters?: { status?: string; type?: string; userId?: string }) => {
+  getAll: async (page?: number, limit?: number, sortBy?: string, filters?: { status?: string; type?: string; userId?: string; search?: string }) => {
     let params = '';
     if (page && limit) {
       params = `?page=${page}&limit=${limit}`;
@@ -670,13 +670,15 @@ export const logEntriesApi = {
       if (filters?.status) params += `&status=${filters.status}`;
       if (filters?.type) params += `&type=${filters.type}`;
       if (filters?.userId) params += `&userId=${filters.userId}`;
-    } else if (sortBy || filters?.status || filters?.type || filters?.userId) {
+      if (filters?.search) params += `&search=${encodeURIComponent(filters.search)}`;
+    } else if (sortBy || filters?.status || filters?.type || filters?.userId || filters?.search) {
       params = '?';
       const paramParts = [];
       if (sortBy) paramParts.push(`sortBy=${sortBy}`);
       if (filters?.status) paramParts.push(`status=${filters.status}`);
       if (filters?.type) paramParts.push(`type=${filters.type}`);
       if (filters?.userId) paramParts.push(`userId=${filters.userId}`);
+      if (filters?.search) paramParts.push(`search=${encodeURIComponent(filters.search)}`);
       params += paramParts.join('&');
     }
     return apiFetch(`/log-entries${params}`);
