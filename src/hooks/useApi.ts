@@ -33,6 +33,11 @@ export function useLogEntries(page?: number, limit?: number, sortBy?: string, fi
   return { data, isLoading, error, retry, refetch: retry };
 }
 
+// Hook for ALL log entries (used by calendar - no pagination/filters)
+export function useAllLogEntries(): LoadingState<any> {
+  return useLoadingState(() => api.logEntries.getAll());
+}
+
 export function useCommunications(): LoadingState<any[]> {
   return useLoadingState(api.communications.getAll);
 }
@@ -134,6 +139,7 @@ export function useReportById(id: string | null): LoadingState<any> {
 export const useApi = {
   users: useUsers,
   logEntries: useLogEntries,
+  allLogEntries: useAllLogEntries,
   communications: useCommunications,
   actas: useActas,
   costActas: useCostActas,

@@ -68,6 +68,13 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
       userId: filters.user !== 'all' ? filters.user : undefined
     }
   );
+  
+  // Fetch ALL entries for calendar (no pagination, no filters)
+  const { data: allEntriesResponse, isLoading: isAllEntriesLoading } = useApi.allLogEntries();
+  const allEntries = Array.isArray(allEntriesResponse) 
+    ? allEntriesResponse 
+    : allEntriesResponse?.entries || [];
+  
   const { data: users, isLoading: isUsersLoading } = useApi.users();
 
   // Use prefetched data if available, otherwise use fresh data
@@ -573,7 +580,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
           )}
           {viewMode === "calendar" && (
             <CalendarView
-              entries={filteredEntries}
+              entries={allEntries}
               onEventClick={handleOpenDetail}
               onDateClick={canEditContent ? handleDateClickOnCalendar : undefined}
             />
