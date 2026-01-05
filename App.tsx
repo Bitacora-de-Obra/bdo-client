@@ -20,6 +20,7 @@ import LoginScreen from "./components/auth/LoginScreen";
 import { ReportScope, Notification, User } from "./types";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import DrawingsDashboard from "./components/DrawingsDashboard";
+import ContractDocumentsDashboard from "./components/ContractDocumentsDashboard";
 import { ChatbotWidget } from "./components/chatbot/ChatbotWidget"; // <-- Añade esta línea
 import SignatureManagerModal from "./components/account/SignatureManagerModal";
 import ProjectChat from "./components/chat/ProjectChat";
@@ -214,6 +215,8 @@ const MainApp = () => {
         );
       case "export_project":
         return <ExportDashboard project={projectDetails} />;
+      case "contract_documents":
+        return <ContractDocumentsDashboard />;
       case "admin":
         return <AdminDashboard />;
       default:
