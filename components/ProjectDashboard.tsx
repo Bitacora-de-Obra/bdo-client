@@ -77,6 +77,11 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   
   const { data: users, isLoading: isUsersLoading } = useApi.users();
 
+  // Reset page to 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters.status, filters.type, filters.user, filters.searchTerm, filters.startDate, filters.endDate]);
+
   // Use prefetched data if available, otherwise use fresh data
   const actualLogEntriesResponse = prefetchedPage === currentPage && prefetchedData
     ? prefetchedData
@@ -159,58 +164,30 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const filteredEntries = useMemo(() => {
     if (!logEntries) return [];
 
+    // Only filter by searchTerm and date range (frontend-only filters)
+    // status, type, user filters are handled by backend
     const filtered = logEntries.filter((entry) => {
-      const searchTermMatch =
+      // Search term filter (frontend only)
+      const searchTermMatch = !filters.searchTerm || 
         entry.title.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-        entry.description
-          .toLowerCase()
-          .includes(filters.searchTerm.toLowerCase()) ||
-        entry.activitiesPerformed
-          .toLowerCase()
-          .includes(filters.searchTerm.toLowerCase()) ||
-        entry.materialsUsed
-          .toLowerCase()
-          .includes(filters.searchTerm.toLowerCase()) ||
-        entry.workforce
-          .toLowerCase()
-          .includes(filters.searchTerm.toLowerCase()) ||
-        entry.weatherConditions
-          .toLowerCase()
-          .includes(filters.searchTerm.toLowerCase()) ||
-        entry.additionalObservations
-          .toLowerCase()
-          .includes(filters.searchTerm.toLowerCase()) ||
+        entry.description.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        entry.activitiesPerformed.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        entry.materialsUsed.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        entry.workforce.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        entry.weatherConditions.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
+        entry.additionalObservations.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
         String(entry.folioNumber).includes(filters.searchTerm);
       
-      // Normalize entry status for comparison (handle English API keys vs Spanish filter values)
-      const normalizedStatus = EntryStatus[entry.status as keyof typeof EntryStatus] || entry.status;
-      const statusMatch =
-        filters.status === "all" || normalizedStatus === filters.status;
-      
-      const typeMatch = filters.type === "all" || entry.type === filters.type;
-      const userMatch =
-        filters.user === "all" ||
-        (entry.author && entry.author.id === filters.user);
-
+      // Date range filter (frontend only)
       const entryDateOnly = entry.entryDate.substring(0, 10);
-      const startDateMatch =
-        !filters.startDate || entryDateOnly >= filters.startDate;
-      const endDateMatch =
-        !filters.endDate || entryDateOnly <= filters.endDate;
+      const startDateMatch = !filters.startDate || entryDateOnly >= filters.startDate;
+      const endDateMatch = !filters.endDate || entryDateOnly <= filters.endDate;
 
-      return (
-        searchTermMatch &&
-        statusMatch &&
-        typeMatch &&
-        userMatch &&
-        startDateMatch &&
-        endDateMatch
-      );
+      return searchTermMatch && startDateMatch && endDateMatch;
     });
 
-    // Backend now handles sorting - return filtered results as-is
     return filtered;
-  }, [logEntries, filters]);
+  }, [logEntries, filters.searchTerm, filters.startDate, filters.endDate]);
 
   const handleCloseDetail = () => {
     setIsDetailModalOpen(false);
