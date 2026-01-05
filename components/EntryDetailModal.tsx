@@ -82,7 +82,9 @@ const formatBytes = (bytes: number, decimals = 2) => {
 };
 
 
+
 const LEGACY_STATUS_ALIASES: Record<string, EntryStatus> = {
+  // Legacy display values (old data)
   Radicado: EntryStatus.SUBMITTED,
   "En Revisión": EntryStatus.NEEDS_REVIEW,
   Aprobado: EntryStatus.APPROVED,
@@ -90,6 +92,13 @@ const LEGACY_STATUS_ALIASES: Record<string, EntryStatus> = {
   "Revisión final": EntryStatus.NEEDS_REVIEW,
   "Listo para firmas": EntryStatus.APPROVED,
   Firmado: EntryStatus.SIGNED,
+  // Prisma enum keys (database values)
+  DRAFT: EntryStatus.DRAFT,
+  SUBMITTED: EntryStatus.SUBMITTED,
+  NEEDS_REVIEW: EntryStatus.NEEDS_REVIEW,
+  APPROVED: EntryStatus.APPROVED,
+  SIGNED: EntryStatus.SIGNED,
+  REJECTED: EntryStatus.REJECTED,
 };
 
 const PROJECT_ROLE_ALIASES: Record<string, UserRole> = {
