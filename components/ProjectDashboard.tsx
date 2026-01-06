@@ -38,7 +38,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const ENTRIES_PER_PAGE = 20;
   const [prefetchedPage, setPrefetchedPage] = useState<number | null>(null);
   const [prefetchedData, setPrefetchedData] = useState<any>(null);
-  const [sortBy, setSortBy] = useState<"entryDate" | "folioNumber" | "folioNumberDesc" | "createdAt">("createdAt");
+  const [sortBy, setSortBy] = useState<"entryDate" | "entryDateDesc" | "folioNumber" | "folioNumberDesc" | "createdAt">("createdAt");
   
   // Helper: Convert Spanish UI labels to DB enum keys
   const convertFilterToDbValue = (label: string, enumObj: any): string | undefined => {
@@ -430,6 +430,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
                   setSortBy(
                     e.target.value as
                       | "entryDate"
+                      | "entryDateDesc"
                       | "folioNumber"
                       | "folioNumberDesc"
                       | "createdAt"
@@ -438,6 +439,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
                 className="w-full appearance-none rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/30"
               >
                 <option value="entryDate">Fecha del diario (ascendente)</option>
+                <option value="entryDateDesc">Fecha del diario (descendente)</option>
                 <option value="folioNumber">No. de folio (ascendente)</option>
                 <option value="folioNumberDesc">No. de folio (descendente)</option>
                 <option value="createdAt">Fecha de creación (recientes primero)</option>
