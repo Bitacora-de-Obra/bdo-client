@@ -683,6 +683,10 @@ export const logEntriesApi = {
     }
     return apiFetch(`/log-entries${params}`);
   },
+  // Endpoint ligero para calendario - solo campos mínimos
+  getCalendar: async () => {
+    return apiFetch('/log-entries/calendar');
+  },
   getById: async (id: string) => {
     return apiFetch(`/log-entries/${id}`);
   },

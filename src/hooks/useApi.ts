@@ -33,9 +33,9 @@ export function useLogEntries(page?: number, limit?: number, sortBy?: string, fi
   return { data, isLoading, error, retry, refetch: retry };
 }
 
-// Hook for ALL log entries (used by calendar - no pagination/filters)
+// Hook for ALL log entries (used by calendar - LIGHTWEIGHT endpoint)
 export function useAllLogEntries(): LoadingState<any> {
-  return useLoadingState(() => api.logEntries.getAll());
+  return useLoadingState(() => api.logEntries.getCalendar());
 }
 
 export function useCommunications(): LoadingState<any[]> {
