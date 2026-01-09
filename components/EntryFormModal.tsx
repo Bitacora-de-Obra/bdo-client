@@ -64,13 +64,13 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   const [weatherNotes, setWeatherNotes] = useState<string>("");
 
   // Catalogs
-  const [staffRolesCatalog, setStaffRolesCatalog] = useState<CatalogItem[]>([]);
-  const [equipmentCatalog, setEquipmentCatalog] = useState<CatalogItem[]>([]);
+  const [contractorRolesCatalog, setContractorRolesCatalog] = useState<CatalogItem[]>([]);
+  const [interventoriaRolesCatalog, setInterventoriaRolesCatalog] = useState<CatalogItem[]>([]);
 
   useEffect(() => {
      if (isOpen) {
-        api.admin.getCatalog("STAFF_ROLE").then(data => setStaffRolesCatalog(data as any));
-        api.admin.getCatalog("EQUIPMENT_TYPE").then(data => setEquipmentCatalog(data as any));
+        api.admin.getCatalog("STAFF_ROLE_CONTRACTOR").then(data => setContractorRolesCatalog(data as any));
+        api.admin.getCatalog("STAFF_ROLE_INTERVENTORIA").then(data => setInterventoriaRolesCatalog(data as any));
      }
   }, [isOpen]);
   const [rainEvents, setRainEvents] = useState<Array<{ start: string; end: string }>>([
@@ -1163,14 +1163,13 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
       title="Registrar Bitácora Diaria"
       size="xl"
     >
-      <datalist id="staff-roles-list">
-        {staffRolesCatalog.map(item => (
+      <datalist id="staff-roles-contractor-list">
+        {contractorRolesCatalog.map(item => (
           <option key={item.id} value={item.name} />
         ))}
-        {/* Fallback defaults if catalog empty?? No, clean slate is better or maybe standard list */}
       </datalist>
-      <datalist id="equipment-types-list">
-        {equipmentCatalog.map(item => (
+      <datalist id="staff-roles-interventoria-list">
+        {interventoriaRolesCatalog.map(item => (
           <option key={item.id} value={item.name} />
         ))}
       </datalist>
@@ -1405,7 +1404,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                   <Input
                     label={index === 0 ? "Cargo" : undefined}
                     value={person.role}
-                    list="staff-roles-list"
+                    list="staff-roles-contractor-list"
                     onChange={(e) => updatePersonnelRow(setContractorPersonnel, index, 'role', e.target.value)}
                   />
                   <Input
@@ -1454,7 +1453,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                   <Input
                     label={index === 0 ? "Cargo" : undefined}
                     value={person.role}
-                    list="staff-roles-list"
+                    list="staff-roles-interventoria-list"
                     onChange={(e) => updatePersonnelRow(setInterventoriaPersonnel, index, 'role', e.target.value)}
                   />
                   <Input
@@ -1503,7 +1502,6 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                   <Input
                     label={index === 0 ? "Equipo" : undefined}
                     value={item.name}
-                    list="equipment-types-list"
                     onChange={(e) => updateEquipmentRow(index, 'name', e.target.value)}
                   />
                   <Input

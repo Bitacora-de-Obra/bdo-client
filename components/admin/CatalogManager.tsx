@@ -3,7 +3,7 @@ import { api, CatalogItem } from "../../src/services/api";
 import { XMarkIcon, PlusIcon, TrashIcon } from "../../components/icons/Icon";
 
 interface CatalogManagerProps {
-  category: "STAFF_ROLE" | "EQUIPMENT_TYPE";
+  category: string;
   title: string;
 }
 
