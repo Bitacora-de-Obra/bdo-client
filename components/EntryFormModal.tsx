@@ -1406,12 +1406,20 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             <div className="mt-2 space-y-3">
               {contractorPersonnel.map((person, index) => (
                 <div key={`contractor-${index}`} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-                  <CreatableSelect
-                    label={index === 0 ? "Cargo" : undefined}
-                    value={person.role}
-                    options={contractorRolesCatalog.map(c => ({ value: c.name, label: c.name }))}
-                    onChange={(val) => updatePersonnelRow(setContractorPersonnel, index, 'role', val)}
-                  />
+                  {window.location.hostname.toLowerCase().includes("mutis") ? (
+                      <Input
+                        label={index === 0 ? "Cargo" : undefined}
+                        value={person.role}
+                        onChange={(e) => updatePersonnelRow(setContractorPersonnel, index, 'role', e.target.value)}
+                      />
+                  ) : (
+                      <CreatableSelect
+                        label={index === 0 ? "Cargo" : undefined}
+                        value={person.role}
+                        options={contractorRolesCatalog.map(c => ({ value: c.name, label: c.name }))}
+                        onChange={(val) => updatePersonnelRow(setContractorPersonnel, index, 'role', val)}
+                      />
+                  )}
                   <Input
                     label={index === 0 ? "Cantidad" : undefined}
                     type="number"
@@ -1455,12 +1463,20 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             <div className="mt-2 space-y-3">
               {interventoriaPersonnel.map((person, index) => (
                 <div key={`interventoria-${index}`} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-                  <CreatableSelect
-                    label={index === 0 ? "Cargo" : undefined}
-                    value={person.role}
-                    options={interventoriaRolesCatalog.map(c => ({ value: c.name, label: c.name }))}
-                    onChange={(val) => updatePersonnelRow(setInterventoriaPersonnel, index, 'role', val)}
-                  />
+                  {window.location.hostname.toLowerCase().includes("mutis") ? (
+                      <Input
+                        label={index === 0 ? "Cargo" : undefined}
+                        value={person.role}
+                        onChange={(e) => updatePersonnelRow(setInterventoriaPersonnel, index, 'role', e.target.value)}
+                      />
+                  ) : (
+                      <CreatableSelect
+                        label={index === 0 ? "Cargo" : undefined}
+                        value={person.role}
+                        options={interventoriaRolesCatalog.map(c => ({ value: c.name, label: c.name }))}
+                        onChange={(val) => updatePersonnelRow(setInterventoriaPersonnel, index, 'role', val)}
+                      />
+                  )}
                   <Input
                     label={index === 0 ? "Cantidad" : undefined}
                     type="number"
@@ -1504,19 +1520,37 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             <div className="mt-2 space-y-3">
               {equipmentResources.map((item, index) => (
                 <div key={`equipment-${index}`} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-                  <CreatableSelect
-                    label={index === 0 ? "Equipo" : undefined}
-                    value={item.name}
-                    options={equipmentCatalog.map(c => ({ value: c.name, label: c.name }))}
-                    onChange={(val) => updateEquipmentRow(index, 'name', val)}
-                  />
-                  <CreatableSelect
-                    label={index === 0 ? "Estado" : undefined}
-                    value={item.status}
-                    options={["Operativa", "Standby", "En Reparación", "Varada", "Mantenimiento"]}
-                    onChange={(val) => updateEquipmentRow(index, 'status', val)}
-                    placeholder="Operativa, standby, etc."
-                  />
+                  {window.location.hostname.toLowerCase().includes("mutis") ? (
+                      <Input
+                        label={index === 0 ? "Equipo" : undefined}
+                        value={item.name}
+                        onChange={(e) => updateEquipmentRow(index, 'name', e.target.value)}
+                      />
+                  ) : (
+                      <CreatableSelect
+                        label={index === 0 ? "Equipo" : undefined}
+                        value={item.name}
+                        options={equipmentCatalog.map(c => ({ value: c.name, label: c.name }))}
+                        onChange={(val) => updateEquipmentRow(index, 'name', val)}
+                      />
+                  )}
+
+                  {window.location.hostname.toLowerCase().includes("mutis") ? (
+                       <Input
+                        label={index === 0 ? "Estado" : undefined}
+                        value={item.status}
+                        onChange={(e) => updateEquipmentRow(index, 'status', e.target.value)}
+                        placeholder="Operativa, standby, etc."
+                      />
+                  ) : (
+                      <CreatableSelect
+                        label={index === 0 ? "Estado" : undefined}
+                        value={item.status}
+                        options={["Operativa", "Standby", "En Reparación", "Varada", "Mantenimiento"]}
+                        onChange={(val) => updateEquipmentRow(index, 'status', val)}
+                        placeholder="Operativa, standby, etc."
+                      />
+                  )}
                   <Input
                     label={index === 0 ? "Notas" : undefined}
                     value={item.notes}

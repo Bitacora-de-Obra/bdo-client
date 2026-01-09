@@ -224,18 +224,18 @@ const AdminDashboard: React.FC = () => {
           )}
           {activeTab === "catalogs" && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {window.location.hostname.toLowerCase().includes("mutis") ? (
-                  <CatalogManager category="STAFF_ROLE" title="Cargos de Personal" />
-                ) : (
-                  <>
+              {window.location.hostname.toLowerCase().includes("mutis") ? (
+                   <div className="bg-white p-6 rounded-lg shadow text-center text-gray-500">
+                      <p>Los catálogos no son configurables para este proyecto.</p>
+                   </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <CatalogManager category="STAFF_ROLE_CONTRACTOR" title="Cargos Personal Contratista" />
                     <CatalogManager category="STAFF_ROLE_INTERVENTORIA" title="Cargos Personal Interventoría" />
-                  </>
-                )}
-                <CatalogManager category="EQUIPMENT_TYPE" title="Maquinaria y Equipos" />
-              </div>
-              </div>
+                    <CatalogManager category="EQUIPMENT_TYPE" title="Maquinaria y Equipos" />
+                </div>
+              )}
+            </div>
 
           )}
         </div>
