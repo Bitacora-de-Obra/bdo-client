@@ -8,7 +8,7 @@ import { XMarkIcon, CameraIcon } from "./icons/Icon";
 import { getFullRoleName } from "../src/utils/roleDisplay";
 import { compressImages } from "../src/utils/compressImage";
 import { useApi } from "../src/hooks/useApi";
-import api from "../src/services/api";
+import api, { CatalogItem } from "../src/services/api";
 import ProgressIndicator from "./ui/ProgressIndicator";
 
 interface EntryFormModalProps {
@@ -62,6 +62,17 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   const [weatherSummary, setWeatherSummary] = useState<string>("");
   const [weatherTemperature, setWeatherTemperature] = useState<string>("");
   const [weatherNotes, setWeatherNotes] = useState<string>("");
+
+  // Catalogs
+  const [staffRolesCatalog, setStaffRolesCatalog] = useState<CatalogItem[]>([]);
+  const [equipmentCatalog, setEquipmentCatalog] = useState<CatalogItem[]>([]);
+
+  useEffect(() => {
+     if (isOpen) {
+        api.admin.getCatalog("STAFF_ROLE").then(data => setStaffRolesCatalog(data as any));
+        api.admin.getCatalog("EQUIPMENT_TYPE").then(data => setEquipmentCatalog(data as any));
+     }
+  }, [isOpen]);
   const [rainEvents, setRainEvents] = useState<Array<{ start: string; end: string }>>([
     { start: "", end: "" },
   ]);
@@ -1152,6 +1163,17 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
       title="Registrar Bitácora Diaria"
       size="xl"
     >
+      <datalist id="staff-roles-list">
+        {staffRolesCatalog.map(item => (
+          <option key={item.id} value={item.name} />
+        ))}
+        {/* Fallback defaults if catalog empty?? No, clean slate is better or maybe standard list */}
+      </datalist>
+      <datalist id="equipment-types-list">
+        {equipmentCatalog.map(item => (
+          <option key={item.id} value={item.name} />
+        ))}
+      </datalist>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
@@ -1383,6 +1405,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                   <Input
                     label={index === 0 ? "Cargo" : undefined}
                     value={person.role}
+                    list="staff-roles-list"
                     onChange={(e) => updatePersonnelRow(setContractorPersonnel, index, 'role', e.target.value)}
                   />
                   <Input
@@ -1431,6 +1454,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                   <Input
                     label={index === 0 ? "Cargo" : undefined}
                     value={person.role}
+                    list="staff-roles-list"
                     onChange={(e) => updatePersonnelRow(setInterventoriaPersonnel, index, 'role', e.target.value)}
                   />
                   <Input
@@ -1479,6 +1503,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                   <Input
                     label={index === 0 ? "Equipo" : undefined}
                     value={item.name}
+                    list="equipment-types-list"
                     onChange={(e) => updateEquipmentRow(index, 'name', e.target.value)}
                   />
                   <Input
