@@ -230,6 +230,8 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     useState(false);
   const [isSavingContractorNotes, setIsSavingContractorNotes] =
     useState(false);
+  const [isSavingInterventoriaObs, setIsSavingInterventoriaObs] =
+    useState(false);
   const [isSendingToContractor, setIsSendingToContractor] = useState(false);
   const [
     isCompletingContractorReview,
@@ -1155,6 +1157,43 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     }
   };
 
+  const handleSaveInterventoriaObservations = async () => {
+    if (!canEditInterventoriaResponses) {
+      showToast({
+        variant: "error",
+        title: "Acción no permitida",
+        message: "No puedes editar las observaciones de la interventoría.",
+      });
+      return;
+    }
+
+    setIsSavingInterventoriaObs(true);
+    try {
+      const payload: Partial<LogEntry> = {
+        interventoriaObservations: (editedEntry.interventoriaObservations || "").trim(),
+      };
+      const updatedEntry = await api.logEntries.update(entry.id, payload);
+      syncEntryState(updatedEntry);
+      await onRefresh();
+      showToast({
+        variant: "success",
+        title: "Observaciones guardadas",
+        message: "Las observaciones de la interventoría fueron registradas correctamente.",
+      });
+    } catch (error: any) {
+      const message =
+        error?.message || "No se pudieron guardar las observaciones.";
+      setValidationError(message);
+      showToast({
+        variant: "error",
+        title: "Error al guardar observaciones",
+        message,
+      });
+    } finally {
+      setIsSavingInterventoriaObs(false);
+    }
+  };
+
   const handleCompleteReview = async () => {
     if (!canCompleteReview) {
       showToast({
@@ -1491,6 +1530,21 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     currentUser.appRole === "admin";
   const isContractorUser =
     normalizedCurrentProjectRole === UserRole.CONTRACTOR_REP;
+  const isInterventoriaUser = [
+    UserRole.SUPERVISOR,
+    UserRole.RESIDENT,
+    UserRole.ADMIN
+  ].includes(normalizedCurrentProjectRole as UserRole);
+  
+  // Detect author's party based on their role
+  const authorRole = normalizeProjectRoleValue(author?.projectRole);
+  const isAuthorContractor = authorRole === UserRole.CONTRACTOR_REP;
+  const isAuthorInterventoria = [
+    UserRole.SUPERVISOR,
+    UserRole.RESIDENT,
+    UserRole.ADMIN
+  ].includes(authorRole as UserRole);
+  
   const effectiveReadOnly = readOnly && !isContractorUser;
   const isDraftStatus = workflowStatus === EntryStatus.DRAFT;
   const isSubmittedStatus = workflowStatus === EntryStatus.SUBMITTED;
@@ -1562,9 +1616,22 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     myReviewTask?.status === "PENDING" &&
     (isAssignee || isAdmin);
   const isAssignedContractor = isAssignee || entry.assignees?.some((u) => u.id === currentUser.id);
+  
+  // Contractor can edit their observations when:
+  // 1. Status is SUBMITTED (under review)
+  // 2. AND (user is contractor OR admin OR assigned)
   const canEditContractorResponses =
     isContractorReviewStatus &&
     (isContractorUser || isAdmin || isAssignedContractor);
+  
+  // Interventoría can edit their observations when:
+  // 1. Status is SUBMITTED (under review)
+  // 2. AND user is interventoría
+  // 3. AND author was contractor (counterpart responding)
+  const canEditInterventoriaResponses =
+    isContractorReviewStatus &&
+    (isInterventoriaUser || isAdmin) &&
+    isAuthorContractor;
 
   const workflowActionButtons: React.ReactNode[] = [];
 
@@ -2911,9 +2978,37 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                   className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
                 />
               ) : (
-                <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
-                  {interventoriaObservations || "Sin observaciones."}
-                </p>
+                <>
+                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                    {interventoriaObservations || "Sin observaciones."}
+                  </p>
+                  {canEditInterventoriaResponses && (
+                    <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3 space-y-3">
+                      <p className="text-xs text-blue-800">
+                        Como interventoría, puedes agregar tus observaciones antes de aprobar.
+                      </p>
+                      <textarea
+                        value={interventoriaObservations}
+                        onChange={(e) =>
+                          setEditedEntry((prev) => ({
+                            ...prev,
+                            interventoriaObservations: e.target.value,
+                          }))
+                        }
+                        rows={3}
+                        className="block w-full border border-blue-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2"
+                        placeholder="Observaciones de la interventoría"
+                      />
+                      <Button
+                        variant="primary"
+                        onClick={handleSaveInterventoriaObservations}
+                        disabled={isSavingInterventoriaObs}
+                      >
+                        {isSavingInterventoriaObs ? "Guardando..." : "Guardar observaciones"}
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
