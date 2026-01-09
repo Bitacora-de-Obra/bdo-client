@@ -22,11 +22,6 @@ const sizeClasses = {
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer, size = 'lg' }) => {
   if (!isOpen) return null;
 
-  // Debug: verificar versión en producción
-  if (typeof console !== "undefined") {
-    console.info("[Modal] rendering with z-layer fix (v2)");
-  }
-
   const modalContent = (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center" aria-labelledby="modal-title" role="dialog" aria-modal="true">
       <div className="fixed inset-0 bg-gray-500 bg-opacity-75" onClick={onClose}></div>
