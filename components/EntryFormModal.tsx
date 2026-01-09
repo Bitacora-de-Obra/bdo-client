@@ -4,6 +4,7 @@ import Modal from "./ui/Modal";
 import Button from "./ui/Button";
 import Input from "./ui/Input";
 import Select from "./ui/Select";
+import CreatableSelect from "./ui/CreatableSelect";
 import { XMarkIcon, CameraIcon } from "./icons/Icon";
 import { getFullRoleName } from "../src/utils/roleDisplay";
 import { compressImages } from "../src/utils/compressImage";
@@ -1165,28 +1166,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
       title="Registrar Bitácora Diaria"
       size="xl"
     >
-      <datalist id="staff-roles-contractor-list">
-        {contractorRolesCatalog.map(item => (
-          <option key={item.id} value={item.name} />
-        ))}
-      </datalist>
-      <datalist id="staff-roles-interventoria-list">
-        {interventoriaRolesCatalog.map(item => (
-          <option key={item.id} value={item.name} />
-        ))}
-      </datalist>
-      <datalist id="equipment-types-list">
-        {equipmentCatalog.map(item => (
-          <option key={item.id} value={item.name} />
-        ))}
-      </datalist>
-      <datalist id="equipment-status-list">
-        <option value="Operativa" />
-        <option value="Standby" />
-        <option value="En Reparación" />
-        <option value="Varada" />
-        <option value="Mantenimiento" />
-      </datalist>
+
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
@@ -1415,11 +1395,11 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             <div className="mt-2 space-y-3">
               {contractorPersonnel.map((person, index) => (
                 <div key={`contractor-${index}`} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-                  <Input
+                  <CreatableSelect
                     label={index === 0 ? "Cargo" : undefined}
                     value={person.role}
-                    list="staff-roles-contractor-list"
-                    onChange={(e) => updatePersonnelRow(setContractorPersonnel, index, 'role', e.target.value)}
+                    options={contractorRolesCatalog.map(c => ({ value: c.name, label: c.name }))}
+                    onChange={(val) => updatePersonnelRow(setContractorPersonnel, index, 'role', val)}
                   />
                   <Input
                     label={index === 0 ? "Cantidad" : undefined}
@@ -1464,11 +1444,11 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             <div className="mt-2 space-y-3">
               {interventoriaPersonnel.map((person, index) => (
                 <div key={`interventoria-${index}`} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-                  <Input
+                  <CreatableSelect
                     label={index === 0 ? "Cargo" : undefined}
                     value={person.role}
-                    list="staff-roles-interventoria-list"
-                    onChange={(e) => updatePersonnelRow(setInterventoriaPersonnel, index, 'role', e.target.value)}
+                    options={interventoriaRolesCatalog.map(c => ({ value: c.name, label: c.name }))}
+                    onChange={(val) => updatePersonnelRow(setInterventoriaPersonnel, index, 'role', val)}
                   />
                   <Input
                     label={index === 0 ? "Cantidad" : undefined}
@@ -1513,17 +1493,17 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             <div className="mt-2 space-y-3">
               {equipmentResources.map((item, index) => (
                 <div key={`equipment-${index}`} className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-                  <Input
+                  <CreatableSelect
                     label={index === 0 ? "Equipo" : undefined}
                     value={item.name}
-                    list="equipment-types-list"
-                    onChange={(e) => updateEquipmentRow(index, 'name', e.target.value)}
+                    options={equipmentCatalog.map(c => ({ value: c.name, label: c.name }))}
+                    onChange={(val) => updateEquipmentRow(index, 'name', val)}
                   />
-                  <Input
+                  <CreatableSelect
                     label={index === 0 ? "Estado" : undefined}
                     value={item.status}
-                    list="equipment-status-list"
-                    onChange={(e) => updateEquipmentRow(index, 'status', e.target.value)}
+                    options={["Operativa", "Standby", "En Reparación", "Varada", "Mantenimiento"]}
+                    onChange={(val) => updateEquipmentRow(index, 'status', val)}
                     placeholder="Operativa, standby, etc."
                   />
                   <Input
