@@ -105,12 +105,18 @@ const AdminDashboard: React.FC = () => {
   const { showToast } = useToast();
 
   const tabs = useMemo(
-    () => [
-      { id: "users", label: "Usuarios y Permisos" },
-      { id: "catalogs", label: "Catálogos" },
-      { id: "audit", label: "Registro de Auditoría" },
-      { id: "settings", label: "Configuración" },
-    ],
+    () => {
+        const allTabs = [
+            { id: "users", label: "Usuarios y Permisos" },
+            { id: "catalogs", label: "Catálogos" },
+            { id: "audit", label: "Registro de Auditoría" },
+            { id: "settings", label: "Configuración" },
+        ];
+        if (typeof window !== "undefined" && window.location.hostname.toLowerCase().includes("mutis")) {
+            return allTabs.filter(t => t.id !== "catalogs");
+        }
+        return allTabs;
+    },
     []
   );
 
