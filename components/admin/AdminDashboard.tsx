@@ -227,6 +227,7 @@ const AdminDashboard: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <CatalogManager category="STAFF_ROLE_CONTRACTOR" title="Cargos Personal Contratista" />
                 <CatalogManager category="STAFF_ROLE_INTERVENTORIA" title="Cargos Personal Interventoría" />
+                <CatalogManager category="EQUIPMENT_TYPE" title="Maquinaria y Equipos" />
               </div>
               </div>
 

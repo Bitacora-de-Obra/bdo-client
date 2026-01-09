@@ -66,11 +66,13 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   // Catalogs
   const [contractorRolesCatalog, setContractorRolesCatalog] = useState<CatalogItem[]>([]);
   const [interventoriaRolesCatalog, setInterventoriaRolesCatalog] = useState<CatalogItem[]>([]);
+  const [equipmentCatalog, setEquipmentCatalog] = useState<CatalogItem[]>([]);
 
   useEffect(() => {
      if (isOpen) {
         api.admin.getCatalog("STAFF_ROLE_CONTRACTOR").then(data => setContractorRolesCatalog(data as any));
         api.admin.getCatalog("STAFF_ROLE_INTERVENTORIA").then(data => setInterventoriaRolesCatalog(data as any));
+        api.admin.getCatalog("EQUIPMENT_TYPE").then(data => setEquipmentCatalog(data as any));
      }
   }, [isOpen]);
   const [rainEvents, setRainEvents] = useState<Array<{ start: string; end: string }>>([
@@ -1173,6 +1175,18 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           <option key={item.id} value={item.name} />
         ))}
       </datalist>
+      <datalist id="equipment-types-list">
+        {equipmentCatalog.map(item => (
+          <option key={item.id} value={item.name} />
+        ))}
+      </datalist>
+      <datalist id="equipment-status-list">
+        <option value="Operativa" />
+        <option value="Standby" />
+        <option value="En Reparación" />
+        <option value="Varada" />
+        <option value="Mantenimiento" />
+      </datalist>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
@@ -1502,11 +1516,13 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                   <Input
                     label={index === 0 ? "Equipo" : undefined}
                     value={item.name}
+                    list="equipment-types-list"
                     onChange={(e) => updateEquipmentRow(index, 'name', e.target.value)}
                   />
                   <Input
                     label={index === 0 ? "Estado" : undefined}
                     value={item.status}
+                    list="equipment-status-list"
                     onChange={(e) => updateEquipmentRow(index, 'status', e.target.value)}
                     placeholder="Operativa, standby, etc."
                   />
