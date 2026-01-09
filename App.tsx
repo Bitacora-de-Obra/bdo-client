@@ -21,7 +21,10 @@ import { ReportScope, Notification, User } from "./types";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import DrawingsDashboard from "./components/DrawingsDashboard";
 import ContractDocumentsDashboard from "./components/ContractDocumentsDashboard";
-import { ChatbotWidget } from "./components/chatbot/ChatbotWidget"; // <-- Añade esta línea
+import { ChatbotWidget } from "./components/chatbot/ChatbotWidget";
+import ThemeManager from "./components/ThemeManager";
+
+// ... existing imports ...
 import SignatureManagerModal from "./components/account/SignatureManagerModal";
 import ProjectChat from "./components/chat/ProjectChat";
 import api from "./src/services/api";
@@ -287,6 +290,7 @@ const AppContent = () => {
   console.log("AppContent: Authenticated, showing MainApp...");
   return (
     <>
+      <ThemeManager />
       <MainApp />
       <ChatbotWidget />
       <OfflineIndicator />

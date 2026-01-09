@@ -2,3 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Default Branding (IDU / Mutis) */
+  --color-brand-primary: #0D47A1;
+  --color-brand-secondary: #1976D2;
+  --color-brand-accent: #29B6F6;
+  
+  --color-idu-blue: #0033A0;
+  --color-idu-cyan: #00B0DA;
+}
+
