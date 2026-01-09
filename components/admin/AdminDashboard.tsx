@@ -225,8 +225,14 @@ const AdminDashboard: React.FC = () => {
           {activeTab === "catalogs" && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <CatalogManager category="STAFF_ROLE_CONTRACTOR" title="Cargos Personal Contratista" />
-                <CatalogManager category="STAFF_ROLE_INTERVENTORIA" title="Cargos Personal Interventoría" />
+                {window.location.hostname.toLowerCase().includes("mutis") ? (
+                  <CatalogManager category="STAFF_ROLE" title="Cargos de Personal" />
+                ) : (
+                  <>
+                    <CatalogManager category="STAFF_ROLE_CONTRACTOR" title="Cargos Personal Contratista" />
+                    <CatalogManager category="STAFF_ROLE_INTERVENTORIA" title="Cargos Personal Interventoría" />
+                  </>
+                )}
                 <CatalogManager category="EQUIPMENT_TYPE" title="Maquinaria y Equipos" />
               </div>
               </div>

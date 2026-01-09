@@ -71,8 +71,19 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
 
   useEffect(() => {
      if (isOpen) {
-        api.admin.getCatalog("STAFF_ROLE_CONTRACTOR").then(data => setContractorRolesCatalog(data as any));
-        api.admin.getCatalog("STAFF_ROLE_INTERVENTORIA").then(data => setInterventoriaRolesCatalog(data as any));
+        const isLegacy = window.location.hostname.toLowerCase().includes("mutis");
+
+        if (isLegacy) {
+            // Legacy: Use single catalog for both
+            api.admin.getCatalog("STAFF_ROLE").then(data => {
+                setContractorRolesCatalog(data as any);
+                setInterventoriaRolesCatalog(data as any);
+            });
+        } else {
+            // New: Use split catalogs
+            api.admin.getCatalog("STAFF_ROLE_CONTRACTOR").then(data => setContractorRolesCatalog(data as any));
+            api.admin.getCatalog("STAFF_ROLE_INTERVENTORIA").then(data => setInterventoriaRolesCatalog(data as any));
+        }
         api.admin.getCatalog("EQUIPMENT_TYPE").then(data => setEquipmentCatalog(data as any));
      }
   }, [isOpen]);
