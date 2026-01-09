@@ -3,12 +3,23 @@ import { API_BASE_URL } from '../src/services/api';
 
 const ThemeManager: React.FC = () => {
   useEffect(() => {
+    // 1. Client-side Fallback (Immediate branding for Staging)
+    // Esto asegura que se vea bien incluso si la API tarda en responder o falla
+    const hostname = window.location.hostname;
+    if (hostname.includes('sanmateo')) {
+       const root = document.documentElement;
+       root.style.setProperty('--color-brand-primary', '#001A4D');
+       root.style.setProperty('--color-idu-blue', '#001A4D');
+       root.style.setProperty('--color-brand-secondary', '#C4D600');
+       root.style.setProperty('--color-brand-accent', '#C4D600');
+       root.style.setProperty('--color-idu-cyan', '#C4D600');
+    }
+
+    // 2. Dynamic Fetch (Source of Truth)
     const fetchTenantTheme = async () => {
       try {
-        // En desarrollo local, forzamos sanmateo si queremos probar, o dejamos que el backend decida
-        // En producción, el browser enviará Origin/Referer automáticamente
         const res = await fetch(`${API_BASE_URL}/tenant/info`);
-        
+         // ... rest of the code matches existing
         if (!res.ok) return;
         
         const tenant = await res.json();
