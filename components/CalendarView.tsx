@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { LogEntry, EntryStatus } from '../types';
+import { LogEntry, EntryStatus, EntryType } from '../types';
 import Card from './ui/Card';
 
 interface CalendarViewProps {
@@ -11,13 +11,15 @@ interface CalendarViewProps {
   onDateClick?: (dateStr: string) => void;
 }
 
-const statusColorMap: Record<EntryStatus, string> = {
-  [EntryStatus.APPROVED]: '#2E7D32', // status-green
-  [EntryStatus.NEEDS_REVIEW]: '#F9A825', // status-yellow
-  [EntryStatus.SUBMITTED]: '#1976D2', // brand-secondary
-  [EntryStatus.REJECTED]: '#C62828', // status-red
-  [EntryStatus.DRAFT]: '#6B7280', // gray-500
-  [EntryStatus.SIGNED]: '#047857', // emerald-600
+// Colors by EntryType (Area) - Using actual enum values
+const entryTypeColorMap: Record<string, string> = {
+  'General': '#1976D2',       // Azul - General
+  'Técnico': '#0D47A1',       // Azul oscuro - Técnica
+  'HSE': '#F57C00',           // Naranja - SST/HSE
+  'Ambiental': '#2E7D32',     // Verde - Ambiental
+  'Social': '#7B1FA2',        // Púrpura - Social
+  'Administrativo': '#5D4037',// Marrón - Administrativo
+  'Calidad': '#00838F',       // Cian - Calidad
 };
 
 const CalendarView: React.FC<CalendarViewProps> = ({ entries, onEventClick, onDateClick }) => {
@@ -27,15 +29,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({ entries, onEventClick, onDa
       .map((entry) => {
         const entryDate = new Date(entry.entryDate);
         const isoDate = entryDate.toISOString().split("T")[0];
+        const entryType = entry.type || 'General';
+        const color = entryTypeColorMap[entryType] || "#6B7280";
 
         return {
           id: entry.id,
-          title: `#${entry.folioNumber}: ${entry.title}`,
+          title: `#${entry.folioNumber}: Reporte ${entryType.toUpperCase()} #${entry.folioNumber}`,
           start: isoDate,
           end: isoDate,
           allDay: true,
-          backgroundColor: statusColorMap[entry.status] || "#6B7280",
-          borderColor: statusColorMap[entry.status] || "#6B7280",
+          backgroundColor: color,
+          borderColor: color,
           extendedProps: {
             logEntry: entry,
           },
