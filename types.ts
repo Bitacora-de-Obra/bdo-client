@@ -237,6 +237,7 @@ export enum EntryType {
 export interface LogEntry {
   id: string;
   folioNumber: number;
+  folioFormatted?: string;
   title: string;
   description: string;
   entryDate: string;

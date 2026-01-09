@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ControlPoint } from '../types';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
@@ -8,12 +8,34 @@ interface ControlPointFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: Omit<ControlPoint, 'id' | 'photos'>) => void;
+  /** Si se pasa, el modal entra en modo edición */
+  initialData?: ControlPoint;
 }
 
-const ControlPointFormModal: React.FC<ControlPointFormModalProps> = ({ isOpen, onClose, onSave }) => {
+const ControlPointFormModal: React.FC<ControlPointFormModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  onSave,
+  initialData 
+}) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('');
+
+  const isEditMode = !!initialData;
+
+  // Pre-llenar campos cuando hay datos iniciales
+  useEffect(() => {
+    if (initialData) {
+      setName(initialData.name || '');
+      setDescription(initialData.description || '');
+      setLocation(initialData.location || '');
+    } else {
+      setName('');
+      setDescription('');
+      setLocation('');
+    }
+  }, [initialData, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,14 +44,30 @@ const ControlPointFormModal: React.FC<ControlPointFormModalProps> = ({ isOpen, o
       return;
     }
     onSave({ name, description, location });
+    if (!isEditMode) {
+      // Solo limpiar en modo creación
+      setName('');
+      setDescription('');
+      setLocation('');
+    }
     onClose();
-    setName('');
-    setDescription('');
-    setLocation('');
+  };
+
+  const handleClose = () => {
+    if (!isEditMode) {
+      setName('');
+      setDescription('');
+      setLocation('');
+    }
+    onClose();
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Crear Nuevo Punto de Control Fotográfico">
+    <Modal 
+      isOpen={isOpen} 
+      onClose={handleClose} 
+      title={isEditMode ? "Editar Punto de Control" : "Crear Nuevo Punto de Control Fotográfico"}
+    >
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           label="Nombre del Punto de Control"
@@ -60,11 +98,11 @@ const ControlPointFormModal: React.FC<ControlPointFormModalProps> = ({ isOpen, o
           />
         </div>
         <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button type="button" variant="secondary" onClick={handleClose}>
             Cancelar
           </Button>
           <Button type="submit">
-            Guardar Punto
+            {isEditMode ? 'Guardar Cambios' : 'Guardar Punto'}
           </Button>
         </div>
       </form>

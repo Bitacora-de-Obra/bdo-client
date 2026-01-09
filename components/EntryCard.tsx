@@ -47,7 +47,7 @@ const EntryCard: React.FC<EntryCardProps> = ({ entry, onSelect }) => {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <p className="text-sm font-semibold text-brand-primary">
-                Folio #{entry.folioNumber}
+                Folio {entry.folioFormatted || `#${entry.folioNumber}`}
               </p>
               {/* The lock icon is now more prominent for locked entries */}
               {/* Fix: Wrapped icon in a span with a title attribute to fix typing error. */}

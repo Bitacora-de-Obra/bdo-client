@@ -1202,6 +1202,17 @@ export const controlPointsApi = {
       body: JSON.stringify({ photoIds }),
     });
   },
+  update: async (id: string, data: { name: string; description?: string; location?: string }) => {
+    return apiFetch(`/control-points/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+  delete: async (id: string) => {
+    return apiFetch(`/control-points/${id}`, {
+      method: "DELETE",
+    });
+  },
 };
 
 // API Functions for Project Tasks

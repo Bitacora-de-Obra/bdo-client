@@ -1382,7 +1382,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   // Eliminado: handleSignAttachment ya no se usa
   // El flujo de firma ahora es solo a través de "Firmar anotación" con contraseña
 
-  const { folioNumber, author } = entry;
+  const { folioNumber, folioFormatted, author } = entry;
   const { comments = [] } = editedEntry;
   const {
     title,
@@ -1634,7 +1634,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title={`Detalle Anotación - Folio #${folioNumber}`}
+        title={`Detalle Anotación - Folio ${folioFormatted || `#${folioNumber}`}`}
         size="2xl"
       >
         <div className="space-y-6">

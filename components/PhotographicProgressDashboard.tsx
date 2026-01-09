@@ -33,6 +33,11 @@ const PhotographicProgressDashboard: React.FC<PhotographicProgressDashboardProps
   const [isControlPointFormOpen, setIsControlPointFormOpen] = useState(false);
   const [isPhotoUploadOpen, setIsPhotoUploadOpen] = useState(false);
   const [isProgressViewerOpen, setIsProgressViewerOpen] = useState(false);
+  const [editingControlPoint, setEditingControlPoint] = useState<ControlPoint | null>(null);
+  const [deletingControlPoint, setDeletingControlPoint] = useState<ControlPoint | null>(null);
+
+  // Verificar si el usuario es admin (appRole === 'admin')
+  const isAdmin = user?.appRole === 'admin';
 
   // --- useEffect para cargar datos ---
   useEffect(() => {
@@ -141,6 +146,47 @@ const PhotographicProgressDashboard: React.FC<PhotographicProgressDashboardProps
   };
   // -----------------------------------
 
+  // --- Handler para editar punto de control ---
+  const handleEditControlPoint = (point: ControlPoint) => {
+    setEditingControlPoint(point);
+    setIsControlPointFormOpen(true);
+  };
+
+  const handleUpdateControlPoint = async (data: Omit<ControlPoint, 'id' | 'photos'>) => {
+    if (!editingControlPoint) return;
+    try {
+      setError(null);
+      const updated = await api(`/control-points/${editingControlPoint.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+      setControlPoints(prev => prev.map(p => p.id === editingControlPoint.id ? updated : p));
+      setIsControlPointFormOpen(false);
+      setEditingControlPoint(null);
+      showToast({ title: 'Éxito', message: 'Punto de control actualizado.', variant: 'success' });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al actualizar el punto de control.');
+    }
+  };
+
+  // --- Handler para eliminar punto de control ---
+  const handleDeleteControlPoint = (point: ControlPoint) => {
+    setDeletingControlPoint(point);
+  };
+
+  const confirmDeleteControlPoint = async () => {
+    if (!deletingControlPoint) return;
+    try {
+      setError(null);
+      await api(`/control-points/${deletingControlPoint.id}`, { method: 'DELETE' });
+      setControlPoints(prev => prev.filter(p => p.id !== deletingControlPoint.id));
+      setDeletingControlPoint(null);
+      showToast({ title: 'Eliminado', message: 'Punto de control eliminado correctamente.', variant: 'success' });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al eliminar el punto de control.');
+    }
+  };
+
   // --- Implementa handleSavePhoto con subida ---
   const handleSavePhoto = async (
     // Quitamos 'url' porque ahora vendrá del attachment
@@ -229,6 +275,9 @@ const PhotographicProgressDashboard: React.FC<PhotographicProgressDashboardProps
                         onAddPhoto={() => handleOpenPhotoUpload(point)}
                         onViewProgress={() => handleOpenProgressViewer(point)}
                         canAddPhoto={canEditContent}
+                        isAdmin={isAdmin}
+                        onEdit={() => handleEditControlPoint(point)}
+                        onDelete={() => handleDeleteControlPoint(point)}
                     />
                     ))}
                 </div>
@@ -248,12 +297,32 @@ const PhotographicProgressDashboard: React.FC<PhotographicProgressDashboardProps
                 )
         )}
 
-      {canEditContent && (
+      {(canEditContent || editingControlPoint) && (
         <ControlPointFormModal
           isOpen={isControlPointFormOpen}
-          onClose={() => setIsControlPointFormOpen(false)}
-          onSave={handleSaveControlPoint}
+          onClose={() => {
+            setIsControlPointFormOpen(false);
+            setEditingControlPoint(null);
+          }}
+          onSave={editingControlPoint ? handleUpdateControlPoint : handleSaveControlPoint}
+          initialData={editingControlPoint || undefined}
         />
+      )}
+
+      {/* Modal de confirmación de eliminación */}
+      {deletingControlPoint && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">¿Eliminar punto de control?</h3>
+            <p className="text-gray-600 mb-4">
+              Se eliminará <strong>{deletingControlPoint.name}</strong> y todas sus {deletingControlPoint.photos?.length || 0} fotos asociadas. Esta acción no se puede deshacer.
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setDeletingControlPoint(null)}>Cancelar</Button>
+              <Button variant="danger" onClick={confirmDeleteControlPoint}>Eliminar</Button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Los modales PhotoUpload y ProgressViewer necesitan el selectedControlPoint */}
