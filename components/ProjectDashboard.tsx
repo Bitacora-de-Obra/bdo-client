@@ -163,9 +163,19 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     }
   }, [pagination?.currentPage, pagination?.hasNext, prefetchedPage]);
 
-  const handleOpenDetail = (entry: LogEntry) => {
+  const handleOpenDetail = async (entry: LogEntry) => {
+    // First show modal with existing data for quick response
     setSelectedEntry(entry);
     setIsDetailModalOpen(true);
+    
+    // Then fetch fresh data with history in background
+    try {
+      const freshEntry = await api.logEntries.getById(entry.id);
+      setSelectedEntry(freshEntry);
+    } catch (err) {
+      console.error("Could not fetch fresh entry data:", err);
+      // Keep showing the original entry data
+    }
   };
 
   const filteredEntries = useMemo(() => {
