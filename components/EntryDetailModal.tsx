@@ -1632,7 +1632,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     isContractorUser &&
     !isInterventoriaUser &&
     isAuthorInterventoria &&
-    !contractorObservations; // Lock after observations are saved
+    !entry.contractorObservations; // Lock if observations were already saved (use original, not edited)
   
   // DEBUG: Log all conditions for contractor observations editing
   console.log("🔍 DEBUG canEditContractorResponses:", {
@@ -1642,7 +1642,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     workflowStatus,
     isContractorUser,
     isAuthorInterventoria,
-    contractorObservations: !!contractorObservations,
+    entryContractorObservations: !!entry.contractorObservations,
     authorRole,
     normalizedCurrentProjectRole
   });
@@ -1659,7 +1659,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     isInterventoriaUser &&
     !isContractorUser &&
     isAuthorContractor &&
-    !interventoriaObservations; // Lock after observations are saved
+    !entry.interventoriaObservations; // Lock if observations were already saved (use original, not edited)
 
   // DEBUG: Log all conditions for interventoría observations editing
   console.log("🔍 DEBUG canEditInterventoriaResponses:", {
@@ -1670,7 +1670,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     isInterventoriaUser,
     isContractorUser,
     isAuthorContractor,
-    interventoriaObservations: !!interventoriaObservations,
+    entryInterventoriaObservations: !!entry.interventoriaObservations,
     authorRole,
     normalizedCurrentProjectRole,
     currentUserProjectRole: currentUser.projectRole,
