@@ -2952,7 +2952,10 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                     }))
                   }
                   rows={3}
-                  className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  disabled={!isContractorUser}
+                  readOnly={!isContractorUser}
+                  className={`mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2 ${!isContractorUser ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                  placeholder={!isContractorUser ? 'Solo el contratista puede editar este campo' : ''}
                 />
               ) : (
                 <>
@@ -3002,7 +3005,10 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                     }))
                   }
                   rows={3}
-                  className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  disabled={!isInterventoriaUser}
+                  readOnly={!isInterventoriaUser}
+                  className={`mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2 ${!isInterventoriaUser ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                  placeholder={!isInterventoriaUser ? 'Solo la interventoría puede editar este campo' : ''}
                 />
               ) : (
                 <>
