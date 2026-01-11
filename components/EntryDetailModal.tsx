@@ -1554,6 +1554,9 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const isSignedStatus = workflowStatus === EntryStatus.SIGNED;
   const contractorReviewCompleted = !!entry.contractorReviewCompleted;
   
+  // Status where observations can be edited (before all signatures are complete)
+  const canEditObservationsStatus = isSubmittedStatus || isReadyForSignaturesStatus;
+  
   // Verificar si el usuario es un responsable (firmante requerido)
   const isRequiredSigner = entry.signatureTasks?.some(
       (task) => task.signer?.id === currentUser.id
@@ -1625,18 +1628,21 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     (isContractorUser || isAdmin || isAssignedContractor);
   
   // Interventoría can edit their observations when:
-  // 1. Status is SUBMITTED (under review)
-  // 2. AND user is interventoría
-  // 3. AND author was contractor (counterpart responding)
+  // 1. Status is SUBMITTED or APPROVED (before signing is complete)
+  // 2. AND no signatures have been completed yet
+  // 3. AND user is interventoría
+  // 4. AND author was contractor (counterpart responding)
   const canEditInterventoriaResponses =
-    isContractorReviewStatus &&
+    canEditObservationsStatus &&
+    !hasCompletedSignatures &&
     (isInterventoriaUser || isAdmin) &&
     isAuthorContractor;
 
   // DEBUG: Log all conditions for interventoría observations editing
   console.log("🔍 DEBUG canEditInterventoriaResponses:", {
     canEditInterventoriaResponses,
-    isContractorReviewStatus,
+    canEditObservationsStatus,
+    hasCompletedSignatures,
     workflowStatus,
     isInterventoriaUser,
     isAdmin,
