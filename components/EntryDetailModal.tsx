@@ -1633,6 +1633,20 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     (isInterventoriaUser || isAdmin) &&
     isAuthorContractor;
 
+  // DEBUG: Log all conditions for interventoría observations editing
+  console.log("🔍 DEBUG canEditInterventoriaResponses:", {
+    canEditInterventoriaResponses,
+    isContractorReviewStatus,
+    workflowStatus,
+    isInterventoriaUser,
+    isAdmin,
+    isAuthorContractor,
+    authorRole,
+    normalizedCurrentProjectRole,
+    currentUserProjectRole: currentUser.projectRole,
+    authorProjectRole: author?.projectRole
+  });
+
   const workflowActionButtons: React.ReactNode[] = [];
 
   if (canSendToContractor) {
