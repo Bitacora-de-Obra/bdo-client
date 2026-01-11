@@ -8,6 +8,7 @@ import { AppRole, AppSettings, AuditLogEntry, User, UserRole } from "../../types
 import { useAdminApi } from "../../src/hooks/useAdminApi";
 import { ShieldCheckIcon } from "../icons/Icon";
 import { useToast } from "../ui/ToastProvider";
+import CatalogManager from "./CatalogManager";
 
 const APP_ROLE_OPTIONS: { value: AppRole; label: string }[] = [
   { value: "viewer", label: "Viewer" },
@@ -98,19 +99,24 @@ type SettingsViewProps = {
 };
 
 const AdminDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<"users" | "audit" | "settings">(
-    "users"
-  );
+  const [activeTab, setActiveTab] = useState<"users" | "audit" | "settings" | "catalogs">("users");
 
   const admin = useAdminApi();
   const { showToast } = useToast();
 
   const tabs = useMemo(
-    () => [
-      { id: "users", label: "Usuarios y Permisos" },
-      { id: "audit", label: "Registro de Auditoría" },
-      { id: "settings", label: "Configuración" },
-    ],
+    () => {
+        const allTabs = [
+            { id: "users", label: "Usuarios y Permisos" },
+            { id: "catalogs", label: "Catálogos" },
+            { id: "audit", label: "Registro de Auditoría" },
+            { id: "settings", label: "Configuración" },
+        ];
+        if (typeof window !== "undefined" && window.location.hostname.toLowerCase().includes("mutis")) {
+            return allTabs.filter(t => t.id !== "catalogs");
+        }
+        return allTabs;
+    },
     []
   );
 
@@ -144,7 +150,7 @@ const AdminDashboard: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() =>
-                  setActiveTab(tab.id as "users" | "audit" | "settings")
+                  setActiveTab(tab.id as "users" | "audit" | "settings" | "catalogs")
                 }
                 className={`${
                   activeTab === tab.id
@@ -221,6 +227,22 @@ const AdminDashboard: React.FC = () => {
                 })
               }
             />
+          )}
+          {activeTab === "catalogs" && (
+            <div className="space-y-6">
+              {window.location.hostname.toLowerCase().includes("mutis") ? (
+                   <div className="bg-white p-6 rounded-lg shadow text-center text-gray-500">
+                      <p>Los catálogos no son configurables para este proyecto.</p>
+                   </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <CatalogManager category="STAFF_ROLE_CONTRACTOR" title="Cargos Personal Contratista" />
+                    <CatalogManager category="STAFF_ROLE_INTERVENTORIA" title="Cargos Personal Interventoría" />
+                    <CatalogManager category="EQUIPMENT_TYPE" title="Maquinaria y Equipos" />
+                </div>
+              )}
+            </div>
+
           )}
         </div>
       </div>

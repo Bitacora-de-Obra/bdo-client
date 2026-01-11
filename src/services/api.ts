@@ -589,7 +589,30 @@ export const usersApi = {
   },
 };
 
+export type CatalogItem = {
+  id: string;
+  category: string;
+  name: string;
+  isActive: boolean;
+};
+
 export const adminApi = {
+  // Catalogs
+  getCatalog: async (category: string) => {
+    return apiFetch(`/catalogs/${category}`);
+  },
+  createCatalogItem: async (category: string, name: string) => {
+    return apiFetch(`/catalogs`, {
+      method: "POST",
+      body: JSON.stringify({ category, name }),
+    });
+  },
+  deleteCatalogItem: async (id: string) => {
+    return apiFetch(`/catalogs/${id}`, {
+      method: "DELETE",
+    });
+  },
+  
   getUsers: async () => {
     return apiFetch("/admin/users");
   },

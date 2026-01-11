@@ -191,12 +191,21 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   // Effect to recalculate schedule day when date changes during edit
   useEffect(() => {
     if (isEditing && formEntryDate && projectStartDate) {
+      // Avoid ghost updates: only recalculate if date actually changed from original
+      const originalEntryDate = entry.entryDate 
+        ? (typeof entry.entryDate === 'string' ? entry.entryDate : new Date(entry.entryDate).toISOString()).substring(0, 10) 
+        : "";
+        
+      if (formEntryDate === originalEntryDate) {
+        return;
+      }
+
       const calculated = calculateScheduleDay(formEntryDate);
       if (calculated && calculated !== editedEntry.scheduleDay) {
         setEditedEntry(prev => ({ ...prev, scheduleDay: calculated }));
       }
     }
-  }, [formEntryDate, isEditing, projectStartDate]);
+  }, [formEntryDate, isEditing, projectStartDate, entry.entryDate]);
   const [isApproving, setIsApproving] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -229,6 +238,8 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const [isContractorEditingNotes, setIsContractorEditingNotes] =
     useState(false);
   const [isSavingContractorNotes, setIsSavingContractorNotes] =
+    useState(false);
+  const [isSavingInterventoriaObs, setIsSavingInterventoriaObs] =
     useState(false);
   const [isSendingToContractor, setIsSendingToContractor] = useState(false);
   const [
@@ -1155,6 +1166,81 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     }
   };
 
+  // Simple handler for the simplified contractor observations panel
+  const handleSaveContractorObservations = async () => {
+    if (!canEditContractorResponses) {
+      showToast({
+        variant: "error",
+        title: "Acción no permitida",
+        message: "No puedes editar las observaciones del contratista.",
+      });
+      return;
+    }
+
+    setIsSavingContractorNotes(true);
+    try {
+      const payload: Partial<LogEntry> = {
+        contractorObservations: (editedEntry.contractorObservations || "").trim(),
+      };
+      const updatedEntry = await api.logEntries.update(entry.id, payload);
+      syncEntryState(updatedEntry);
+      await onRefresh();
+      showToast({
+        variant: "success",
+        title: "Observaciones guardadas",
+        message: "Tus observaciones fueron registradas correctamente.",
+      });
+    } catch (error: any) {
+      const message =
+        error?.message || "No se pudieron guardar las observaciones.";
+      setValidationError(message);
+      showToast({
+        variant: "error",
+        title: "Error al guardar observaciones",
+        message,
+      });
+    } finally {
+      setIsSavingContractorNotes(false);
+    }
+  };
+
+  const handleSaveInterventoriaObservations = async () => {
+    if (!canEditInterventoriaResponses) {
+      showToast({
+        variant: "error",
+        title: "Acción no permitida",
+        message: "No puedes editar las observaciones de la interventoría.",
+      });
+      return;
+    }
+
+    setIsSavingInterventoriaObs(true);
+    try {
+      const payload: Partial<LogEntry> = {
+        interventoriaObservations: (editedEntry.interventoriaObservations || "").trim(),
+      };
+      const updatedEntry = await api.logEntries.update(entry.id, payload);
+      syncEntryState(updatedEntry);
+      await onRefresh();
+      showToast({
+        variant: "success",
+        title: "Observaciones guardadas",
+        message: "Las observaciones de la interventoría fueron registradas correctamente.",
+      });
+    } catch (error: any) {
+      const message =
+        error?.message || "No se pudieron guardar las observaciones.";
+      setValidationError(message);
+      showToast({
+        variant: "error",
+        title: "Error al guardar observaciones",
+        message,
+      });
+    } finally {
+      setIsSavingInterventoriaObs(false);
+    }
+  };
+
   const handleCompleteReview = async () => {
     if (!canCompleteReview) {
       showToast({
@@ -1491,6 +1577,21 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     currentUser.appRole === "admin";
   const isContractorUser =
     normalizedCurrentProjectRole === UserRole.CONTRACTOR_REP;
+  const isInterventoriaUser = [
+    UserRole.SUPERVISOR,
+    UserRole.RESIDENT,
+    UserRole.ADMIN
+  ].includes(normalizedCurrentProjectRole as UserRole);
+  
+  // Detect author's party based on their role
+  const authorRole = normalizeProjectRoleValue(author?.projectRole);
+  const isAuthorContractor = authorRole === UserRole.CONTRACTOR_REP;
+  const isAuthorInterventoria = [
+    UserRole.SUPERVISOR,
+    UserRole.RESIDENT,
+    UserRole.ADMIN
+  ].includes(authorRole as UserRole);
+  
   const effectiveReadOnly = readOnly && !isContractorUser;
   const isDraftStatus = workflowStatus === EntryStatus.DRAFT;
   const isSubmittedStatus = workflowStatus === EntryStatus.SUBMITTED;
@@ -1499,6 +1600,9 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const isReadyForSignaturesStatus = workflowStatus === EntryStatus.APPROVED;
   const isSignedStatus = workflowStatus === EntryStatus.SIGNED;
   const contractorReviewCompleted = !!entry.contractorReviewCompleted;
+  
+  // Status where observations can be edited (before all signatures are complete)
+  const canEditObservationsStatus = isSubmittedStatus || isReadyForSignaturesStatus;
   
   // Verificar si el usuario es un responsable (firmante requerido)
   const isRequiredSigner = entry.signatureTasks?.some(
@@ -1562,9 +1666,63 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     myReviewTask?.status === "PENDING" &&
     (isAssignee || isAdmin);
   const isAssignedContractor = isAssignee || entry.assignees?.some((u) => u.id === currentUser.id);
+  
+  // Contractor can edit their observations when:
+  // 1. Status is SUBMITTED or APPROVED (before signing is complete)
+  // 2. AND no signatures have been completed yet
+  // 3. AND user is contractor (by role)
+  // 4. AND author was interventoría (counterpart responding)
+  // 5. AND observations are not already saved (lock after save)
   const canEditContractorResponses =
-    isContractorReviewStatus &&
-    (isContractorUser || isAdmin || isAssignedContractor);
+    canEditObservationsStatus &&
+    !hasCompletedSignatures &&
+    isContractorUser &&
+    !isInterventoriaUser &&
+    isAuthorInterventoria &&
+    !entry.contractorObservations; // Lock if observations were already saved (use original, not edited)
+  
+  // DEBUG: Log all conditions for contractor observations editing
+  console.log("🔍 DEBUG canEditContractorResponses:", {
+    canEditContractorResponses,
+    canEditObservationsStatus,
+    hasCompletedSignatures,
+    workflowStatus,
+    isContractorUser,
+    isAuthorInterventoria,
+    entryContractorObservations: !!entry.contractorObservations,
+    authorRole,
+    normalizedCurrentProjectRole
+  });
+  
+  // Interventoría can edit their observations when:
+  // 1. Status is SUBMITTED or APPROVED (before signing is complete)
+  // 2. AND no signatures have been completed yet
+  // 3. AND user is interventoría (by role, not appRole admin)
+  // 4. AND author was contractor (counterpart responding)
+  // 5. AND observations are not already saved (lock after save)
+  const canEditInterventoriaResponses =
+    canEditObservationsStatus &&
+    !hasCompletedSignatures &&
+    isInterventoriaUser &&
+    !isContractorUser &&
+    isAuthorContractor &&
+    !entry.interventoriaObservations; // Lock if observations were already saved (use original, not edited)
+
+  // DEBUG: Log all conditions for interventoría observations editing
+  console.log("🔍 DEBUG canEditInterventoriaResponses:", {
+    canEditInterventoriaResponses,
+    canEditObservationsStatus,
+    hasCompletedSignatures,
+    workflowStatus,
+    isInterventoriaUser,
+    isContractorUser,
+    isAuthorContractor,
+    entryInterventoriaObservations: !!entry.interventoriaObservations,
+    authorRole,
+    normalizedCurrentProjectRole,
+    currentUserProjectRole: currentUser.projectRole,
+    authorProjectRole: author?.projectRole
+  });
 
   const workflowActionButtons: React.ReactNode[] = [];
 
@@ -2803,7 +2961,10 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                     }))
                   }
                   rows={3}
-                  className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  disabled={!isContractorUser}
+                  readOnly={!isContractorUser}
+                  className={`mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2 ${!isContractorUser ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                  placeholder={!isContractorUser ? 'Solo el contratista puede editar este campo' : ''}
                 />
               ) : (
                 <>
@@ -2813,82 +2974,27 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                   {canEditContractorResponses && (
                     <div className="mt-3 rounded-lg border border-yellow-200 bg-yellow-50 p-3 space-y-3">
                       <p className="text-xs text-yellow-800">
-                        Solo puedes editar tus respuestas durante la revisión del
-                        contratista.
+                        Como contratista, puedes agregar tus observaciones antes de aprobar.
                       </p>
-                      {isContractorEditingNotes ? (
-                        <>
-                          <div className="space-y-3">
-                            {contractorResponseFields.map(({ key, label }) => (
-                              <div key={key}>
-                                <label className="text-xs font-semibold text-yellow-900">
-                                  {label}
-                                </label>
-                                <textarea
-                                  value={contractorResponsesDraft[key]}
-                                  onChange={(e) =>
-                                    handleContractorResponseDraftChange(
-                                      key,
-                                      e.target.value
-                                    )
-                                  }
-                                  rows={key === "contractorObservations" ? 3 : 2}
-                                  className="mt-1 block w-full border border-yellow-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm p-2"
-                                />
-                              </div>
-                            ))}
-                          </div>
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              variant="primary"
-                              onClick={handleSaveContractorNotes}
-                              disabled={isSavingContractorNotes}
-                            >
-                              {isSavingContractorNotes
-                                ? "Guardando..."
-                                : "Guardar"}
-                            </Button>
-                            <Button
-                              variant="secondary"
-                              onClick={() => {
-                                setIsContractorEditingNotes(false);
-                                setContractorResponsesDraft({
-                                  contractorObservations:
-                                    contractorObservations || "",
-                                  safetyContractorResponse:
-                                    safetyContractorResponse || "",
-                                  environmentContractorResponse:
-                                    environmentContractorResponse || "",
-                                  socialContractorResponse:
-                                    socialContractorResponse || "",
-                                });
-                              }}
-                              disabled={isSavingContractorNotes}
-                            >
-                              Cancelar
-                            </Button>
-                          </div>
-                        </>
-                      ) : (
-                        <Button
-                          variant="secondary"
-                          onClick={() => {
-                            setContractorResponsesDraft({
-                              contractorObservations:
-                                contractorObservations || "",
-                              safetyContractorResponse:
-                                safetyContractorResponse || "",
-                              environmentContractorResponse:
-                                environmentContractorResponse || "",
-                              socialContractorResponse:
-                                socialContractorResponse || "",
-                            });
-                            setIsContractorEditingNotes(true);
-                          }}
-                        >
-                          Editar respuestas
-                        </Button>
-                      )}
+                      <textarea
+                        value={contractorObservations}
+                        onChange={(e) =>
+                          setEditedEntry((prev) => ({
+                            ...prev,
+                            contractorObservations: e.target.value,
+                          }))
+                        }
+                        rows={3}
+                        className="block w-full border border-yellow-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm p-2"
+                        placeholder="Observaciones del contratista"
+                      />
+                      <Button
+                        variant="primary"
+                        onClick={handleSaveContractorObservations}
+                        disabled={isSavingContractorNotes}
+                      >
+                        {isSavingContractorNotes ? "Guardando..." : "Guardar observaciones"}
+                      </Button>
                     </div>
                   )}
                 </>
@@ -2908,12 +3014,43 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                     }))
                   }
                   rows={3}
-                  className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  disabled={!isInterventoriaUser}
+                  readOnly={!isInterventoriaUser}
+                  className={`mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2 ${!isInterventoriaUser ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                  placeholder={!isInterventoriaUser ? 'Solo la interventoría puede editar este campo' : ''}
                 />
               ) : (
-                <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
-                  {interventoriaObservations || "Sin observaciones."}
-                </p>
+                <>
+                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                    {interventoriaObservations || "Sin observaciones."}
+                  </p>
+                  {canEditInterventoriaResponses && (
+                    <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3 space-y-3">
+                      <p className="text-xs text-blue-800">
+                        Como interventoría, puedes agregar tus observaciones antes de aprobar.
+                      </p>
+                      <textarea
+                        value={interventoriaObservations}
+                        onChange={(e) =>
+                          setEditedEntry((prev) => ({
+                            ...prev,
+                            interventoriaObservations: e.target.value,
+                          }))
+                        }
+                        rows={3}
+                        className="block w-full border border-blue-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2"
+                        placeholder="Observaciones de la interventoría"
+                      />
+                      <Button
+                        variant="primary"
+                        onClick={handleSaveInterventoriaObservations}
+                        disabled={isSavingInterventoriaObs}
+                      >
+                        {isSavingInterventoriaObs ? "Guardando..." : "Guardar observaciones"}
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

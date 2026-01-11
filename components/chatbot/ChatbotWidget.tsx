@@ -365,7 +365,7 @@ export const ChatbotWidget: React.FC = () => {
       width: "60px",
       height: "60px",
       borderRadius: "50%",
-      backgroundColor: "#007BFF",
+      backgroundColor: "var(--color-brand-secondary, #007BFF)",
       color: "white",
       display: "flex",
       alignItems: "center",
@@ -470,7 +470,7 @@ export const ChatbotWidget: React.FC = () => {
     },
     sendButton: {
       border: "none",
-      backgroundColor: "#007BFF",
+      backgroundColor: "var(--color-brand-secondary, #007BFF)",
       color: "white",
       borderRadius: "50%",
       width: "40px",
@@ -732,7 +732,7 @@ export const ChatbotWidget: React.FC = () => {
                 type="submit"
                 style={{
                   ...styles.sendButton,
-                  backgroundColor: !inputValue.trim() && !selectedPhoto ? '#9CA3AF' : '#007BFF',
+                  backgroundColor: !inputValue.trim() && !selectedPhoto ? '#9CA3AF' : 'var(--color-brand-secondary, #007BFF)',
                   cursor: !inputValue.trim() && !selectedPhoto ? 'default' : 'pointer'
                 }}
                 aria-label="Enviar"
