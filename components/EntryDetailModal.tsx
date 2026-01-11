@@ -1157,6 +1157,44 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     }
   };
 
+  // Simple handler for the simplified contractor observations panel
+  const handleSaveContractorObservations = async () => {
+    if (!canEditContractorResponses) {
+      showToast({
+        variant: "error",
+        title: "Acción no permitida",
+        message: "No puedes editar las observaciones del contratista.",
+      });
+      return;
+    }
+
+    setIsSavingContractorNotes(true);
+    try {
+      const payload: Partial<LogEntry> = {
+        contractorObservations: (editedEntry.contractorObservations || "").trim(),
+      };
+      const updatedEntry = await api.logEntries.update(entry.id, payload);
+      syncEntryState(updatedEntry);
+      await onRefresh();
+      showToast({
+        variant: "success",
+        title: "Observaciones guardadas",
+        message: "Tus observaciones fueron registradas correctamente.",
+      });
+    } catch (error: any) {
+      const message =
+        error?.message || "No se pudieron guardar las observaciones.";
+      setValidationError(message);
+      showToast({
+        variant: "error",
+        title: "Error al guardar observaciones",
+        message,
+      });
+    } finally {
+      setIsSavingContractorNotes(false);
+    }
+  };
+
   const handleSaveInterventoriaObservations = async () => {
     if (!canEditInterventoriaResponses) {
       showToast({
@@ -2940,7 +2978,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                       />
                       <Button
                         variant="primary"
-                        onClick={handleSaveContractorNotes}
+                        onClick={handleSaveContractorObservations}
                         disabled={isSavingContractorNotes}
                       >
                         {isSavingContractorNotes ? "Guardando..." : "Guardar observaciones"}
