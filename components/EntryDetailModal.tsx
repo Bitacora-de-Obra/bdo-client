@@ -1630,13 +1630,16 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   // Interventoría can edit their observations when:
   // 1. Status is SUBMITTED or APPROVED (before signing is complete)
   // 2. AND no signatures have been completed yet
-  // 3. AND user is interventoría
+  // 3. AND user is interventoría (by role, not appRole admin)
   // 4. AND author was contractor (counterpart responding)
+  // 5. AND observations are not already saved (lock after save)
   const canEditInterventoriaResponses =
     canEditObservationsStatus &&
     !hasCompletedSignatures &&
-    (isInterventoriaUser || isAdmin) &&
-    isAuthorContractor;
+    isInterventoriaUser &&
+    !isContractorUser &&
+    isAuthorContractor &&
+    !interventoriaObservations; // Lock after observations are saved
 
   // DEBUG: Log all conditions for interventoría observations editing
   console.log("🔍 DEBUG canEditInterventoriaResponses:", {
@@ -1645,8 +1648,9 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     hasCompletedSignatures,
     workflowStatus,
     isInterventoriaUser,
-    isAdmin,
+    isContractorUser,
     isAuthorContractor,
+    interventoriaObservations: !!interventoriaObservations,
     authorRole,
     normalizedCurrentProjectRole,
     currentUserProjectRole: currentUser.projectRole,
