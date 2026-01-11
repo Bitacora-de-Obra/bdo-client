@@ -144,6 +144,8 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
+  const isLegacyTenant = typeof window !== 'undefined' && window.location.hostname.toLowerCase().includes("mutis");
+
   const SAVE_STEPS = [
     { message: 'Validando datos...', percentage: 20 },
     { message: 'Subiendo archivos...', percentage: 50 },
@@ -1583,22 +1585,26 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             onChange={(e) => setExecutedActivitiesText(e.target.value)}
             rows={3}
             className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-            placeholder="Actividades ejecutadas (frente, abscisa, tareas específicas)"
+            placeholder={isLegacyTenant ? "Actividades ejecutadas (frente, abscisa, tareas específicas)" : "Descripción general de ejecución y avance"}
           />
-          <textarea
-            value={executedQuantitiesText}
-            onChange={(e) => setExecutedQuantitiesText(e.target.value)}
-            rows={3}
-            className="mt-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-            placeholder="Cantidades de obra ejecutadas"
-          />
-          <textarea
-            value={scheduledActivitiesText}
-            onChange={(e) => setScheduledActivitiesText(e.target.value)}
-            rows={3}
-            className="mt-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-            placeholder="Actividades programadas y no ejecutadas (incluye motivo)"
-          />
+          {isLegacyTenant && (
+            <>
+              <textarea
+                value={executedQuantitiesText}
+                onChange={(e) => setExecutedQuantitiesText(e.target.value)}
+                rows={3}
+                className="mt-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                placeholder="Cantidades de obra ejecutadas"
+              />
+              <textarea
+                value={scheduledActivitiesText}
+                onChange={(e) => setScheduledActivitiesText(e.target.value)}
+                rows={3}
+                className="mt-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                placeholder="Actividades programadas y no ejecutadas (incluye motivo)"
+              />
+            </>
+          )}
         </div>
 
         {showGeneralSections && (
@@ -1606,41 +1612,53 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           <h4 className="text-sm font-semibold text-gray-800 mb-1">
             Controles y novedades
           </h4>
-          <textarea
-            value={qualityControlsText}
-            onChange={(e) => setQualityControlsText(e.target.value)}
-            rows={3}
-            className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-            placeholder="Ensayos y controles de calidad"
-          />
-          <textarea
-            value={materialsReceivedText}
-            onChange={(e) => setMaterialsReceivedText(e.target.value)}
-            rows={3}
-            className="mt-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-            placeholder="Materiales recibidos"
-          />
-          <textarea
-            value={safetyNotesText}
-            onChange={(e) => setSafetyNotesText(e.target.value)}
-            rows={3}
-            className="mt-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-            placeholder="Gestión HSEQ / SST"
-          />
-          <textarea
-            value={projectIssuesText}
-            onChange={(e) => setProjectIssuesText(e.target.value)}
-            rows={3}
-            className="mt-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-            placeholder="Novedades y contratiempos"
-          />
-          <textarea
-            value={siteVisitsText}
-            onChange={(e) => setSiteVisitsText(e.target.value)}
-            rows={3}
-            className="mt-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-            placeholder="Visitas registradas"
-          />
+          {isLegacyTenant ? (
+            <>
+              <textarea
+                value={qualityControlsText}
+                onChange={(e) => setQualityControlsText(e.target.value)}
+                rows={3}
+                className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                placeholder="Ensayos y controles de calidad"
+              />
+              <textarea
+                value={materialsReceivedText}
+                onChange={(e) => setMaterialsReceivedText(e.target.value)}
+                rows={3}
+                className="mt-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                placeholder="Materiales recibidos"
+              />
+              <textarea
+                value={safetyNotesText}
+                onChange={(e) => setSafetyNotesText(e.target.value)}
+                rows={3}
+                className="mt-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                placeholder="Gestión HSEQ / SST"
+              />
+              <textarea
+                value={projectIssuesText}
+                onChange={(e) => setProjectIssuesText(e.target.value)}
+                rows={3}
+                className="mt-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                placeholder="Novedades y contratiempos"
+              />
+              <textarea
+                value={siteVisitsText}
+                onChange={(e) => setSiteVisitsText(e.target.value)}
+                rows={3}
+                className="mt-3 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                placeholder="Visitas registradas"
+              />
+            </>
+          ) : (
+            <textarea
+              value={projectIssuesText}
+              onChange={(e) => setProjectIssuesText(e.target.value)}
+              rows={3}
+              className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+              placeholder="Descripción general de controles, novedades e incidencias"
+            />
+          )}
         </div>
         )}
 
