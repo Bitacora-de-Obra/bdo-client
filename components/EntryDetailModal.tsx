@@ -191,12 +191,21 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   // Effect to recalculate schedule day when date changes during edit
   useEffect(() => {
     if (isEditing && formEntryDate && projectStartDate) {
+      // Avoid ghost updates: only recalculate if date actually changed from original
+      const originalEntryDate = entry.entryDate 
+        ? (typeof entry.entryDate === 'string' ? entry.entryDate : new Date(entry.entryDate).toISOString()).substring(0, 10) 
+        : "";
+        
+      if (formEntryDate === originalEntryDate) {
+        return;
+      }
+
       const calculated = calculateScheduleDay(formEntryDate);
       if (calculated && calculated !== editedEntry.scheduleDay) {
         setEditedEntry(prev => ({ ...prev, scheduleDay: calculated }));
       }
     }
-  }, [formEntryDate, isEditing, projectStartDate]);
+  }, [formEntryDate, isEditing, projectStartDate, entry.entryDate]);
   const [isApproving, setIsApproving] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
