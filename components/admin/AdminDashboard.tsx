@@ -239,6 +239,7 @@ const AdminDashboard: React.FC = () => {
                     <CatalogManager category="STAFF_ROLE_CONTRACTOR" title="Cargos Personal Contratista" />
                     <CatalogManager category="STAFF_ROLE_INTERVENTORIA" title="Cargos Personal Interventoría" />
                     <CatalogManager category="EQUIPMENT_TYPE" title="Maquinaria y Equipos" />
+                    <CatalogManager category="LOCATION_SEGMENT" title="Tramos / Localización" />
                 </div>
               )}
             </div>
