@@ -68,6 +68,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   const [contractorRolesCatalog, setContractorRolesCatalog] = useState<CatalogItem[]>([]);
   const [interventoriaRolesCatalog, setInterventoriaRolesCatalog] = useState<CatalogItem[]>([]);
   const [equipmentCatalog, setEquipmentCatalog] = useState<CatalogItem[]>([]);
+  const [locationSegmentCatalog, setLocationSegmentCatalog] = useState<CatalogItem[]>([]);
 
   useEffect(() => {
      if (isOpen) {
@@ -85,6 +86,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             api.admin.getCatalog("STAFF_ROLE_INTERVENTORIA").then(data => setInterventoriaRolesCatalog(data as any));
         }
         api.admin.getCatalog("EQUIPMENT_TYPE").then(data => setEquipmentCatalog(data as any));
+        api.admin.getCatalog("LOCATION_SEGMENT").then(data => setLocationSegmentCatalog(data as any));
      }
   }, [isOpen]);
   const [rainEvents, setRainEvents] = useState<Array<{ start: string; end: string }>>([
@@ -1220,13 +1222,53 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             disabled
             className="bg-gray-100"
           />
-          <Input
-            label="Localización / Tramo"
-            id="locationDetails"
-            placeholder="Ej. Tramo K2+100 al K2+300"
-            value={locationDetails}
-            onChange={(e) => setLocationDetails(e.target.value)}
-          />
+          {isLegacyTenant ? (
+            <Input
+              label="Localización / Tramo"
+              id="locationDetails"
+              placeholder="Ej. Tramo K2+100 al K2+300"
+              value={locationDetails}
+              onChange={(e) => setLocationDetails(e.target.value)}
+            />
+          ) : (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Localización / Tramo(s)</label>
+              <CreatableSelect
+                value=""
+                options={locationSegmentCatalog.map(c => ({ value: c.name, label: c.name }))}
+                onChange={(val) => {
+                    if (!val) return;
+                    const current = locationDetails.split(',').map(s => s.trim()).filter(Boolean);
+                    if (!current.includes(val)) {
+                        setLocationDetails([...current, val].join(', '));
+                    }
+                }}
+                placeholder="Selecciona o escribe tramos..."
+              />
+              {locationDetails && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {locationDetails.split(',').map(s => s.trim()).filter(Boolean).map((segment, idx) => (
+                    <span
+                      key={`segment-${idx}`}
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                    >
+                      {segment}
+                      <button
+                        type="button"
+                        onClick={() => {
+                            const current = locationDetails.split(',').map(s => s.trim()).filter(Boolean);
+                            setLocationDetails(current.filter(s => s !== segment).join(', '));
+                        }}
+                        className="ml-1 inline-flex items-center text-blue-400 hover:text-blue-600"
+                      >
+                        <XMarkIcon className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {showGeneralSections && (
