@@ -1684,7 +1684,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     contractorReviewCompleted &&
     (isAuthor || isAdmin);
   
-  const isSigningStage = isReadyForSignaturesStatus || isSignedStatus;
+  const isSigningStage = (isReadyForSignaturesStatus || isSignedStatus) && !entry.pendingReviewBy;
   const signatureBlockReadOnly = readOnly || !isSigningStage;
   const canSign = !effectiveReadOnly && isSigningStage;
 
