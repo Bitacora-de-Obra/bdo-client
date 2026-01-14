@@ -1770,18 +1770,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     />
   );
 
-  if (canSendToContractor) {
-    workflowActionButtons.push(
-      <Button
-        key="send-to-contractor"
-        variant="primary"
-        onClick={handleSendToContractor}
-        disabled={isSendingToContractor}
-      >
-        {isSendingToContractor ? "Enviando..." : "Enviar a contratista"}
-      </Button>
-    );
-  }
+  // Duplicate 'Send to Contractor' button removed in favor of ReviewWorkflowBanner dropdown
 
   if (canCompleteContractorReview) {
     workflowActionButtons.push(
