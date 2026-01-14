@@ -37,6 +37,7 @@ import MentionTextarea from "./ui/MentionTextarea";
 import LazyImage from "./ui/LazyImage";
 import { convertInputMentionsToPayload, renderCommentWithMentions } from "../src/utils/mentions";
 import AttachmentSections from "./AttachmentSections";
+import ReviewWorkflowBanner from "./ReviewWorkflowBanner";
 
 interface EntryDetailModalProps {
   isOpen: boolean;
@@ -1029,6 +1030,35 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     }
   };
 
+  const handleSendToInterventoria = async () => {
+    if (!window.confirm(
+      "¿Enviar esta anotación a interventoría para su revisión?"
+    )) {
+      return;
+    }
+
+    setIsSendingToContractor(true);
+    try {
+      const updatedEntry = await api.logEntries.sendToInterventoria(entry.id);
+      syncEntryState(updatedEntry);
+      await onRefresh();
+      showToast({
+        variant: "success",
+        title: "Anotación enviada",
+        message: "La anotación fue enviada a interventoría para su revisión.",
+      });
+    } catch (error: any) {
+      const message = error?.message || "No se pudo enviar la anotación.";
+      showToast({
+        variant: "error",
+        title: "Error al enviar",
+        message,
+      });
+    } finally {
+      setIsSendingToContractor(false);
+    }
+  };
+
   const handleCompleteContractorReview = async () => {
     if (!canCompleteContractorReview) {
       showToast({
@@ -1726,6 +1756,20 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
 
   const workflowActionButtons: React.ReactNode[] = [];
 
+  // New Review Workflow Banner (for San Mateo + new clients)
+  const reviewWorkflowBanner = (
+    <ReviewWorkflowBanner
+      entry={entry}
+      isAuthor={isAuthor}
+      isAdmin={isAdmin}
+      isContractorUser={isContractorUser}
+      isDraftStatus={isDraftStatus}
+      onSendToContractor={handleSendToContractor}
+      onSendToInterventoria={handleSendToInterventoria}
+      isLoading={isSendingToContractor}
+    />
+  );
+
   if (canSendToContractor) {
     workflowActionButtons.push(
       <Button
@@ -2122,6 +2166,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
               </div>
                 {workflowActionButtons.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2">
+                    {reviewWorkflowBanner}
                     {workflowActionButtons}
                   </div>
                 )}

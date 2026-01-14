@@ -273,6 +273,10 @@ export interface LogEntry {
   contractorReviewCompleted?: boolean;
   contractorReviewCompletedAt?: string | null;
   contractorReviewer?: User | null;
+  // New: Review-before-signature workflow (San Mateo & new clients)
+  pendingReviewBy?: string | null; // "CONTRACTOR" | "INTERVENTORIA" | null
+  reviewCompletedBy?: string | null; // Which party completed the review
+  reviewCompletedAt?: string | null; // When review was completed
   author: User;
   createdAt: string; // ISO date string
   updatedAt?: string; // ISO date string

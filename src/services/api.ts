@@ -958,6 +958,11 @@ export const logEntriesApi = {
       method: "POST",
     });
   },
+  sendToInterventoria: async (entryId: string) => {
+    return apiFetch(`/log-entries/${entryId}/send-to-interventoria`, {
+      method: "POST",
+    });
+  },
   completeContractorReview: async (entryId: string) => {
     return apiFetch(`/log-entries/${entryId}/contractor-review/complete`, {
       method: "POST",
