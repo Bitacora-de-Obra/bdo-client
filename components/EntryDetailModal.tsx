@@ -1738,11 +1738,21 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
 
   // Verificar si el usuario actual puede completar su revisión
   const myReviewTask = reviewTasks.find((task) => task.reviewer?.id === currentUser.id);
+  
+  // Per-signatory workflow: any signer with a PENDING review task can complete it
+  const myPendingSignatoryReview = myReviewTask?.status === "PENDING" && 
+    entry.pendingReviewBy === "ALL_SIGNERS";
+  
+  // Legacy workflow or new per-signatory workflow
   const canCompleteReview =
     !effectiveReadOnly &&
-    isFinalReviewStatus &&
     myReviewTask?.status === "PENDING" &&
-    (isAssignee || isAdmin);
+    (
+      // Legacy: assignees in final review status
+      (isFinalReviewStatus && (isAssignee || isAdmin)) ||
+      // New: any signer with pending task when using per-signatory workflow
+      myPendingSignatoryReview
+    );
   const isAssignedContractor = isAssignee || entry.assignees?.some((u) => u.id === currentUser.id);
   
   // Contractor can edit their observations when:
@@ -3378,13 +3388,16 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                 })}
               </div>
               {canCompleteReview && (
-                <div className="mt-4">
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-sm text-green-800 mb-2">
+                    Tienes una revisión pendiente. Puedes completarla agregando observaciones arriba o aprobar directamente:
+                  </p>
                   <Button
                     variant="primary"
-                    onClick={handleCompleteReview}
-                    className="bg-blue-600 hover:bg-blue-700"
+                    onClick={myPendingSignatoryReview ? handleApproveReview : handleCompleteReview}
+                    className="bg-green-600 hover:bg-green-700"
                   >
-                    Marcar Mi Revisión como Completada
+                    ✓ Aprobar y Completar Mi Revisión
                   </Button>
                 </div>
               )}
