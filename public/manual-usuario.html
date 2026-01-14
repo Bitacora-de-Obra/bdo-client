@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Manual de Usuario – Bitácora Digital</title>
+  <title>Manual de Supervisión – Bitácora Digital</title>
   <style>
     :root {
       --brand: #1d4ed8;
@@ -13,6 +13,7 @@
       --card: #ffffff;
       --border: #e2e8f0;
       --accent: #0ea5e9;
+      --success: #10b981;
     }
     * { box-sizing: border-box; }
     body {
@@ -23,347 +24,225 @@
       line-height: 1.6;
     }
     header {
-      background: linear-gradient(135deg, var(--brand), var(--accent));
+      background: linear-gradient(135deg, var(--brand), var(--brand));
       color: #fff;
-      padding: 48px 32px;
+      padding: 60px 32px;
       text-align: center;
+      position: relative;
+      overflow: hidden;
     }
-    header h1 { margin: 0 0 12px; font-size: 32px; letter-spacing: 0.3px; }
-    header p { margin: 4px 0; font-size: 15px; opacity: 0.95; }
-    main { max-width: 1080px; margin: -40px auto 48px; padding: 0 24px; }
+    header::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: url('/manual_usuario/logo.png') no-repeat center center;
+      opacity: 0.1;
+      background-size: cover;
+      pointer-events: none;
+    }
+    header h1 { margin: 0 0 16px; font-size: 36px; letter-spacing: -0.5px; font-weight: 800; }
+    header p { margin: 4px 0; font-size: 18px; opacity: 0.95; font-weight: 400; }
+    main { max-width: 960px; margin: -40px auto 60px; padding: 0 24px; position: relative; z-index: 10; }
     section {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 24px;
-      margin-bottom: 18px;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     }
-    h2 { margin: 0 0 12px; font-size: 22px; color: var(--brand); }
-    h3 { margin: 18px 0 8px; font-size: 17px; color: var(--text); }
-    p { margin: 0 0 10px; }
-    ul { margin: 0 0 12px 20px; padding: 0; }
-    li { margin-bottom: 6px; }
-    .tag { display: inline-block; padding: 4px 10px; border-radius: 999px; background: #e0f2fe; color: #0369a1; font-weight: 600; font-size: 12px; letter-spacing: 0.2px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
-    .card-muted { background: #f1f5f9; border-radius: 10px; padding: 12px 14px; border: 1px dashed var(--border); color: var(--muted); }
+    h2 { margin: 0 0 20px; font-size: 24px; color: var(--brand); display: flex; align-items: center; gap: 10px; }
+    h2::before { content: ''; display: block; width: 6px; height: 24px; background: var(--accent); border-radius: 4px; }
+    h3 { margin: 24px 0 12px; font-size: 18px; color: var(--text); font-weight: 600; }
+    p { margin: 0 0 16px; color: var(--muted); }
+    ul, ol { margin: 0 0 20px 20px; padding: 0; color: var(--muted); }
+    li { margin-bottom: 8px; }
+    strong { color: var(--text); font-weight: 600; }
+    
+    .tag { display: inline-block; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,0.2); color: #fff; font-weight: 500; font-size: 14px; backdrop-filter: blur(4px); margin-top: 16px; }
+    
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
+    
+    .feature-card {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      transition: transform 0.2s;
+    }
+    .feature-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+    .feature-title { font-weight: 700; color: var(--brand); margin-bottom: 8px; font-size: 16px; }
+    
     .steps { counter-reset: step; list-style: none; padding: 0; margin: 0; }
-    .steps li { counter-increment: step; margin: 10px 0; padding-left: 32px; position: relative; }
+    .steps li { counter-increment: step; margin: 16px 0; padding-left: 40px; position: relative; }
     .steps li::before {
       content: counter(step);
       position: absolute; left: 0; top: 0;
-      width: 22px; height: 22px;
-      border-radius: 6px;
+      width: 28px; height: 28px;
+      border-radius: 8px;
       background: var(--brand); color: #fff;
       display: grid; place-items: center;
-      font-size: 12px; font-weight: 700;
+      font-size: 14px; font-weight: 700;
+      box-shadow: 0 2px 4px rgba(29, 78, 216, 0.3);
     }
-    figure { margin: 12px 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: #fff; }
-    figure img { width: 100%; display: block; }
-    figure figcaption { padding: 8px 12px; font-size: 13px; color: var(--muted); background: #f8fafc; }
-    @media print {
-      header, main { margin: 0; padding: 0; box-shadow: none; }
-      section { break-inside: avoid; box-shadow: none; }
-      #scrollTopBtn { display: none !important; }
-    }
-    /* Botón flotante "volver arriba" */
+
+    figure { margin: 24px 0; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: #fff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+    figure img { width: 100%; height: auto; display: block; }
+    figure figcaption { padding: 12px 16px; font-size: 13px; color: var(--muted); background: #f8fafc; border-top: 1px solid var(--border); text-align: center; }
+
+    .role-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+    .role-idu { background: #e0e7ff; color: #3730a3; }
+    .role-inter { background: #dcfce7; color: #166534; }
+
+    /* Botón flotante */
     #scrollTopBtn {
-      position: fixed;
-      right: 24px;
-      bottom: 24px;
-      width: 44px;
-      height: 44px;
-      border-radius: 999px;
-      border: none;
-      background: var(--brand);
-      color: #ffffff;
-      font-size: 22px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25);
-      cursor: pointer;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.2s ease, transform 0.2s ease;
-      transform: translateY(8px);
-      z-index: 999;
+      position: fixed; right: 32px; bottom: 32px; width: 48px; height: 48px;
+      border-radius: 50%; border: none; background: var(--brand); color: white;
+      font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(29, 78, 216, 0.4);
+      opacity: 0; transition: all 0.3s; transform: translateY(20px);
     }
-    #scrollTopBtn:hover { transform: translateY(0); background: var(--accent); }
-    #scrollTopBtn.scrollTopBtn--visible { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    #scrollTopBtn.visible { opacity: 1; transform: translateY(0); }
+    #scrollTopBtn:hover { background: var(--accent); transform: translateY(-2px); }
   </style>
 </head>
 <body>
   <header>
-    <h1>Manual de Usuario – Bitácora Digital</h1>
-    <p>Perfiles, flujo de registro y firmas</p>
-    <p class="tag">Versión 1.0 · Actualizado</p>
+    <h1>Manual de Supervisión e Interventoría</h1>
+    <p>Guía de uso para Bitácora Digital de Obra</p>
+    <div class="tag">Versión IDU/Interventoría 2.0</div>
   </header>
 
   <main>
-    <section id="presentacion">
-      <h2>Presentación</h2>
-      <p><strong>Bitácora Digital</strong> es tu cuaderno de obra llevado a una experiencia moderna, segura y colaborativa. Centraliza el registro diario de actividades, clima, recursos, hallazgos y evidencias, y automatiza el flujo de revisión y firma para que contratistas e interventorías trabajen sobre una única versión confiable.</p>
-      <p>Con roles claros (admin, editor, firmante, viewer), notificaciones oportunas y PDFs listos para archivo, reduces reprocesos, evitas pérdidas de información y aceleras la aprobación. La app se adapta al terreno: captura rápida, adjuntos, firmas manuscritas y estados visibles en tiempo real. Resultado: menos fricción, más trazabilidad y decisiones mejor informadas en cada jornada de obra.</p>
-    </section>
-
     <section>
-      <h2>Roles y permisos</h2>
+      <h2>Bienvenido</h2>
+      <p>Bienvenido a la <strong>Bitácora Digital de Obra (BDO)</strong>. Esta plataforma ha sido diseñada para facilitar su labor de supervisión y control, permitiendo un acceso transparente, seguro y en tiempo real a toda la información del proyecto.</p>
+      <p>Como usuario con perfil <span class="role-badge role-idu">IDU</span> o <span class="role-badge role-inter">INTERVENTORÍA</span>, usted tiene acceso privilegiado para:</p>
       <div class="grid">
-        <div class="card-muted"><strong>Administrador</strong><br />Gestiona proyectos/usuarios, configura la app, crea/edita/elimina bitácoras, aprueba y firma si está asignado.</div>
-        <div class="card-muted"><strong>Editor</strong><br />Crea/edita bitácoras, asigna firmantes, aprueba y firma si está asignado.</div>
-        <div class="card-muted"><strong>Firmante</strong><br />Puede firmar si tiene tarea asignada (cualquier rol ≠ viewer).</div>
-        <div class="card-muted"><strong>Viewer</strong><br />Solo lectura, sin creación ni firma.</div>
+        <div class="feature-card">
+          <div class="feature-title">👁️ Monitorear</div>
+          Visualice el avance físico, financiero y fotográfico del proyecto a través de tableros de control actualizados en tiempo real.
+        </div>
+        <div class="feature-card">
+          <div class="feature-title">✅ Validar</div>
+          Revise y firme digitalmente las anotaciones diarias, asegurando la trazabilidad de cada decisión en obra.
+        </div>
+        <div class="feature-card">
+          <div class="feature-title">📂 Consultar</div>
+          Acceda al histórico completo de la bitácora, con filtros potentes y descargas de PDFs individuales.
+        </div>
+        <div class="feature-card">
+          <div class="feature-title">📦 Exportar</div>
+          Genere y descargue el expediente completo del proyecto en cualquier momento para sus archivos de gestión.
+        </div>
       </div>
     </section>
 
-    <section id="recuperar-password">
-      <h2>Recuperar contraseña</h2>
+    <section id="acceso">
+      <h2>1. Acceso y Seguridad</h2>
+      <p>La seguridad de su firma y sus datos es prioritaria. El acceso es personal e intransferible.</p>
+      
+      <h3>Inicio de Sesión</h3>
       <ol class="steps">
-        <li>En la pantalla de login, haz clic en <strong>“¿Olvidaste tu contraseña?”</strong>.</li>
-        <li>Ingresa tu correo y envía la solicitud.</li>
-        <li>Revisa tu bandeja (o spam) y sigue el enlace de restablecimiento.</li>
-        <li>Define una nueva contraseña y confirma.</li>
-      </ol>
-      <div class="card-muted">Si no llega el correo: verifica spam o pide a un administrador que valide tu cuenta y reenvíe el enlace.</div>
-      <figure>
-        <img src="/manual_usuario/olvido_contrase.png" alt="Olvidé mi contraseña" />
-        <figcaption>Flujo de recuperación de contraseña</figcaption>
-      </figure>
-    </section>
-
-    <section id="inicio-sesion">
-      <h2>Inicio de sesión y sesión</h2>
-      <ul>
-        <li>Ingresa con tu usuario y contraseña. La sesión dura 2 horas por token de acceso; el refresh dura 30 días.</li>
-        <li>Si ves “token expirado”, inicia sesión de nuevo. Verifica que la hora del dispositivo esté correcta (zona <strong>America/Bogota</strong>).</li>
-      </ul>
-      <figure>
-        <img src="/manual_usuario/login.png" alt="Pantalla de login" />
-        <figcaption>Pantalla de acceso</figcaption>
-      </figure>
-    </section>
-
-    <section id="crear-bitacora">
-      <h2>Crear una bitácora (admin/editor)</h2>
-      <ol class="steps">
-        <li>Haz clic en <strong>Registrar Bitácora Diaria</strong>.</li>
-        <li>Completa datos básicos: fecha del diario, título (obligatorio), resumen general (obligatorio), tipo de anotación, día del plazo, localización/tramo.</li>
-        <li>Condiciones climáticas: resumen, temperatura, notas, intervalos de lluvia (inicio/fin).</li>
-        <li>Materiales utilizados: material, cantidad, unidad.</li>
-        <li>Recursos:
-          <ul>
-            <li>Personal del contratista: cargo, cantidad, notas.</li>
-            <li>Personal de interventoría: cargo, cantidad, notas.</li>
-            <li>Maquinaria y equipos: equipo, estado (operativa/standby), notas.</li>
-          </ul>
-        </li>
-        <li>Ejecución y avance:
-          <ul>
-            <li>Actividades ejecutadas.</li>
-            <li>Cantidades ejecutadas.</li>
-            <li>Actividades programadas/no ejecutadas (motivo).</li>
-          </ul>
-        </li>
-        <li>Controles y novedades:
-          <ul>
-            <li>Ensayos/controles de calidad.</li>
-            <li>Materiales recibidos.</li>
-            <li>Gestión HSEQ/SST: novedades/contratiempos.</li>
-            <li>Visitas registradas.</li>
-          </ul>
-        </li>
-        <li>Hallazgos y respuestas:
-          <ul>
-            <li>HSEQ: hallazgos y respuesta del contratista.</li>
-            <li>Ambiental: hallazgos y respuesta del contratista.</li>
-            <li>Social: actividades/observaciones, respuesta social, resumen fotográfico.</li>
-          </ul>
-        </li>
-        <li>Observaciones: contratista, interventoría, adicionales.</li>
-        <li>Firmantes responsables: selecciona a quienes firman; puedes desmarcar al autor si solo carga.</li>
-        <li>Adjuntos: archivos (PDF/imágenes, ≤10 MB c/u) y fotos (solo imágenes, ≤5 MB c/u).</li>
-        <li>Guarda en borrador.</li>
+        <li>Ingrese a la plataforma con su correo electrónico institucional y su contraseña.</li>
+        <li>Si es su primera vez, el sistema le pedirá cambiar su contraseña temporal.</li>
       </ol>
       <figure>
-        <img src="/manual_usuario/nueva_anotacion.png" alt="Formulario de bitácora - datos básicos" />
-        <figcaption>Datos básicos y clima</figcaption>
+        <img src="/manual_usuario/login.png" alt="Pantalla de inicio de sesión" />
+        <figcaption>Pantalla de acceso seguro</figcaption>
       </figure>
-      <figure>
-        <img src="/manual_usuario/firmantes_res.png" alt="Selección de firmantes" />
-        <figcaption>Selección de firmantes (autor opcional)</figcaption>
-      </figure>
-    </section>
 
-    <section id="flujo-anotacion">
-      <h2>Flujo completo de una anotación</h2>
+      <h3>Gestión de Firma Digital</h3>
+      <p>Para firmar documentos, debe configurar su firma manuscrita digitalizada. Esta se encripta de punto a punto.</p>
       <ol class="steps">
-        <li><strong>Crear borrador</strong>: completa toda la información y guarda.</li>
-        <li><strong>Enviar a contratista</strong>: pasa a revisión contratista.</li>
-        <li><strong>Revisión contratista</strong>: el contratista puede agregar observaciones.</li>
-        <li><strong>Aprobar para firmas</strong>: la interventoría/admin/editor aprueba y deja la anotación lista para firmar.</li>
-        <li><strong>Firmas</strong>: cada firmante asignado ingresa su contraseña de firma.</li>
-        <li><strong>Exportar PDF final</strong>: genera el documento con todas las firmas.</li>
+        <li>Vaya al menú de usuario (esquina superior derecha) y seleccione <strong>"Mi Firma"</strong>.</li>
+        <li>Puede <strong>Dibujar</strong> su firma en pantalla o <strong>Subir</strong> una imagen (PNG con fondo transparente recomendado).</li>
+        <li>Guarde su firma. Esta será requerida cada vez que apruebe un documento.</li>
       </ol>
-      <div class="grid">
-        <figure>
-          <img src="/manual_usuario/borrador.png" alt="Crear borrador" />
-          <figcaption>1. Crear borrador</figcaption>
-        </figure>
-        <figure>
-          <img src="/manual_usuario/enviarcontratista.png" alt="Enviar a contratista" />
-          <figcaption>2. Enviar a contratista</figcaption>
-        </figure>
-        <figure>
-          <img src="/manual_usuario/aprobar_firmas.png" alt="Aprobar para firmas" />
-          <figcaption>3. Aprobar para firmas</figcaption>
-        </figure>
-        <figure>
-          <img src="/manual_usuario/firmar_anota.png" alt="Firma de responsables" />
-          <figcaption>4. Firmar y finalizar</figcaption>
-        </figure>
-      </div>
+      <figure>
+        <img src="/manual_usuario/subir_firma.png" alt="Configuración de firma" />
+        <figcaption>Panel de configuración de firma digital</figcaption>
+      </figure>
     </section>
 
-    <section id="edicion">
-      <h2>Edición y flujo de revisión</h2>
+    <section id="tablero">
+      <h2>2. Tablero de Control y Resumen</h2>
+      <p>Al ingresar, verá el <strong>Resumen del Proyecto</strong>. Este panel le ofrece una visión de 360° del estado actual de la obra.</p>
       <ul>
-        <li>Estados: Borrador → Revisión contratista → Aprobado para firmas → Firmado.</li>
-        <li>Editar en Borrador o Revisión final (interventoría). En Revisión contratista, cambios limitados.</li>
-        <li>Acciones: Enviar a contratista, Devolver, Aprobar para firmas.</li>
+        <li><strong>KPIs Principales</strong>: Valor del contrato, plazo transcurrido, días restantes.</li>
+        <li><strong>Estado del Clima</strong>: Resumen de las condiciones meteorológicas reportadas recientemente.</li>
+        <li><strong>Pendientes</strong>: Alertas sobre documentos que requieren su atención inmediata.</li>
       </ul>
-      <figure>
-        <img src="/manual_usuario/detalle-flujo.png" alt="Detalle de bitácora con acciones" />
-        <figcaption>Detalle y acciones del flujo</figcaption>
-      </figure>
-      <div class="grid">
-        <figure>
-          <img src="/manual_usuario/borrador.png" alt="Borrador" />
-          <figcaption>1. Borrador</figcaption>
-        </figure>
-        <figure>
-          <img src="/manual_usuario/enviarcontratista.png" alt="Enviar a contratista" />
-          <figcaption>2. Enviar a contratista</figcaption>
-        </figure>
-        <figure>
-          <img src="/manual_usuario/aprobar_firmas.png" alt="Aprobar para firmas" />
-          <figcaption>3. Aprobar para firmas</figcaption>
-        </figure>
-        <figure>
-          <img src="/manual_usuario/firmar_anota.png" alt="Firmar anotación" />
-          <figcaption>4. Firmar anotación</figcaption>
-        </figure>
-      </div>
-      <figure>
-        <img src="/manual_usuario/observaciones_contrat.png" alt="Observaciones del contratista" />
-        <figcaption>Edición de observaciones del contratista</figcaption>
-      </figure>
     </section>
 
-    <section id="asignacion-firma">
-      <h2>Asignación y firma</h2>
-      <ul>
-        <li>Firmantes: cualquier rol ≠ viewer, con tarea asignada.</li>
-        <li>Autor no es obligatorio: puedes quitarlo al crear/editar.</li>
-        <li>Firma: el firmante ingresa su contraseña de firma; el PDF se actualiza con firma manuscrita y estado.</li>
-      </ul>
-      <figure>
-        <img src="/manual_usuario/modal_firmas.png" alt="Modal de firma" />
-        <figcaption>Proceso de firma</figcaption>
-      </figure>
-    </section>
+    <section id="pendientes">
+      <h2>3. Gestión de Pendientes y Firmas</h2>
+      <p>Su función principal es validar la información registrada. La sección <strong>"Mis Pendientes"</strong> centraliza esta tarea.</p>
 
-    <section id="exportar-pdf">
-      <h2>Exportar PDF</h2>
-      <ul>
-        <li>Usa “Exportar PDF” desde la bitácora.</li>
-        <li>Incluye: fecha del diario, tipo, localización, clima (resumen, temperatura, lluvia), materiales, personal, equipos, avance, controles, hallazgos/respuestas, social, observaciones, firmas y estados.</li>
-      </ul>
-      <figure>
-        <img src="/manual_usuario/pdf-portada.png" alt="PDF exportado" />
-        <figcaption>PDF – portada y datos clave</figcaption>
-      </figure>
-      <div class="grid">
-        <figure>
-          <img src="/manual_usuario/exportar.png" alt="Exportar PDF" />
-          <figcaption>Exportar PDF desde la bitácora</figcaption>
-        </figure>
-        <figure>
-          <img src="/manual_usuario/bitacora_pdf.png" alt="PDF final" />
-          <figcaption>Vista del PDF final</figcaption>
-        </figure>
-      </div>
-    </section>
-
-    <section id="notificaciones">
-      <h2>Notificaciones y tareas pendientes</h2>
-      <ul>
-        <li>Recibirás notificaciones por: asignación de firma, comentarios con mención, cambios importantes.</li>
-        <li>El panel de tareas pendientes muestra firmas y revisiones asignadas. Firma directamente desde la tarjeta o abre el detalle.</li>
-        <li>Si no recibes correos: verifica tu correo en perfil, revisa spam y pide al admin confirmar que el servidor de correo esté activo.</li>
-      </ul>
-      <figure>
-        <img src="/manual_usuario/notificacion_firma.png" alt="Notificaciones y tareas" />
-        <figcaption>Panel de tareas/alertas</figcaption>
-      </figure>
-    </section>
-
-    <section id="firma-manuscrita">
-      <h2>Subir tu firma manuscrita</h2>
+      <h3>Flujo de Revisión</h3>
       <ol class="steps">
-        <li>Ve a tu perfil / sección “Mi firma”.</li>
-        <li>Sube la imagen (PNG/JPG) o dibuja en el lienzo, guarda.</li>
-        <li>Tu firma quedará asociada y podrás usarla al firmar una bitácora.</li>
+        <li>Ingrese a la pestaña <strong>"Mis Pendientes"</strong> en el menú lateral.</li>
+        <li>Verá una lista de anotaciones que esperan su revisión o firma.</li>
+        <li>Haga clic en una tarjeta para ver el detalle completo de la anotación.</li>
+        <li>Revise el contenido: actividades, personal, clima y adjuntos.</li>
+        <li><strong>Para Firmar:</strong> Presione el botón "Firmar", ingrese su contraseña y confirme. La anotación quedará cerrada y sellada.</li>
       </ol>
-      <div class="card-muted">Formato recomendado: fondo transparente, buena resolución, archivo menor a 1 MB.</div>
       <figure>
-        <img src="/manual_usuario/subir_firma.png" alt="Subir firma manuscrita" />
-        <figcaption>Registro de firma manuscrita</figcaption>
+        <img src="/manual_usuario/notificacion_firma.png" alt="Panel de pendientes" />
+        <figcaption>Baneja de entrada de tareas pendientes</figcaption>
+      </figure>
+      <figure>
+        <img src="/manual_usuario/modal_firmas.png" alt="Modal de firma segura" />
+        <figcaption>Confirmación segura de firma</figcaption>
       </figure>
     </section>
 
-    <section id="comentarios">
-      <h2>Comentarios y menciones</h2>
+    <section id="bitacora">
+      <h2>4. Consulta de Bitácora Histórica</h2>
+      <p>Puede consultar cualquier registro pasado en la sección <strong>"Bitácora de Obra"</strong>.</p>
       <ul>
-        <li>Menciones: usa <code>@[userId]</code> para notificar.</li>
-        <li>Permisos dependen del estado y rol (admin/editor/autor/firmante/assignado).</li>
+        <li><strong>Filtros:</strong> Use los filtros superiores para buscar por rango de fechas, tipo de nota (Ambiental, SST, Técnica) o palabras clave.</li>
+        <li><strong>Visualización:</strong> Vea el resumen en lista o cambie a la vista de Calendario.</li>
+        <li><strong>Descarga Individual:</strong> En cada anotación, encontrará el botón <img src="https://api.iconify.design/heroicons:document-arrow-down.svg" style="vertical-align: middle; width: 16px;" alt="icono pdf"/> para descargar el PDF oficial con todas las firmas y sellos de tiempo.</li>
       </ul>
-      <figure>
-        <img src="/manual_usuario/comentarios.png" alt="Comentarios con menciones" />
-        <figcaption>Comentarios y menciones</figcaption>
-      </figure>
     </section>
 
-    <section id="problemas">
-      <h2>Resolución de problemas</h2>
-      <div class="grid">
-        <div class="card-muted"><strong>Token expirado / 401 refresh</strong><br />Reinicia sesión; verifica que el navegador envíe cookie de refresh (HTTPS). Hora del sistema correcta.</div>
-        <div class="card-muted"><strong>P2000 al crear</strong><br />Texto muy largo en campos: recortar o avisar; se ampliaron descripciones/actividades.</div>
-        <div class="card-muted"><strong>Fecha corrida</strong><br />Usar la UI actual; re-editar y guardar. Las fechas se fijan a mediodía UTC.</div>
-        <div class="card-muted"><strong>Firmas/estados en PDF</strong><br />Re-exportar; si persiste, reportar folio.</div>
+    <section id="exportacion">
+      <h2>5. Exportar Expediente Completo</h2>
+      <p>Para cierres mensuales o auditorías, no necesita descargar archivo por archivo. Utilice la herramienta de exportación masiva.</p>
+      <div class="feature-card" style="background: #eff6ff; border-color: var(--brand);">
+        <h3 style="margin-top: 0;">🚀 Nueva Funcionalidad</h3>
+        <ol class="steps">
+          <li>Vaya a la sección <strong>"Herramientas" > "Exportar Expediente"</strong> en el menú lateral.</li>
+          <li>Seleccione el rango de fechas deseado.</li>
+          <li>El sistema generará un archivo consolidado (ZIP/PDF) que contiene todas las bitácoras, anexos y firmas organizados cronológicamente.</li>
+          <li>Este proceso garantiza que usted tenga una copia inmutable y completa del proyecto en sus manos.</li>
+        </ol>
       </div>
     </section>
 
     <section id="soporte">
-      <h2>Soporte</h2>
-      <p>Contacto interno / Mesa de ayuda del proyecto.</p>
-      <p>Versión de la aplicación y del manual.</p>
+      <h2>Soporte y Ayuda</h2>
+      <p>Si encuentra algún inconveniente técnico o requiere asistencia adicional:</p>
+      <ul>
+        <li>Contacte al administrador del sistema a través del canal oficial del proyecto.</li>
+        <li>Para restablecer su contraseña, use el enlace "¿Olvidaste tu contraseña?" en la pantalla de inicio.</li>
+      </ul>
+      <p style="text-align: center; margin-top: 32px; font-size: 14px; opacity: 0.7;">
+        Bitácora Digital de Obra © 2026<br>
+        Cumpliendo con estándares de gestión documental y transparencia.
+      </p>
     </section>
   </main>
 
-  <!-- Botón flotante "volver arriba" -->
-  <button id="scrollTopBtn" aria-label="Volver arriba" title="Volver arriba">↑</button>
+  <button id="scrollTopBtn" title="Volver arriba">↑</button>
 
   <script>
-    const scrollTopBtn = document.getElementById('scrollTopBtn');
+    const btn = document.getElementById('scrollTopBtn');
     window.addEventListener('scroll', () => {
-      if (window.scrollY > 300) {
-        scrollTopBtn.classList.add('scrollTopBtn--visible');
-      } else {
-        scrollTopBtn.classList.remove('scrollTopBtn--visible');
-      }
+      if (window.scrollY > 300) btn.classList.add('visible');
+      else btn.classList.remove('visible');
     });
-    scrollTopBtn.addEventListener('click', () => {
+    btn.addEventListener('click', () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   </script>
