@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -15,7 +16,11 @@
       --accent: #0ea5e9;
       --success: #10b981;
     }
-    * { box-sizing: border-box; }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -23,6 +28,7 @@
       color: var(--text);
       line-height: 1.6;
     }
+
     header {
       background: linear-gradient(135deg, var(--brand), var(--brand));
       color: #fff;
@@ -31,18 +37,42 @@
       position: relative;
       overflow: hidden;
     }
+
     header::after {
       content: '';
       position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       background: url('/manual_usuario/logo.png') no-repeat center center;
       opacity: 0.1;
       background-size: cover;
       pointer-events: none;
     }
-    header h1 { margin: 0 0 16px; font-size: 36px; letter-spacing: -0.5px; font-weight: 800; }
-    header p { margin: 4px 0; font-size: 18px; opacity: 0.95; font-weight: 400; }
-    main { max-width: 960px; margin: -40px auto 60px; padding: 0 24px; position: relative; z-index: 10; }
+
+    header h1 {
+      margin: 0 0 16px;
+      font-size: 36px;
+      letter-spacing: -0.5px;
+      font-weight: 800;
+    }
+
+    header p {
+      margin: 4px 0;
+      font-size: 18px;
+      opacity: 0.95;
+      font-weight: 400;
+    }
+
+    main {
+      max-width: 960px;
+      margin: -40px auto 60px;
+      padding: 0 24px;
+      position: relative;
+      z-index: 10;
+    }
+
     section {
       background: var(--card);
       border: 1px solid var(--border);
@@ -51,18 +81,72 @@
       margin-bottom: 24px;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
     }
-    h2 { margin: 0 0 20px; font-size: 24px; color: var(--brand); display: flex; align-items: center; gap: 10px; }
-    h2::before { content: ''; display: block; width: 6px; height: 24px; background: var(--accent); border-radius: 4px; }
-    h3 { margin: 24px 0 12px; font-size: 18px; color: var(--text); font-weight: 600; }
-    p { margin: 0 0 16px; color: var(--muted); }
-    ul, ol { margin: 0 0 20px 20px; padding: 0; color: var(--muted); }
-    li { margin-bottom: 8px; }
-    strong { color: var(--text); font-weight: 600; }
-    
-    .tag { display: inline-block; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,0.2); color: #fff; font-weight: 500; font-size: 14px; backdrop-filter: blur(4px); margin-top: 16px; }
-    
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
-    
+
+    h2 {
+      margin: 0 0 20px;
+      font-size: 24px;
+      color: var(--brand);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h2::before {
+      content: '';
+      display: block;
+      width: 6px;
+      height: 24px;
+      background: var(--accent);
+      border-radius: 4px;
+    }
+
+    h3 {
+      margin: 24px 0 12px;
+      font-size: 18px;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0 0 16px;
+      color: var(--muted);
+    }
+
+    ul,
+    ol {
+      margin: 0 0 20px 20px;
+      padding: 0;
+      color: var(--muted);
+    }
+
+    li {
+      margin-bottom: 8px;
+    }
+
+    strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+      font-weight: 500;
+      font-size: 14px;
+      backdrop-filter: blur(4px);
+      margin-top: 16px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+
     .feature-card {
       background: #f8fafc;
       border-radius: 12px;
@@ -70,41 +154,123 @@
       border: 1px solid var(--border);
       transition: transform 0.2s;
     }
-    .feature-card:hover { transform: translateY(-2px); border-color: var(--accent); }
-    .feature-title { font-weight: 700; color: var(--brand); margin-bottom: 8px; font-size: 16px; }
-    
-    .steps { counter-reset: step; list-style: none; padding: 0; margin: 0; }
-    .steps li { counter-increment: step; margin: 16px 0; padding-left: 40px; position: relative; }
+
+    .feature-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+    }
+
+    .feature-title {
+      font-weight: 700;
+      color: var(--brand);
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+
+    .steps {
+      counter-reset: step;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .steps li {
+      counter-increment: step;
+      margin: 16px 0;
+      padding-left: 40px;
+      position: relative;
+    }
+
     .steps li::before {
       content: counter(step);
-      position: absolute; left: 0; top: 0;
-      width: 28px; height: 28px;
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 28px;
+      height: 28px;
       border-radius: 8px;
-      background: var(--brand); color: #fff;
-      display: grid; place-items: center;
-      font-size: 14px; font-weight: 700;
+      background: var(--brand);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+      font-weight: 700;
       box-shadow: 0 2px 4px rgba(29, 78, 216, 0.3);
     }
 
-    figure { margin: 24px 0; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: #fff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
-    figure img { width: 100%; height: auto; display: block; }
-    figure figcaption { padding: 12px 16px; font-size: 13px; color: var(--muted); background: #f8fafc; border-top: 1px solid var(--border); text-align: center; }
+    figure {
+      margin: 24px 0;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
 
-    .role-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
-    .role-idu { background: #e0e7ff; color: #3730a3; }
-    .role-inter { background: #dcfce7; color: #166534; }
+    figure img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    figure figcaption {
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--muted);
+      background: #f8fafc;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .role-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .role-idu {
+      background: #e0e7ff;
+      color: #3730a3;
+    }
+
+    .role-inter {
+      background: #dcfce7;
+      color: #166534;
+    }
 
     /* Botón flotante */
     #scrollTopBtn {
-      position: fixed; right: 32px; bottom: 32px; width: 48px; height: 48px;
-      border-radius: 50%; border: none; background: var(--brand); color: white;
-      font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(29, 78, 216, 0.4);
-      opacity: 0; transition: all 0.3s; transform: translateY(20px);
+      position: fixed;
+      right: 32px;
+      bottom: 32px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: none;
+      background: var(--brand);
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(29, 78, 216, 0.4);
+      opacity: 0;
+      transition: all 0.3s;
+      transform: translateY(20px);
     }
-    #scrollTopBtn.visible { opacity: 1; transform: translateY(0); }
-    #scrollTopBtn:hover { background: var(--accent); transform: translateY(-2px); }
+
+    #scrollTopBtn.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    #scrollTopBtn:hover {
+      background: var(--accent);
+      transform: translateY(-2px);
+    }
   </style>
 </head>
+
 <body>
   <header>
     <h1>Manual de Supervisión e Interventoría</h1>
@@ -115,12 +281,21 @@
   <main>
     <section>
       <h2>Bienvenido</h2>
-      <p>Bienvenido a la <strong>Bitácora Digital de Obra (BDO)</strong>. Esta plataforma ha sido diseñada para facilitar su labor de supervisión y control, permitiendo un acceso transparente, seguro y en tiempo real a toda la información del proyecto.</p>
-      <p>Como usuario con perfil <span class="role-badge role-idu">IDU</span> o <span class="role-badge role-inter">INTERVENTORÍA</span>, usted tiene acceso privilegiado para:</p>
+      <p>Bienvenido a la <strong>Bitácora Digital de Obra (BDO)</strong>. Esta plataforma ha sido diseñada para
+        facilitar su labor de supervisión y control, permitiendo un acceso transparente, seguro y en tiempo real a toda
+        la información del proyecto.</p>
+      <p>Como usuario con perfil <span class="role-badge role-idu">IDU</span> o <span
+          class="role-badge role-inter">INTERVENTORÍA</span>, usted tiene acceso privilegiado para:</p>
       <div class="grid">
         <div class="feature-card">
           <div class="feature-title">👁️ Monitorear</div>
-          Visualice el avance físico, financiero y fotográfico del proyecto a través de tableros de control actualizados en tiempo real.
+          Visualice el avance físico, financiero y fotográfico del proyecto a través de tableros de control actualizados
+          en tiempo real.
+        </div>
+        <div class="feature-card">
+          <div class="feature-title">📝 Registrar</div>
+          Cree sus propias anotaciones de interventoría, reportando inspecciones, personal y observaciones de manera
+          autónoma.
         </div>
         <div class="feature-card">
           <div class="feature-title">✅ Validar</div>
@@ -140,7 +315,7 @@
     <section id="acceso">
       <h2>1. Acceso y Seguridad</h2>
       <p>La seguridad de su firma y sus datos es prioritaria. El acceso es personal e intransferible.</p>
-      
+
       <h3>Inicio de Sesión</h3>
       <ol class="steps">
         <li>Ingrese a la plataforma con su correo electrónico institucional y su contraseña.</li>
@@ -152,10 +327,12 @@
       </figure>
 
       <h3>Gestión de Firma Digital</h3>
-      <p>Para firmar documentos, debe configurar su firma manuscrita digitalizada. Esta se encripta de punto a punto.</p>
+      <p>Para firmar documentos, debe configurar su firma manuscrita digitalizada. Esta se encripta de punto a punto.
+      </p>
       <ol class="steps">
         <li>Vaya al menú de usuario (esquina superior derecha) y seleccione <strong>"Mi Firma"</strong>.</li>
-        <li>Puede <strong>Dibujar</strong> su firma en pantalla o <strong>Subir</strong> una imagen (PNG con fondo transparente recomendado).</li>
+        <li>Puede <strong>Dibujar</strong> su firma en pantalla o <strong>Subir</strong> una imagen (PNG con fondo
+          transparente recomendado).</li>
         <li>Guarde su firma. Esta será requerida cada vez que apruebe un documento.</li>
       </ol>
       <figure>
@@ -166,7 +343,8 @@
 
     <section id="tablero">
       <h2>2. Tablero de Control y Resumen</h2>
-      <p>Al ingresar, verá el <strong>Resumen del Proyecto</strong>. Este panel le ofrece una visión de 360° del estado actual de la obra.</p>
+      <p>Al ingresar, verá el <strong>Resumen del Proyecto</strong>. Este panel le ofrece una visión de 360° del estado
+        actual de la obra.</p>
       <ul>
         <li><strong>KPIs Principales</strong>: Valor del contrato, plazo transcurrido, días restantes.</li>
         <li><strong>Estado del Clima</strong>: Resumen de las condiciones meteorológicas reportadas recientemente.</li>
@@ -174,9 +352,33 @@
       </ul>
     </section>
 
+    <section id="creacion">
+      <h2>3. Creación de Anotaciones (Interventoría)</h2>
+      <p>Como Interventoría, usted tiene la facultad de registrar anotaciones en la bitácora, ya sea para dejar
+        constancia de inspecciones, hallazgos o novedades propias.</p>
+
+      <h3>Pasos para registrar una nota:</h3>
+      <ol class="steps">
+        <li>Haga clic en el botón <strong>"Registrar Bitácora Diaria"</strong> en el menú principal.</li>
+        <li><strong>Datos Básicos:</strong> Seleccione la fecha, ingrese el título y un resumen ejecutivo. Defina el
+          <em>Tipo de Nota</em> (Técnica, Ambiental, SST, Social).
+        </li>
+        <li><strong>Detalle:</strong> Puede diligenciar secciones específicas como personal de interventoría, clima y
+          observaciones.</li>
+        <li><strong>Evidencias:</strong> Adjunte fotografías o documentos PDF que soporten su anotación.</li>
+        <li><strong>Guardar y Firmar:</strong> Al finalizar, guarde la nota. Puede firmarla inmediatamente para dejarla
+          en firme.</li>
+      </ol>
+      <figure>
+        <img src="/manual_usuario/nueva_anotacion.png" alt="Formulario de nueva anotación" />
+        <figcaption>Formulario de registro de bitácora</figcaption>
+      </figure>
+    </section>
+
     <section id="pendientes">
-      <h2>3. Gestión de Pendientes y Firmas</h2>
-      <p>Su función principal es validar la información registrada. La sección <strong>"Mis Pendientes"</strong> centraliza esta tarea.</p>
+      <h2>4. Gestión de Pendientes y Firmas</h2>
+      <p>Su función principal es validar la información registrada. La sección <strong>"Mis Pendientes"</strong>
+        centraliza esta tarea.</p>
 
       <h3>Flujo de Revisión</h3>
       <ol class="steps">
@@ -184,7 +386,8 @@
         <li>Verá una lista de anotaciones que esperan su revisión o firma.</li>
         <li>Haga clic en una tarjeta para ver el detalle completo de la anotación.</li>
         <li>Revise el contenido: actividades, personal, clima y adjuntos.</li>
-        <li><strong>Para Firmar:</strong> Presione el botón "Firmar", ingrese su contraseña y confirme. La anotación quedará cerrada y sellada.</li>
+        <li><strong>Para Firmar:</strong> Presione el botón "Firmar", ingrese su contraseña y confirme. La anotación
+          quedará cerrada y sellada.</li>
       </ol>
       <figure>
         <img src="/manual_usuario/notificacion_firma.png" alt="Panel de pendientes" />
@@ -197,24 +400,30 @@
     </section>
 
     <section id="bitacora">
-      <h2>4. Consulta de Bitácora Histórica</h2>
+      <h2>5. Consulta de Bitácora Histórica</h2>
       <p>Puede consultar cualquier registro pasado en la sección <strong>"Bitácora de Obra"</strong>.</p>
       <ul>
-        <li><strong>Filtros:</strong> Use los filtros superiores para buscar por rango de fechas, tipo de nota (Ambiental, SST, Técnica) o palabras clave.</li>
+        <li><strong>Filtros:</strong> Use los filtros superiores para buscar por rango de fechas, tipo de nota
+          (Ambiental, SST, Técnica) o palabras clave.</li>
         <li><strong>Visualización:</strong> Vea el resumen en lista o cambie a la vista de Calendario.</li>
-        <li><strong>Descarga Individual:</strong> En cada anotación, encontrará el botón <img src="https://api.iconify.design/heroicons:document-arrow-down.svg" style="vertical-align: middle; width: 16px;" alt="icono pdf"/> para descargar el PDF oficial con todas las firmas y sellos de tiempo.</li>
+        <li><strong>Descarga Individual:</strong> En cada anotación, encontrará el botón <img
+            src="https://api.iconify.design/heroicons:document-arrow-down.svg"
+            style="vertical-align: middle; width: 16px;" alt="icono pdf" /> para descargar el PDF oficial con todas las
+          firmas y sellos de tiempo.</li>
       </ul>
     </section>
 
     <section id="exportacion">
-      <h2>5. Exportar Expediente Completo</h2>
-      <p>Para cierres mensuales o auditorías, no necesita descargar archivo por archivo. Utilice la herramienta de exportación masiva.</p>
+      <h2>6. Exportar Expediente Completo</h2>
+      <p>Para cierres mensuales o auditorías, no necesita descargar archivo por archivo. Utilice la herramienta de
+        exportación masiva.</p>
       <div class="feature-card" style="background: #eff6ff; border-color: var(--brand);">
         <h3 style="margin-top: 0;">🚀 Nueva Funcionalidad</h3>
         <ol class="steps">
           <li>Vaya a la sección <strong>"Herramientas" > "Exportar Expediente"</strong> en el menú lateral.</li>
           <li>Seleccione el rango de fechas deseado.</li>
-          <li>El sistema generará un archivo consolidado (ZIP/PDF) que contiene todas las bitácoras, anexos y firmas organizados cronológicamente.</li>
+          <li>El sistema generará un archivo consolidado (ZIP/PDF) que contiene todas las bitácoras, anexos y firmas
+            organizados cronológicamente.</li>
           <li>Este proceso garantiza que usted tenga una copia inmutable y completa del proyecto en sus manos.</li>
         </ol>
       </div>
@@ -247,4 +456,5 @@
     });
   </script>
 </body>
+
 </html>
