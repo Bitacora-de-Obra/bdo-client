@@ -30,6 +30,9 @@ interface SidebarProps {
   setCurrentView: (view: string) => void;
 }
 
+// Tabs visible to INTERVENTORIA and IDU entities (restricted access)
+const RESTRICTED_ENTITY_ALLOWED_TABS = ['summary', 'pending_tasks', 'logbook', 'manual'];
+
 const navItems = [
     { id: 'summary', label: 'Resumen del Proyecto', icon: <Squares2X2Icon />, section: 'General' },
     { id: 'pending_tasks', label: 'Mis Pendientes', icon: <ListBulletIcon />, section: 'General' },
@@ -73,7 +76,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, setIsSidebarOpen, isSi
   
   const visibleNavItems = React.useMemo(() => {
     if (!user) return [];
+    
+    // Check if user is from a restricted entity (INTERVENTORIA or IDU)
+    const isRestrictedEntity = user.entity === 'INTERVENTORIA' || user.entity === 'IDU';
+    
     return navItems.filter(item => {
+        // Entity-based filtering: INTERVENTORIA and IDU can only see specific tabs
+        if (isRestrictedEntity && !RESTRICTED_ENTITY_ALLOWED_TABS.includes(item.id)) {
+          return false;
+        }
+        
+        // Existing role-based filtering
         const projectRoleMatch = !item.roles || item.roles.includes(user.projectRole);
         const appRoleMatch = !item.appRoles || item.appRoles.includes(user.appRole);
         return projectRoleMatch && appRoleMatch;
