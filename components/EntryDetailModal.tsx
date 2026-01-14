@@ -1783,9 +1783,9 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const canEditContractorResponses =
     canEditObservationsStatus &&
     !hasCompletedSignatures &&
-    isContractorUser &&
-    !isInterventoriaUser &&
-    (isAuthorInterventoria || hasPendingReviewTask) &&
+    (isContractorUser || isAdmin) &&
+    (!isInterventoriaUser || isAdmin) &&
+    (isAuthorInterventoria || hasPendingReviewTask || isAdmin) &&
     !entry.contractorObservations; // Lock if observations were already saved (use original, not edited)
   
   // DEBUG: Log all conditions for contractor observations editing
@@ -1810,9 +1810,9 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const canEditInterventoriaResponses =
     canEditObservationsStatus &&
     !hasCompletedSignatures &&
-    isInterventoriaUser &&
-    !isContractorUser &&
-    (isAuthorContractor || hasPendingReviewTask) &&
+    (isInterventoriaUser || isAdmin) &&
+    (!isContractorUser || isAdmin) &&
+    (isAuthorContractor || hasPendingReviewTask || isAdmin) &&
     !entry.interventoriaObservations; // Lock if observations were already saved (use original, not edited)
 
   // DEBUG: Log all conditions for interventoría observations editing
