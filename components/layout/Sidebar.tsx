@@ -31,7 +31,7 @@ interface SidebarProps {
 }
 
 // Tabs visible to INTERVENTORIA and IDU entities (restricted access)
-const RESTRICTED_ENTITY_ALLOWED_TABS = ['summary', 'pending_tasks', 'logbook', 'manual'];
+const RESTRICTED_ENTITY_ALLOWED_TABS = ['summary', 'pending_tasks', 'logbook', 'manual', 'export_project'];
 
 const navItems = [
     { id: 'summary', label: 'Resumen del Proyecto', icon: <Squares2X2Icon />, section: 'General' },

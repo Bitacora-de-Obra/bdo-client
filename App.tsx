@@ -271,7 +271,7 @@ const MainApp = () => {
 
 const AppContent = () => {
   console.log("AppContent: Rendering...");
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     console.log("AppContent: Showing Loading...");
@@ -288,11 +288,15 @@ const AppContent = () => {
   }
 
   console.log("AppContent: Authenticated, showing MainApp...");
+  
+  // Ocultar chatbot para Interventoría e IDU
+  const isRestrictedEntity = user?.entity === "INTERVENTORIA" || user?.entity === "IDU";
+
   return (
     <>
       <ThemeManager />
       <MainApp />
-      <ChatbotWidget />
+      {!isRestrictedEntity && <ChatbotWidget />}
       <OfflineIndicator />
     </>
   );
