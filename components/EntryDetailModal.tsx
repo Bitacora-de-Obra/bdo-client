@@ -1059,6 +1059,52 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     }
   };
 
+  // NEW: Per-signatory review workflow handlers
+  const handleSendForReview = async () => {
+    setIsSendingToContractor(true);
+    try {
+      const updatedEntry = await api.logEntries.sendForReview(entry.id);
+      syncEntryState(updatedEntry);
+      await onRefresh();
+      showToast({
+        variant: "success",
+        title: "Enviado para revisión",
+        message: "La anotación fue enviada a todos los firmantes para su revisión.",
+      });
+    } catch (error: any) {
+      const message = error?.message || "No se pudo enviar para revisión.";
+      showToast({
+        variant: "error",
+        title: "Error al enviar",
+        message,
+      });
+    } finally {
+      setIsSendingToContractor(false);
+    }
+  };
+
+  const handleApproveReview = async () => {
+    try {
+      const updatedEntry = await api.logEntries.approveReview(entry.id);
+      syncEntryState(updatedEntry);
+      await onRefresh();
+      showToast({
+        variant: "success",
+        title: "Revisión aprobada",
+        message: updatedEntry.allReviewsComplete
+          ? "Todas las revisiones están completas. Las firmas están habilitadas."
+          : "Tu revisión fue registrada exitosamente.",
+      });
+    } catch (error: any) {
+      const message = error?.message || "No se pudo aprobar la revisión.";
+      showToast({
+        variant: "error",
+        title: "Error",
+        message,
+      });
+    }
+  };
+
   const handleCompleteContractorReview = async () => {
     if (!canCompleteContractorReview) {
       showToast({
@@ -1684,7 +1730,9 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     contractorReviewCompleted &&
     (isAuthor || isAdmin);
   
-  const isSigningStage = (isReadyForSignaturesStatus || isSignedStatus) && !entry.pendingReviewBy;
+  // On per-signatory workflow: signatures disabled until ALL review tasks complete
+  const allReviewTasksComplete = reviewTasks.length === 0 || reviewTasks.every(t => t.status === 'COMPLETED');
+  const isSigningStage = (isReadyForSignaturesStatus || isSignedStatus) && !entry.pendingReviewBy && allReviewTasksComplete;
   const signatureBlockReadOnly = readOnly || !isSigningStage;
   const canSign = !effectiveReadOnly && isSigningStage;
 
@@ -1760,12 +1808,13 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const reviewWorkflowBanner = (
     <ReviewWorkflowBanner
       entry={entry}
+      currentUser={currentUser}
       isAuthor={isAuthor}
-      isAdmin={isAdmin}
-      isContractorUser={isContractorUser}
       isDraftStatus={isDraftStatus}
-      onSendToContractor={handleSendToContractor}
-      onSendToInterventoria={handleSendToInterventoria}
+      isSubmittedStatus={isSubmittedStatus}
+      onSendForReview={handleSendForReview}
+      onApproveReview={handleApproveReview}
+      onRefresh={onRefresh}
       isLoading={isSendingToContractor}
     />
   );

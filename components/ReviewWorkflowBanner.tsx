@@ -1,124 +1,145 @@
 import React, { useState } from "react";
-import { LogEntry } from "../types";
+import { LogEntry, ReviewTask, User } from "../types";
 import Button from "./ui/Button";
 
 interface ReviewWorkflowBannerProps {
   entry: LogEntry;
+  currentUser: User;
   isAuthor: boolean;
-  isAdmin: boolean;
-  isContractorUser: boolean;
   isDraftStatus: boolean;
-  onSendToContractor: () => Promise<void>;
-  onSendToInterventoria: () => Promise<void>;
+  isSubmittedStatus: boolean;
+  onSendForReview: () => Promise<void>;
+  onApproveReview: () => Promise<void>;
+  onRefresh: () => void | Promise<void>;
   isLoading?: boolean;
 }
 
 /**
- * Component for the new review workflow (San Mateo + new clients).
+ * Component for the per-signatory review workflow.
  * Shows:
- * - A dropdown to send entry for review (Contractor or Interventoria)
- * - A status banner when review is pending
- * - Blocks signature actions via the pendingReviewBy field
+ * - A single "Enviar para revisión" button when in draft (author only)
+ * - A status panel showing each reviewer and their status (pending/completed)
+ * - An "Aprobar" button if current user has a pending review
  */
 const ReviewWorkflowBanner: React.FC<ReviewWorkflowBannerProps> = ({
   entry,
+  currentUser,
   isAuthor,
-  isAdmin,
-  isContractorUser,
   isDraftStatus,
-  onSendToContractor,
-  onSendToInterventoria,
+  isSubmittedStatus,
+  onSendForReview,
+  onApproveReview,
+  onRefresh,
   isLoading = false,
 }) => {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
 
-  const canSendForReview = isDraftStatus && (isAuthor || isAdmin);
-  const hasPendingReview = !!entry.pendingReviewBy;
+  const reviewTasks = entry.reviewTasks || [];
+  const hasReviewTasks = reviewTasks.length > 0;
+  const pendingReviews = reviewTasks.filter((t) => t.status === "PENDING");
+  const completedReviews = reviewTasks.filter((t) => t.status === "COMPLETED");
+  const allReviewsComplete = hasReviewTasks && pendingReviews.length === 0;
 
-  const handleSendToContractor = async () => {
-    setIsDropdownOpen(false);
-    await onSendToContractor();
-  };
+  // Check if current user has a pending review
+  const myPendingReview = reviewTasks.find(
+    (t) => t.reviewer?.id === currentUser.id && t.status === "PENDING"
+  );
 
-  const handleSendToInterventoria = async () => {
-    setIsDropdownOpen(false);
-    await onSendToInterventoria();
-  };
-
-  const getPendingReviewLabel = () => {
-    if (entry.pendingReviewBy === "CONTRACTOR") {
-      return "contratista";
+  const handleApprove = async () => {
+    if (
+      !window.confirm(
+        "¿Confirmas que apruebas esta anotación sin agregar comentarios?"
+      )
+    ) {
+      return;
     }
-    if (entry.pendingReviewBy === "INTERVENTORIA") {
-      return "interventoría";
+    setIsApproving(true);
+    try {
+      await onApproveReview();
+      await onRefresh();
+    } finally {
+      setIsApproving(false);
     }
-    return "la otra parte";
   };
+
+  const handleSendForReview = async () => {
+    if (
+      !window.confirm(
+        "¿Enviar esta anotación para revisión de todos los firmantes? Cada uno deberá aprobar o comentar antes de poder firmar."
+      )
+    ) {
+      return;
+    }
+    await onSendForReview();
+  };
+
+  // Only show if we have review workflow active
+  const hasPendingReviewBy = !!entry.pendingReviewBy;
+  const showReviewPanel = isSubmittedStatus && hasReviewTasks;
+  const canSendForReview = isDraftStatus && isAuthor;
+
+  if (!canSendForReview && !showReviewPanel) {
+    return null;
+  }
 
   return (
-    <div className="space-y-3">
-      {/* Pending Review Banner */}
-      {hasPendingReview && (
-        <div className="bg-yellow-50 border border-yellow-200 px-4 py-3 rounded-lg flex items-center gap-3">
-          <span className="text-yellow-600 text-lg">⏳</span>
-          <div>
-            <p className="text-sm font-medium text-yellow-800">
-              Esperando revisión de {getPendingReviewLabel()}
-            </p>
-            <p className="text-xs text-yellow-700 mt-0.5">
-              Las firmas estarán disponibles después de que complete la revisión.
-            </p>
-          </div>
-        </div>
+    <div className="space-y-4">
+      {/* Send for Review Button (Draft only, author only) */}
+      {canSendForReview && (
+        <Button
+          variant="primary"
+          onClick={handleSendForReview}
+          disabled={isLoading}
+        >
+          {isLoading ? "Enviando..." : "Enviar para revisión"}
+        </Button>
       )}
 
-      {/* Send for Review Dropdown */}
-      {canSendForReview && (
-        <div className="relative inline-block">
-          <Button
-            variant="primary"
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            disabled={isLoading}
-          >
-            {isLoading ? "Enviando..." : "Enviar para revisión ▼"}
-          </Button>
+      {/* Review Status Panel */}
+      {showReviewPanel && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <h4 className="text-sm font-semibold text-yellow-800 mb-3">
+            Estado de Revisiones ({completedReviews.length}/{reviewTasks.length} completadas)
+          </h4>
+          <div className="space-y-2">
+            {reviewTasks.map((task) => (
+              <div
+                key={task.id}
+                className="flex items-center justify-between text-sm"
+              >
+                <span className="text-gray-700">
+                  {task.reviewer?.fullName || "Usuario"}
+                </span>
+                {task.status === "COMPLETED" ? (
+                  <span className="text-green-600 font-medium">✅ Revisado</span>
+                ) : (
+                  <span className="text-orange-600 font-medium">⏳ Pendiente</span>
+                )}
+              </div>
+            ))}
+          </div>
 
-          {isDropdownOpen && (
-            <div className="absolute z-50 mt-1 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
-              {/* Show option based on who can send to whom */}
-              {!isContractorUser && (
-                <button
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                  onClick={handleSendToContractor}
-                >
-                  📤 Enviar a Contratista
-                </button>
-              )}
-              {isContractorUser && (
-                <button
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                  onClick={handleSendToInterventoria}
-                >
-                  📤 Enviar a Interventoría
-                </button>
-              )}
-              {/* If admin, show both options */}
-              {isAdmin && !isContractorUser && (
-                <button
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors border-t border-gray-100"
-                  onClick={handleSendToInterventoria}
-                >
-                  📤 Enviar a Interventoría
-                </button>
-              )}
-              {isAdmin && isContractorUser && (
-                <button
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors border-t border-gray-100"
-                  onClick={handleSendToContractor}
-                >
-                  📤 Enviar a Contratista
-                </button>
-              )}
+          {allReviewsComplete && (
+            <p className="mt-3 text-sm text-green-700 font-medium">
+              ✅ Todas las revisiones están completas. Las firmas están habilitadas.
+            </p>
+          )}
+
+          {/* Approve Button for current user */}
+          {myPendingReview && (
+            <div className="mt-4 pt-3 border-t border-yellow-300">
+              <p className="text-sm text-yellow-800 mb-2">
+                Tienes una revisión pendiente. Puedes agregar un comentario arriba o aprobar directamente:
+              </p>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleApprove}
+                disabled={isApproving}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {isApproving ? "Aprobando..." : "✓ Aprobar sin comentario"}
+              </Button>
             </div>
           )}
         </div>

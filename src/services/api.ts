@@ -963,6 +963,17 @@ export const logEntriesApi = {
       method: "POST",
     });
   },
+  // NEW: Per-signatory review workflow
+  sendForReview: async (entryId: string) => {
+    return apiFetch(`/log-entries/${entryId}/send-for-review`, {
+      method: "POST",
+    });
+  },
+  approveReview: async (entryId: string) => {
+    return apiFetch(`/log-entries/${entryId}/approve-review`, {
+      method: "POST",
+    });
+  },
   completeContractorReview: async (entryId: string) => {
     return apiFetch(`/log-entries/${entryId}/contractor-review/complete`, {
       method: "POST",
