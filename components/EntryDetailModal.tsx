@@ -1777,14 +1777,15 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   // 1. Status is SUBMITTED or APPROVED (before signing is complete)
   // 2. AND no signatures have been completed yet
   // 3. AND user is contractor (by role)
-  // 4. AND author was interventoría (counterpart responding)
+  // 4. AND (author was interventoría OR user has pending review task)
   // 5. AND observations are not already saved (lock after save)
+  const hasPendingReviewTask = myReviewTask?.status === "PENDING";
   const canEditContractorResponses =
     canEditObservationsStatus &&
     !hasCompletedSignatures &&
     isContractorUser &&
     !isInterventoriaUser &&
-    isAuthorInterventoria &&
+    (isAuthorInterventoria || hasPendingReviewTask) &&
     !entry.contractorObservations; // Lock if observations were already saved (use original, not edited)
   
   // DEBUG: Log all conditions for contractor observations editing
@@ -1804,14 +1805,14 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   // 1. Status is SUBMITTED or APPROVED (before signing is complete)
   // 2. AND no signatures have been completed yet
   // 3. AND user is interventoría (by role, not appRole admin)
-  // 4. AND author was contractor (counterpart responding)
+  // 4. AND (author was contractor OR user has pending review task)
   // 5. AND observations are not already saved (lock after save)
   const canEditInterventoriaResponses =
     canEditObservationsStatus &&
     !hasCompletedSignatures &&
     isInterventoriaUser &&
     !isContractorUser &&
-    isAuthorContractor &&
+    (isAuthorContractor || hasPendingReviewTask) &&
     !entry.interventoriaObservations; // Lock if observations were already saved (use original, not edited)
 
   // DEBUG: Log all conditions for interventoría observations editing
