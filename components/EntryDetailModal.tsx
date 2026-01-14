@@ -2153,12 +2153,10 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                   </p>
                 )}
               </div>
-                {workflowActionButtons.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="mt-3 flex flex-wrap gap-2 text-left">
                     {reviewWorkflowBanner}
                     {workflowActionButtons}
                   </div>
-                )}
             </div>
           )}
           
