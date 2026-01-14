@@ -586,7 +586,17 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
           onDelete={handleDeleteEntry}
           currentUser={user}
           availableUsers={users || []}
-          onRefresh={refetchLogEntries}
+          onRefresh={async () => {
+            refetchLogEntries();
+            if (selectedEntry) {
+              try {
+                const fresh = await api.logEntries.getById(selectedEntry.id);
+                setSelectedEntry(fresh);
+              } catch (e) {
+                console.error("Error refreshing entry:", e);
+              }
+            }
+          }}
           readOnly={readOnly}
         />
       )}
