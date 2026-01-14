@@ -129,7 +129,9 @@ const MainApp = () => {
       );
     }
 
-    if (currentView === "export_project" && user?.appRole !== "admin") {
+    // Permitir acceso a exportar expediente para admin o entidades autorizadas (IDU, Interventoría)
+    const isRestrictedEntity = user?.entity === "INTERVENTORIA" || user?.entity === "IDU";
+    if (currentView === "export_project" && user?.appRole !== "admin" && !isRestrictedEntity) {
       console.warn("Acceso no autorizado a la exportación de expediente.");
       setCurrentView("summary");
       return (

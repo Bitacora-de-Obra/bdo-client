@@ -48,7 +48,7 @@ const navItems = [
     { id: 'weekly_reports', label: 'Informes Semanales', icon: <DocumentChartBarIcon />, section: 'Reportes' },
   { id: 'monthly_reports_obra', label: 'Informes Mensuales (Obra)', icon: <DocumentChartBarIcon />, section: 'Reportes' },
   { id: 'monthly_reports_interventoria', label: 'Informes Mensuales (Interv.)', icon: <DocumentChartBarIcon />, section: 'Reportes', roles: [UserRole.SUPERVISOR, UserRole.ADMIN] },
-  { id: 'export_project', label: 'Exportar Expediente', icon: <DocumentArrowDownIcon />, section: 'Herramientas', appRoles: ['admin'] },
+  { id: 'export_project', label: 'Exportar Expediente', icon: <DocumentArrowDownIcon />, section: 'Herramientas' },
   { id: 'contract_documents', label: 'Documentos del Contrato', icon: <DocumentIcon />, section: 'Registros' },
   { id: 'admin', label: 'Administración', icon: <ShieldCheckIcon />, section: 'Herramientas', appRoles: ['admin'] },
   { id: 'manual', label: 'Manual de Usuario', icon: <DocumentIcon />, section: 'Ayuda' },
