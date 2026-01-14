@@ -2205,21 +2205,39 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                 )}
                 {isReadyForSignaturesStatus && (
                   <>
-                    <p>
-                      ✍️ <strong>Listo para firmas:</strong> los firmantes asignados 
-                      pueden proceder a firmar.
-                    </p>
-                    {canEdit && (
-                      <p>
-                        ✓ Los participantes pueden seguir editando hasta que se completen las firmas.
-                      </p>
-                    )}
-                    {canSign ? (
-                      <p>✓ Puedes firmar si estás en la lista de firmantes.</p>
+                    {(entry.pendingReviewBy || !allReviewTasksComplete) ? (
+                       <>
+                         <p>
+                           📝 <strong>En Revisión:</strong> Se requiere completar todas las revisiones antes de habilitar las firmas.
+                         </p>
+                         <p className="text-orange-700">
+                           ⚠ Las firmas se habilitarán automáticamente cuando todos los participantes aprueben su revisión.
+                         </p>
+                         {canEdit && (
+                           <p>
+                             ✓ Los participantes pueden seguir editando hasta que se completen las firmas.
+                           </p>
+                         )}
+                       </>
                     ) : (
-                      <p className="text-orange-700">
-                        ⚠ Solo los firmantes designados pueden firmar.
-                      </p>
+                       <>
+                        <p>
+                          ✍️ <strong>Listo para firmas:</strong> los firmantes asignados 
+                          pueden proceder a firmar.
+                        </p>
+                        {canEdit && (
+                          <p>
+                            ✓ Los participantes pueden seguir editando hasta que se completen las firmas.
+                          </p>
+                        )}
+                        {canSign ? (
+                          <p>✓ Puedes firmar si estás en la lista de firmantes.</p>
+                        ) : (
+                          <p className="text-orange-700">
+                            ⚠ Solo los firmantes designados pueden firmar.
+                          </p>
+                        )}
+                      </>
                     )}
                   </>
                 )}
