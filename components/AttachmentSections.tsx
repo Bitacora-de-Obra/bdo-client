@@ -118,12 +118,61 @@ const AttachmentSections: React.FC<AttachmentSectionsProps> = ({
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            Documentos Generados ({pdfAttachments.length})
+            Documentos Generados
           </h4>
           <div className="space-y-2">
-            {pdfAttachments.map((att) => (
-              <AttachmentItem key={att.id} attachment={att} />
-            ))}
+            {(() => {
+              // Logic to prioritize and group PDFs
+              
+              // 1. Remove the main signed PDF if it exists (it's already in the green box)
+              let remaining = signedPdf 
+                ? pdfAttachments.filter(p => p.id !== signedPdf.id)
+                : [...pdfAttachments];
+
+              // 2. Find the latest Draft (non-signed)
+              // Assuming attachments are sort of ordered, or we rely on name.
+              // Logic: Find first non-signed.
+              const latestDraft = remaining.find(p => !p.fileName?.toLowerCase().includes('firmado'));
+              
+              // 3. Filter list: Show latestDraft + History
+              const history = remaining.filter(p => p.id !== latestDraft?.id);
+              
+              return (
+                <>
+                  {/* Latest Draft (if exists) */}
+                  {latestDraft && (
+                    <div className="mb-2">
+                         <div className="text-xs text-gray-500 mb-1 ml-1 font-medium">Borrador más reciente:</div>
+                         <AttachmentItem attachment={latestDraft} />
+                    </div>
+                  )}
+
+                  {/* History (Collapsible) */}
+                  {history.length > 0 && (
+                    <details className="group mt-2">
+                      <summary className="list-none flex items-center cursor-pointer text-sm text-gray-500 hover:text-gray-700">
+                         <span className="font-medium">Ver historial de versiones ({history.length})</span>
+                         <span className="ml-2 transition group-open:rotate-180">
+                           <svg fill="none" height="20" width="20" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
+                             <polyline points="6 9 12 15 18 9"></polyline>
+                           </svg>
+                         </span>
+                      </summary>
+                      <div className="mt-2 pl-2 border-l-2 border-gray-100 space-y-2">
+                        {history.map(att => (
+                           <AttachmentItem key={att.id} attachment={att} />
+                        ))}
+                      </div>
+                    </details>
+                  )}
+                  
+                  {/* Fallback: If no draft and no history (but we had remaining?), show remaining */}
+                  {!latestDraft && history.length === 0 && remaining.map((att) => (
+                    <AttachmentItem key={att.id} attachment={att} />
+                  ))}
+                </>
+              );
+            })()}
           </div>
         </div>
       )}
