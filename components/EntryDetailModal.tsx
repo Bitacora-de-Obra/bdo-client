@@ -949,6 +949,12 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     setIsUpdating(true);
     try {
       await onUpdate(finalEntry);
+      
+      // Refresh to get side effects from backend (e.g. review task completion)
+      if (onRefresh) {
+        await onRefresh();
+      }
+      
       setIsEditing(false);
       setNewFiles([]);
     } catch (error) {
