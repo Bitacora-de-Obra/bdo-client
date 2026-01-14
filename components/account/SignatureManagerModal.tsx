@@ -276,6 +276,9 @@ const SignatureManagerModal: React.FC<SignatureManagerModalProps> = ({
             onChange={handleFileChange}
             className="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-primary/10 file:text-brand-primary hover:file:bg-brand-primary/20"
           />
+          <p className="text-xs text-gray-500 mt-1">
+            Tamaño máximo permitido: 10 MB. Formatos: PNG, JPG, PDF.
+          </p>
           {selectedFile && (
             <>
               <p className="text-xs text-gray-500">
