@@ -783,7 +783,17 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     if (isSubmittingComment) {
       return;
     }
-    if (readOnly) {
+    // Allow commenting if not readOnly, OR if user is Contractor/Supervisor/Admin (reviewers)
+    // We recalculate permissions here because the main permission block is defined below
+    const roleForComment = normalizeProjectRoleValue(currentUser.projectRole);
+    const canCommentOverride = 
+      roleForComment === UserRole.CONTRACTOR_REP || 
+      roleForComment === UserRole.SUPERVISOR || 
+      roleForComment === UserRole.RESIDENT || 
+      roleForComment === UserRole.ADMIN || 
+      currentUser.appRole === 'admin';
+
+    if (readOnly && !canCommentOverride) {
       showToast({
         title: "Acción no permitida",
         message: "No tienes permisos para agregar comentarios.",
@@ -1748,6 +1758,8 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   // Per-signatory workflow: any signer with a PENDING review task can complete it
   const myPendingSignatoryReview = myReviewTask?.status === "PENDING" && 
     entry.pendingReviewBy === "ALL_SIGNERS";
+
+  const canAddComments = !effectiveReadOnly || isAssignee || isAdmin || !!myReviewTask || isContractorUser || isInterventoriaUser;
   
   // Legacy workflow or new per-signatory workflow
   const canCompleteReview =
@@ -3509,7 +3521,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
             )}
           </div>
           {/* New Comment Form */}
-          {!readOnly && (
+          {(canAddComments) && (
             <div className="pt-4 border-t" onClick={(e) => e.stopPropagation()}>
               <form
                 onSubmit={handleCommentSubmit}
