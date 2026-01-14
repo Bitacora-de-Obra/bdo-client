@@ -243,6 +243,9 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const [isSavingInterventoriaObs, setIsSavingInterventoriaObs] =
     useState(false);
   const [isSendingToContractor, setIsSendingToContractor] = useState(false);
+  // Separate state for new observation inputs (avoid overwriting existing text)
+  const [contractorNoteInput, setContractorNoteInput] = useState("");
+  const [interventoriaNoteInput, setInterventoriaNoteInput] = useState("");
   const [
     isCompletingContractorReview,
     setIsCompletingContractorReview,
@@ -1271,11 +1274,23 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
 
     setIsSavingContractorNotes(true);
     try {
+      const currentObs = (editedEntry.contractorObservations || "").trim();
+      const newObs = contractorNoteInput.trim();
+      
+      let finalObs = currentObs;
+      if (newObs) {
+        const timestamp = new Date().toLocaleString("es-CO");
+        const authorName = currentUser.fullName || "Usuario";
+        const entryText = `[${timestamp}] ${authorName}: ${newObs}`;
+        finalObs = currentObs ? `${currentObs}\n\n${entryText}` : entryText;
+      }
+
       const payload: Partial<LogEntry> = {
-        contractorObservations: (editedEntry.contractorObservations || "").trim(),
+        contractorObservations: finalObs,
       };
       const updatedEntry = await api.logEntries.update(entry.id, payload);
       syncEntryState(updatedEntry);
+      setContractorNoteInput(""); // Clear input after successful save
       await onRefresh();
       showToast({
         variant: "success",
@@ -1308,11 +1323,23 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
 
     setIsSavingInterventoriaObs(true);
     try {
+      const currentObs = (editedEntry.interventoriaObservations || "").trim();
+      const newObs = interventoriaNoteInput.trim();
+      
+      let finalObs = currentObs;
+      if (newObs) {
+        const timestamp = new Date().toLocaleString("es-CO");
+        const authorName = currentUser.fullName || "Usuario";
+        const entryText = `[${timestamp}] ${authorName}: ${newObs}`;
+        finalObs = currentObs ? `${currentObs}\n\n${entryText}` : entryText;
+      }
+
       const payload: Partial<LogEntry> = {
-        interventoriaObservations: (editedEntry.interventoriaObservations || "").trim(),
+        interventoriaObservations: finalObs,
       };
       const updatedEntry = await api.logEntries.update(entry.id, payload);
       syncEntryState(updatedEntry);
+      setInterventoriaNoteInput(""); // Clear input after successful save
       await onRefresh();
       showToast({
         variant: "success",
@@ -3103,16 +3130,11 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                         Como contratista, puedes agregar tus observaciones antes de aprobar.
                       </p>
                       <textarea
-                        value={contractorObservations}
-                        onChange={(e) =>
-                          setEditedEntry((prev) => ({
-                            ...prev,
-                            contractorObservations: e.target.value,
-                          }))
-                        }
+                        value={contractorNoteInput}
+                        onChange={(e) => setContractorNoteInput(e.target.value)}
                         rows={3}
                         className="block w-full border border-yellow-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm p-2"
-                        placeholder="Observaciones del contratista"
+                        placeholder="Escribe tus observaciones aquí..."
                       />
                       <Button
                         variant="primary"
@@ -3156,16 +3178,11 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                         Como interventoría, puedes agregar tus observaciones antes de aprobar.
                       </p>
                       <textarea
-                        value={interventoriaObservations}
-                        onChange={(e) =>
-                          setEditedEntry((prev) => ({
-                            ...prev,
-                            interventoriaObservations: e.target.value,
-                          }))
-                        }
+                        value={interventoriaNoteInput}
+                        onChange={(e) => setInterventoriaNoteInput(e.target.value)}
                         rows={3}
                         className="block w-full border border-blue-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2"
-                        placeholder="Observaciones de la interventoría"
+                        placeholder="Escribe tus observaciones aquí..."
                       />
                       <Button
                         variant="primary"
