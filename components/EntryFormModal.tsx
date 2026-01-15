@@ -758,20 +758,38 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     const safetyNotesItems = linesToItems(safetyNotesText) as LogEntryListItem[];
     
     if (showExtendedSST) {
-       // Siempre guardar estado de accidentalidad (incluso si es negativo)
+       // Build text summary for accident report
+       let accidentText = '[REPORTE ACCIDENTE] Sin novedades';
+       if (sstAccident.hasAccident) {
+         const count = sstAccident.count || (sstAccident.incidents?.length) || 1;
+         if (count === 1) {
+           const first = sstAccident.incidents?.[0] || sstAccident.details;
+           accidentText = `[REPORTE ACCIDENTE] ${first?.severity || ''} - ${first?.injuredName || ''}`;
+         } else {
+           accidentText = `[REPORTE ACCIDENTE] ${count} accidentes reportados`;
+         }
+       }
+       
        safetyNotesItems.push({
-          text: sstAccident.hasAccident 
-             ? `[REPORTE ACCIDENTE] ${sstAccident.details?.severity || ''} - ${sstAccident.details?.injuredName || ''}`
-             : `[REPORTE ACCIDENTE] Sin novedades`,
+          text: accidentText,
           type: 'ACCIDENT_REPORT',
           accidentData: sstAccident
        });
        
-       // Siempre guardar estado de enfermedad
+       // Build text summary for disease report
+       let diseaseText = '[REPORTE ENFERMEDAD] Sin novedades';
+       if (sstDisease.hasDisease) {
+         const count = sstDisease.count || (sstDisease.incidents?.length) || 1;
+         if (count === 1) {
+           const first = sstDisease.incidents?.[0] || sstDisease.details;
+           diseaseText = `[REPORTE ENFERMEDAD] ${first?.officialReport ? 'Oficial' : 'No Oficial'}`;
+         } else {
+           diseaseText = `[REPORTE ENFERMEDAD] ${count} enfermedades reportadas`;
+         }
+       }
+       
        safetyNotesItems.push({
-         text: sstDisease.hasDisease 
-             ? `[REPORTE ENFERMEDAD] ${sstDisease.details?.officialReport ? 'Oficial' : 'No Oficial'}`
-             : `[REPORTE ENFERMEDAD] Sin novedades`,
+         text: diseaseText,
          type: 'DISEASE_REPORT',
          diseaseData: sstDisease
        });

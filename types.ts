@@ -197,36 +197,45 @@ export interface WeatherReport {
   rainEvents: WeatherRainEvent[];
 }
 
+export interface AccidentDetails {
+  severity: 'GRAVE' | 'LEVE' | '';
+  injuredName: string;
+  injuredRole: string;
+  contractorCompany: string;
+  location: string;
+  time: string;
+  description: string;
+  firstAid: boolean;
+  furat: boolean;
+  witnesses: string;
+  technicalResponsible: string;
+  sstResponsible: string;
+  reportedToBoss: boolean;
+  reportedToBossDetails?: { name: string; date: string; time: string };
+  reportedToInterventoria: boolean;
+  reportedToInterventoriaDetails?: { name: string; date: string; time: string };
+}
+
+export interface DiseaseDetails {
+  workerName?: string;
+  officialReport: boolean;
+  notifiedResident: boolean;
+  residentNotification?: { name: string; date: string; time: string };
+  noNotification?: { name: string; date: string; time: string; reason: string };
+}
+
 export interface SSTAccidentData {
   hasAccident: boolean;
-  details?: {
-    severity: 'GRAVE' | 'LEVE' | '';
-    injuredName: string;
-    injuredRole: string;
-    contractorCompany: string;
-    location: string;
-    time: string;
-    description: string;
-    firstAid: boolean;
-    furat: boolean;
-    witnesses: string;
-    technicalResponsible: string;
-    sstResponsible: string;
-    reportedToBoss: boolean;
-    reportedToBossDetails?: { name: string; date: string; time: string };
-    reportedToInterventoria: boolean;
-    reportedToInterventoriaDetails?: { name: string; date: string; time: string };
-  };
+  count?: number;
+  incidents?: AccidentDetails[];
+  details?: AccidentDetails;
 }
 
 export interface SSTDiseaseData {
   hasDisease: boolean;
-  details?: {
-    officialReport: boolean;
-    notifiedResident: boolean;
-    residentNotification?: { name: string; date: string; time: string };
-    noNotification?: { name: string; date: string; time: string; reason: string };
-  };
+  count?: number;
+  incidents?: DiseaseDetails[];
+  details?: DiseaseDetails;
 }
 
 export interface LogEntryListItem {
