@@ -1636,7 +1636,33 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
 
   const workflowStatus = normalizeWorkflowStatusValue(status);
   const statusLabel = workflowStatus as string;
-  const entryTypeValue = type as EntryType;
+  
+  // Normalize entry type to handle both old display values and new Prisma values
+  const normalizeEntryType = (t: string | undefined): EntryType => {
+    if (!t) return EntryType.GENERAL;
+    const typeMap: { [key: string]: EntryType } = {
+      // New Prisma values
+      'SAFETY': EntryType.SAFETY,
+      'ENVIRONMENTAL': EntryType.ENVIRONMENTAL,
+      'SOCIAL': EntryType.SOCIAL,
+      'GENERAL': EntryType.GENERAL,
+      'TECHNICAL': EntryType.TECHNICAL,
+      'ADMINISTRATIVE': EntryType.ADMINISTRATIVE,
+      'QUALITY': EntryType.QUALITY,
+      // Old display values (from backend reverse map)
+      'HSE': EntryType.SAFETY,
+      'Ambiental': EntryType.ENVIRONMENTAL,
+      'Social': EntryType.SOCIAL,
+      'General': EntryType.GENERAL,
+      'Técnica': EntryType.TECHNICAL,
+      'Técnico': EntryType.TECHNICAL,
+      'Administrativo': EntryType.ADMINISTRATIVE,
+      'Calidad': EntryType.QUALITY,
+    };
+    return typeMap[t] || EntryType.GENERAL;
+  };
+
+  const entryTypeValue = normalizeEntryType(type as string);
   const isSpecialType =
     entryTypeValue === EntryType.SAFETY ||
     entryTypeValue === EntryType.ENVIRONMENTAL ||
@@ -1655,7 +1681,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
 
   // DEBUG: Log type values
   console.log('[DETAIL DEBUG] type from entry:', type);
-  console.log('[DETAIL DEBUG] entryTypeValue:', entryTypeValue);
+  console.log('[DETAIL DEBUG] entryTypeValue (normalized):', entryTypeValue);
   console.log('[DETAIL DEBUG] EntryType.SAFETY:', EntryType.SAFETY);
   console.log('[DETAIL DEBUG] isSpecialType:', isSpecialType);
   console.log('[DETAIL DEBUG] showSafetyPanel:', showSafetyPanel);
