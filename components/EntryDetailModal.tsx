@@ -1649,10 +1649,9 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       EntryType.ADMINISTRATIVE,
       EntryType.QUALITY,
     ].includes(entryTypeValue);
-  const showSafetyPanel = entryTypeValue === EntryType.SAFETY && !isSpecialType;
-  const showEnvironmentalPanel =
-    entryTypeValue === EntryType.ENVIRONMENTAL && !isSpecialType;
-  const showSocialPanel = entryTypeValue === EntryType.SOCIAL && !isSpecialType;
+  const showSafetyPanel = entryTypeValue === EntryType.SAFETY;
+  const showEnvironmentalPanel = entryTypeValue === EntryType.ENVIRONMENTAL;
+  const showSocialPanel = entryTypeValue === EntryType.SOCIAL;
   const syncEntryState = (updatedEntry: LogEntry) => {
     applyEntryState(updatedEntry);
     setIsEditing(false);
