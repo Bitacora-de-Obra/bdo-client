@@ -754,7 +754,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
         : socialContractorResponse;
 
     // Build Safety Notes with Extended Data if applicable
-    const showExtendedSST = entryType === EntryType.SAFETY && !isLegacyTenant;
+    const showExtendedSST = entryType === EntryType.SAFETY;
     const safetyNotesItems = linesToItems(safetyNotesText) as LogEntryListItem[];
     
     if (showExtendedSST) {
@@ -943,7 +943,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             />
           </div>
 
-          {entryType === EntryType.SAFETY && !isLegacyTenant && (
+          {entryType === EntryType.SAFETY && (
             <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 mb-6">
                  <h4 className="text-sm font-semibold text-gray-800 mb-4">
                     Reporte de Accidentalidad y Enfermedad Laboral
