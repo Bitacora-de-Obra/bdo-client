@@ -1652,6 +1652,15 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const showSafetyPanel = entryTypeValue === EntryType.SAFETY;
   const showEnvironmentalPanel = entryTypeValue === EntryType.ENVIRONMENTAL;
   const showSocialPanel = entryTypeValue === EntryType.SOCIAL;
+
+  // DEBUG: Log type values
+  console.log('[DETAIL DEBUG] type from entry:', type);
+  console.log('[DETAIL DEBUG] entryTypeValue:', entryTypeValue);
+  console.log('[DETAIL DEBUG] EntryType.SAFETY:', EntryType.SAFETY);
+  console.log('[DETAIL DEBUG] isSpecialType:', isSpecialType);
+  console.log('[DETAIL DEBUG] showSafetyPanel:', showSafetyPanel);
+  console.log('[DETAIL DEBUG] safetyNotes:', safetyNotes);
+
   const syncEntryState = (updatedEntry: LogEntry) => {
     applyEntryState(updatedEntry);
     setIsEditing(false);
