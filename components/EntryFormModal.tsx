@@ -777,6 +777,13 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
        });
     }
 
+    // DEBUG: Log what we're saving
+    console.log('[SST DEBUG] entryType:', entryType);
+    console.log('[SST DEBUG] showExtendedSST:', showExtendedSST);
+    console.log('[SST DEBUG] safetyNotesItems:', JSON.stringify(safetyNotesItems, null, 2));
+    console.log('[SST DEBUG] sstAccident:', JSON.stringify(sstAccident, null, 2));
+    console.log('[SST DEBUG] sstDisease:', JSON.stringify(sstDisease, null, 2));
+
     setIsSaving(true);
     setSaveProgress(0);
     
@@ -946,7 +953,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           {entryType === EntryType.SAFETY && (
             <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 mb-6">
                  <h4 className="text-sm font-semibold text-gray-800 mb-4">
-                    Reporte de Accidentalidad y Enfermedad Laboral
+                    Reporte de Accidentalidad y Enfermedad Laboral (v3)
                  </h4>
                  <p className="text-xs text-gray-500 mb-4">
                       Diligencie esta sección únicamente si se presentaron eventos de accidentalidad o enfermedad laboral.
