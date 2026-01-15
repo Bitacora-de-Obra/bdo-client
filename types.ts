@@ -260,13 +260,13 @@ export enum EntryStatus {
 }
 
 export enum EntryType {
-  GENERAL = 'General',
-  SAFETY = 'HSE',
-  ENVIRONMENTAL = 'Ambiental',
-  SOCIAL = 'Social',
-  QUALITY = 'Calidad',
-  ADMINISTRATIVE = 'Administrativo',
-  TECHNICAL = 'Técnico',
+  GENERAL = 'GENERAL',
+  SAFETY = 'SAFETY',
+  ENVIRONMENTAL = 'ENVIRONMENTAL',
+  SOCIAL = 'SOCIAL',
+  QUALITY = 'QUALITY',
+  ADMINISTRATIVE = 'ADMINISTRATIVE',
+  TECHNICAL = 'TECHNICAL',
 }
 
 export interface LogEntry {
