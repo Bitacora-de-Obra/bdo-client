@@ -758,20 +758,23 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     const safetyNotesItems = linesToItems(safetyNotesText) as LogEntryListItem[];
     
     if (showExtendedSST) {
-       if (sstAccident.hasAccident) {
-          safetyNotesItems.push({
-             text: `[REPORTE ACCIDENTE] ${sstAccident.details?.severity || ''} - ${sstAccident.details?.injuredName || ''}`,
-             type: 'ACCIDENT_REPORT',
-             accidentData: sstAccident
-          });
-       }
-       if (sstDisease.hasDisease) {
-           safetyNotesItems.push({
-             text: `[REPORTE ENFERMEDAD] ${sstDisease.details?.officialReport ? 'Oficial' : 'No Oficial'}`,
-             type: 'DISEASE_REPORT',
-             diseaseData: sstDisease
-           });
-       }
+       // Siempre guardar estado de accidentalidad (incluso si es negativo)
+       safetyNotesItems.push({
+          text: sstAccident.hasAccident 
+             ? `[REPORTE ACCIDENTE] ${sstAccident.details?.severity || ''} - ${sstAccident.details?.injuredName || ''}`
+             : `[REPORTE ACCIDENTE] Sin novedades`,
+          type: 'ACCIDENT_REPORT',
+          accidentData: sstAccident
+       });
+       
+       // Siempre guardar estado de enfermedad
+       safetyNotesItems.push({
+         text: sstDisease.hasDisease 
+             ? `[REPORTE ENFERMEDAD] ${sstDisease.details?.officialReport ? 'Oficial' : 'No Oficial'}`
+             : `[REPORTE ENFERMEDAD] Sin novedades`,
+         type: 'DISEASE_REPORT',
+         diseaseData: sstDisease
+       });
     }
 
     setIsSaving(true);

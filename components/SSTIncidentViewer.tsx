@@ -10,7 +10,17 @@ const SSTIncidentViewer: React.FC<SSTIncidentViewerProps> = ({ type, data }) => 
   
   if (type === 'ACCIDENT') {
     const accident = data as SSTAccidentData;
-    if (!accident.hasAccident || !accident.details) return null;
+    if (!accident.hasAccident) {
+        return (
+          <div className="p-3 rounded-lg border-l-4 border-green-500 bg-green-50 mb-4">
+            <h5 className="font-bold text-sm text-green-800 uppercase flex items-center">
+               ✅ Accidentalidad Laboral: Sin novedades
+            </h5>
+          </div>
+        );
+    }
+    
+    if (!accident.details) return null;
 
     const { details } = accident;
     const isSevere = details.severity === 'GRAVE';
@@ -59,7 +69,16 @@ const SSTIncidentViewer: React.FC<SSTIncidentViewerProps> = ({ type, data }) => 
 
   if (type === 'DISEASE') {
       const disease = data as SSTDiseaseData;
-      if (!disease.hasDisease || !disease.details) return null;
+      if (!disease.hasDisease) {
+          return (
+            <div className="p-3 rounded-lg border-l-4 border-green-500 bg-green-50 mb-4">
+              <h5 className="font-bold text-sm text-green-800 uppercase flex items-center">
+                 ✅ Enfermedad Laboral: Sin novedades
+              </h5>
+            </div>
+          );
+      }
+      if (!disease.details) return null;
       const { details } = disease;
       
       return (
