@@ -2004,6 +2004,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
               {safetyNotes && safetyNotes.length > 0 && (
                  <div className="space-y-4">
                     {safetyNotes.map((item, index) => {
+                        console.log('[SST ITEM DEBUG]', index, 'item:', item, 'type:', item.type, 'accidentData:', item.accidentData, 'diseaseData:', item.diseaseData);
                         if (item.type === 'ACCIDENT_REPORT' && item.accidentData) {
                             return <SSTIncidentViewer key={`sst-acc-${index}`} type="ACCIDENT" data={item.accidentData} />;
                         }
