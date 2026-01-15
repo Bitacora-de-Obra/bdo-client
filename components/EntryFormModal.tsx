@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
-import { LogEntry, EntryStatus, EntryType, User } from "../types";
+import { LogEntry, EntryStatus, EntryType, User, LogEntryListItem } from "../types";
 import Modal from "./ui/Modal";
 import Button from "./ui/Button";
 import Input from "./ui/Input";
@@ -11,6 +11,8 @@ import { compressImages } from "../src/utils/compressImage";
 import { useApi } from "../src/hooks/useApi";
 import api, { CatalogItem } from "../src/services/api";
 import ProgressIndicator from "./ui/ProgressIndicator";
+import SSTIncidentForm from "./SSTIncidentForm";
+import { SSTAccidentData, SSTDiseaseData } from "../types";
 
 interface EntryFormModalProps {
   isOpen: boolean;
@@ -138,6 +140,10 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [saveProgress, setSaveProgress] = useState(0);
 
+  // SST Extended Data State
+  const [sstAccident, setSstAccident] = useState<SSTAccidentData>({ hasAccident: false });
+  const [sstDisease, setSstDisease] = useState<SSTDiseaseData>({ hasDisease: false });
+
   // Camera states for photo capture
   const [showCamera, setShowCamera] = useState(false);
   const [cameraAvailable, setCameraAvailable] = useState(false);
@@ -199,6 +205,8 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     setPhotos([]);
     setValidationError(null);
     setSelectedSignerIds(currentUser ? [currentUser.id] : []);
+    setSstAccident({ hasAccident: false });
+    setSstDisease({ hasDisease: false });
   };
 
   // Camera availability detection
@@ -371,6 +379,8 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
         if (!weatherTemperature && data.weatherTemperature) setWeatherTemperature(data.weatherTemperature);
         if (!weatherNotes && data.weatherNotes) setWeatherNotes(data.weatherNotes);
         if (rainEvents.length === 1 && !rainEvents[0].start && data.rainEvents) setRainEvents(data.rainEvents);
+        if (data.sstAccident) setSstAccident(data.sstAccident);
+        if (data.sstDisease) setSstDisease(data.sstDisease);
         // Puedes agregar más campos si lo necesitas
       } catch {}
     }
@@ -393,10 +403,12 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
       weatherTemperature,
       weatherNotes,
       rainEvents,
+      sstAccident,
+      sstDisease,
       // Puedes agregar más campos si lo necesitas
     };
     localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(draft));
-  }, [entryDate, entryType, title, summary, materialsUsed, activitiesPerformed, additionalObservations, scheduleDay, locationDetails, weatherSummary, weatherTemperature, weatherNotes, rainEvents, isOpen]);
+  }, [entryDate, entryType, title, summary, materialsUsed, activitiesPerformed, additionalObservations, scheduleDay, locationDetails, weatherSummary, weatherTemperature, weatherNotes, rainEvents, sstAccident, sstDisease, isOpen]);
 
   // Calcular día del plazo automáticamente basado en la fecha de inicio del proyecto
   const calculateScheduleDay = (entryDate: string) => {
@@ -741,6 +753,27 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
         ? environmentContractorResponse
         : socialContractorResponse;
 
+    // Build Safety Notes with Extended Data if applicable
+    const showExtendedSST = entryType === EntryType.SAFETY && !isLegacyTenant;
+    const safetyNotesItems = linesToItems(safetyNotesText) as LogEntryListItem[];
+    
+    if (showExtendedSST) {
+       if (sstAccident.hasAccident) {
+          safetyNotesItems.push({
+             text: `[REPORTE ACCIDENTE] ${sstAccident.details?.severity || ''} - ${sstAccident.details?.injuredName || ''}`,
+             type: 'ACCIDENT_REPORT',
+             accidentData: sstAccident
+          });
+       }
+       if (sstDisease.hasDisease) {
+           safetyNotesItems.push({
+             text: `[REPORTE ENFERMEDAD] ${sstDisease.details?.officialReport ? 'Oficial' : 'No Oficial'}`,
+             type: 'DISEASE_REPORT',
+             diseaseData: sstDisease
+           });
+       }
+    }
+
     setIsSaving(true);
     setSaveProgress(0);
     
@@ -781,7 +814,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           scheduledActivities: isSpecialType ? [] : linesToItems(scheduledActivitiesText),
           qualityControls: isSpecialType ? [] : linesToItems(qualityControlsText),
           materialsReceived: isSpecialType ? [] : linesToItems(materialsReceivedText),
-          safetyNotes: isSpecialType ? [] : linesToItems(safetyNotesText),
+          safetyNotes: (isSpecialType && !showExtendedSST) ? [] : safetyNotesItems,
           projectIssues: isSpecialType ? [] : linesToItems(projectIssuesText),
           siteVisits: isSpecialType ? [] : linesToItems(siteVisitsText),
           contractorObservations: isSpecialType ? "" : contractorObservations.trim(),
@@ -1737,6 +1770,22 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
 
         {showSafetySection && (
           <div className="space-y-5 border border-gray-200 rounded-lg p-4 bg-gray-50">
+            {!isLegacyTenant && (
+                <div className="mb-6 border-b border-gray-200 pb-6">
+                    <h4 className="text-sm font-semibold text-gray-800 mb-4">
+                        Reporte de Accidentalidad y Enfermedad Laboral
+                    </h4>
+                    <p className="text-xs text-gray-500 mb-4">
+                        Diligencie esta sección únicamente si se presentaron eventos de accidentalidad o enfermedad laboral.
+                    </p>
+                    <SSTIncidentForm 
+                        accidentData={sstAccident}
+                        onChangeAccident={setSstAccident}
+                        diseaseData={sstDisease}
+                        onChangeDisease={setSstDisease}
+                    />
+                </div>
+            )}
             <h4 className="text-sm font-semibold text-gray-800">
               Componente SST (SST y MEV)
             </h4>

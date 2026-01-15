@@ -26,6 +26,7 @@ import {
   PaperClipIcon,
   DocumentArrowDownIcon,
 } from "./icons/Icon";
+import SSTIncidentViewer from "./SSTIncidentViewer";
 import SignatureBlock from "./SignatureBlock";
 import SignatureModal from "./SignatureModal";
 import { useToast } from "./ui/ToastProvider";
@@ -1993,6 +1994,22 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                   Componente SST (SST y MEV)
                 </h4>
               </div>
+              
+              {/* Extended SST Reports */}
+              {safetyNotes && safetyNotes.length > 0 && (
+                 <div className="space-y-4">
+                    {safetyNotes.map((item, index) => {
+                        if (item.type === 'ACCIDENT_REPORT' && item.accidentData) {
+                            return <SSTIncidentViewer key={`sst-acc-${index}`} type="ACCIDENT" data={item.accidentData} />;
+                        }
+                        if (item.type === 'DISEASE_REPORT' && item.diseaseData) {
+                            return <SSTIncidentViewer key={`sst-dis-${index}`} type="DISEASE" data={item.diseaseData} />;
+                        }
+                        return null;
+                    })}
+                 </div>
+              )}
+
               <div>
                 <p className="text-sm font-semibold text-gray-700">
                   Observaciones de la interventoría

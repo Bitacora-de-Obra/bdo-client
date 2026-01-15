@@ -197,8 +197,43 @@ export interface WeatherReport {
   rainEvents: WeatherRainEvent[];
 }
 
+export interface SSTAccidentData {
+  hasAccident: boolean;
+  details?: {
+    severity: 'GRAVE' | 'LEVE' | '';
+    injuredName: string;
+    injuredRole: string;
+    contractorCompany: string;
+    location: string;
+    time: string;
+    description: string;
+    firstAid: boolean;
+    furat: boolean;
+    witnesses: string;
+    technicalResponsible: string;
+    sstResponsible: string;
+    reportedToBoss: boolean;
+    reportedToBossDetails?: { name: string; date: string; time: string };
+    reportedToInterventoria: boolean;
+    reportedToInterventoriaDetails?: { name: string; date: string; time: string };
+  };
+}
+
+export interface SSTDiseaseData {
+  hasDisease: boolean;
+  details?: {
+    officialReport: boolean;
+    notifiedResident: boolean;
+    residentNotification?: { name: string; date: string; time: string };
+    noNotification?: { name: string; date: string; time: string; reason: string };
+  };
+}
+
 export interface LogEntryListItem {
   text: string;
+  type?: 'ACCIDENT_REPORT' | 'DISEASE_REPORT';
+  accidentData?: SSTAccidentData;
+  diseaseData?: SSTDiseaseData;
 }
 
 export interface PersonnelEntry {
