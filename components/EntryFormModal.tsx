@@ -940,6 +940,23 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             />
           </div>
 
+          {entryType === EntryType.SAFETY && !isLegacyTenant && (
+            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 mb-6">
+                 <h4 className="text-sm font-semibold text-gray-800 mb-4">
+                    Reporte de Accidentalidad y Enfermedad Laboral
+                 </h4>
+                 <p className="text-xs text-gray-500 mb-4">
+                      Diligencie esta sección únicamente si se presentaron eventos de accidentalidad o enfermedad laboral.
+                 </p>
+                 <SSTIncidentForm 
+                    accidentData={sstAccident}
+                    onChangeAccident={setSstAccident}
+                    diseaseData={sstDisease}
+                    onChangeDisease={setSstDisease}
+                 />
+            </div>
+          )}
+
           <div>
             <h4 className="text-sm font-semibold text-gray-800 mb-1">
               {contractorLabel}
