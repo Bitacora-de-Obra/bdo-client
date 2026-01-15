@@ -1823,19 +1823,6 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     !isInterventoriaUser &&
     (isAuthorInterventoria || hasPendingReviewTask);
   
-  // DEBUG: Log all conditions for contractor observations editing
-  console.log("🔍 DEBUG canEditContractorResponses:", {
-    canEditContractorResponses,
-    canEditObservationsStatus,
-    hasCompletedSignatures,
-    workflowStatus,
-    isContractorUser,
-    isAuthorInterventoria,
-    entryContractorObservations: !!entry.contractorObservations,
-    authorRole,
-    normalizedCurrentProjectRole
-  });
-  
   // Interventoría can edit their observations when:
   // 1. Status is SUBMITTED or APPROVED (before signing is complete)
   // 2. AND no signatures have been completed yet
@@ -1848,22 +1835,6 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     isInterventoriaUser &&
     !isContractorUser &&
     (isAuthorContractor || hasPendingReviewTask);
-
-  // DEBUG: Log all conditions for interventoría observations editing
-  console.log("🔍 DEBUG canEditInterventoriaResponses:", {
-    canEditInterventoriaResponses,
-    canEditObservationsStatus,
-    hasCompletedSignatures,
-    workflowStatus,
-    isInterventoriaUser,
-    isContractorUser,
-    isAuthorContractor,
-    entryInterventoriaObservations: !!entry.interventoriaObservations,
-    authorRole,
-    normalizedCurrentProjectRole,
-    currentUserProjectRole: currentUser.projectRole,
-    authorProjectRole: author?.projectRole
-  });
 
   const workflowActionButtons: React.ReactNode[] = [];
 
