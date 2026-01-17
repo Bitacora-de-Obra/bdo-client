@@ -799,6 +799,7 @@ export const logEntriesApi = {
       (data as any).socialContractorResponse
     );
     appendIfDefined("socialPhotoSummary", (data as any).socialPhotoSummary);
+    appendJson("socialTramos", (data as any).socialTramos);
 
     const serializeUsers = (users?: Array<Partial<User> | string>) => {
       if (!users || users.length === 0) {

@@ -238,6 +238,54 @@ export interface SSTDiseaseData {
   details?: DiseaseDetails;
 }
 
+// Social Logbook - Per-segment data structures
+export interface PQRSD {
+  origin: 'CAMPO' | 'OFICINA';
+  quantity: number;
+  subject: string;
+  status: 'ABIERTA' | 'CERRADA';
+}
+
+export interface SocialTramoData {
+  tramoId: string;
+  tramoName: string;
+  
+  // 1. PQRSD Recibidas
+  pqrsds: PQRSD[];
+  
+  // 2. Acta de Compromiso
+  actaCompromiso: {
+    required: boolean;
+    actaNumber?: string;
+    subject?: string;
+  };
+  
+  // 3. Articulación Interinstitucional
+  articulacion: {
+    performed: boolean;
+    entity?: string;
+    subject?: string;
+  };
+  
+  // 4. Vallas Móviles
+  vallasMobiles: boolean;
+  
+  // 5. Volantes
+  volantes: {
+    delivered: boolean;
+    number?: string;
+    type?: string;
+    quantity?: number;
+  };
+  
+  // 6. PSI (Instalación/Actualización)
+  psi: {
+    installed: boolean;
+    location?: string;
+    piece?: string;
+  };
+}
+
 export interface LogEntryListItem {
   text: string;
   type?: 'ACCIDENT_REPORT' | 'DISEASE_REPORT';
@@ -314,6 +362,7 @@ export interface LogEntry {
   socialObservations: string;
   socialContractorResponse: string;
   socialPhotoSummary: string;
+  socialTramos?: SocialTramoData[]; // Multi-segment social data
   contractorReviewCompleted?: boolean;
   contractorReviewCompletedAt?: string | null;
   contractorReviewer?: User | null;

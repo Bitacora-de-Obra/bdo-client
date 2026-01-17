@@ -27,6 +27,7 @@ import {
   DocumentArrowDownIcon,
 } from "./icons/Icon";
 import SSTIncidentViewer from "./SSTIncidentViewer";
+import SocialTramoViewer from "./SocialTramoViewer";
 import SignatureBlock from "./SignatureBlock";
 import SignatureModal from "./SignatureModal";
 import { useToast } from "./ui/ToastProvider";
@@ -1623,6 +1624,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     socialObservations = "",
     socialContractorResponse = "",
     socialPhotoSummary = "",
+    socialTramos = [],
     type,
     status,
     isConfidential,
@@ -2095,12 +2097,18 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
             <div className="border border-gray-200 rounded-lg p-4 space-y-4 shadow-sm bg-white">
               <div>
                 <h4 className="text-md font-semibold text-gray-800">
-                  Componente social
+                  Componente Social
                 </h4>
                 <p className="text-sm text-gray-500">
-                  Registro diario de actividades, soporte fotográfico y observaciones.
+                  Registro por tramo, actividades diarias, soporte fotográfico y observaciones.
                 </p>
               </div>
+              
+              {/* Tramos Data */}
+              {socialTramos && socialTramos.length > 0 && (
+                <SocialTramoViewer tramos={socialTramos} />
+              )}
+              
               <div>
                 <p className="text-sm font-semibold text-gray-700">
                   Registro diario de actividades

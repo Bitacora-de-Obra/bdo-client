@@ -106,3 +106,8 @@ storybook-static/
 secrets/
 *.pem
 *.key
+
+# Excel docs with sensitive info
+docs/Info Bitácora.xlsx
+docs/PK_ID.csv
+docs/bitacorasocial.docx
