@@ -1022,7 +1022,26 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                 selectedIds={socialTramos.map(t => t.tramoId)}
                 variant="purple"
                 label="Localización / Tramo (seleccione en cascada)"
+                showSelectAll={true}
+                onSelectAll={() => {
+                  // For Social, add a single "All tramos" entry
+                  // Use a special ID to mark it as "all"
+                  setSocialTramos([{
+                    tramoId: 'ALL_TRAMOS',
+                    tramoName: 'Todos los tramos',
+                    pqrsds: [],
+                    actaCompromiso: { required: false },
+                    articulacion: { performed: false },
+                    vallasMobiles: false,
+                    volantes: { delivered: false },
+                    psi: { installed: false }
+                  }]);
+                }}
                 onAdd={(catalogItem) => {
+                  // Don't allow adding if "All" is already selected
+                  if (socialTramos.find(t => t.tramoId === 'ALL_TRAMOS')) {
+                    return;
+                  }
                   setSocialTramos([...socialTramos, {
                     tramoId: catalogItem.id,
                     tramoName: catalogItem.name,
