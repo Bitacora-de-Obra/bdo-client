@@ -364,12 +364,17 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
       };
     }
     try {
-      const updatedEntry = await api.logEntries.addSignature(documentId, {
+      const response = await api.logEntries.addSignature(documentId, {
         signerId: signer.id,
         password: payload.password,
         consent: payload.consent,
         consentStatement: payload.consentStatement,
       });
+
+      // Fix: The backend returns { entry: LogEntry, ... } wrapper, not the entry directly
+      // We need to extract the entry object to update the local state correctly
+      // @ts-ignore - The api type definition might need update, but runtime returns wrapper
+      const updatedEntry = response.entry || response;
 
       setSelectedEntry(updatedEntry);
       refetchLogEntries();
