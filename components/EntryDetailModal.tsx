@@ -1671,7 +1671,8 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const isSpecialType =
     entryTypeValue === EntryType.SAFETY ||
     entryTypeValue === EntryType.ENVIRONMENTAL ||
-    entryTypeValue === EntryType.SOCIAL;
+    entryTypeValue === EntryType.SOCIAL ||
+    entryTypeValue === EntryType.MEV;
 
   const showGeneralSections = !isSpecialType &&
     [
@@ -3199,6 +3200,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
           </div>
           )}
 
+          {!showMevPanel && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
               <h4 className="text-md font-semibold text-gray-800">
@@ -3297,8 +3299,9 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
               )}
             </div>
           </div>
+          )}
 
-        {!isSpecialType && (
+        {(!isSpecialType || showMevPanel) && (
           <div>
             <h4 className="text-md font-semibold text-gray-800">
               Observaciones adicionales
