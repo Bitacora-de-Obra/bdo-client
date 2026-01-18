@@ -184,7 +184,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
       "director",
       // @ts-ignore
       UserRole.DIRECTOR, // Safe fallback
-    ].includes(currentUser?.projectRole as any);
+    ].includes(currentUser?.projectRole as any) || currentUser?.entity === 'INTERVENTORIA';
 
   const isAdmin = currentUser?.appRole === "admin" || currentUser?.projectRole === UserRole.ADMIN;
 
