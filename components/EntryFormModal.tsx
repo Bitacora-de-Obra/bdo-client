@@ -169,6 +169,13 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
 
   const isAdmin = currentUser?.appRole === "admin" || currentUser?.projectRole === UserRole.ADMIN;
 
+  // Temporary selection state for cascading dropdowns
+  const [tempTramoSelection, setTempTramoSelection] = useState<{
+    troncal: string;
+    civ: string;
+    pk: string;
+  }>({ troncal: '', civ: '', pk: '' });
+
   const SAVE_STEPS = [
     { message: 'Validando datos...', percentage: 20 },
     { message: 'Subiendo archivos...', percentage: 50 },
@@ -1009,18 +1016,123 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
               </h4>
               
               <div className="p-4 bg-purple-100 rounded-lg border border-purple-200">
-                <label className="block text-sm font-semibold text-purple-800 mb-2">
-                  Localización / Tramo (seleccione los tramos visitados)
+                <label className="block text-sm font-semibold text-purple-800 mb-3">
+                  Localización / Tramo (seleccione en cascada)
                 </label>
-                <select
-                  className="w-full border border-purple-300 rounded-md p-2 mb-2 bg-white"
-                  onChange={(e) => {
-                    const selectedId = e.target.value;
-                    if (!selectedId) return;
-                    const catalogItem = locationSegmentCatalog.find(c => c.id === selectedId);
-                    if (catalogItem && !socialTramos.find(t => t.tramoId === selectedId)) {
+                
+                {/* Cascading Dropdowns */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                  {/* Troncal Selector */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Troncal</label>
+                    <select
+                      className="w-full border border-purple-300 rounded-md p-2 bg-white text-sm"
+                      value={tempTramoSelection.troncal || ''}
+                      onChange={(e) => {
+                        setTempTramoSelection({
+                          troncal: e.target.value,
+                          civ: '',
+                          pk: ''
+                        });
+                      }}
+                    >
+                      <option value="">Seleccionar troncal...</option>
+                      {(() => {
+                        // Extract unique troncales from catalog
+                        const troncalesSet = new Set<string>();
+                        locationSegmentCatalog.forEach(item => {
+                          const match = item.name.match(/^([^-]+) - CIV/);
+                          if (match) troncalesSet.add(match[1].trim());
+                        });
+                        return Array.from(troncalesSet).sort().map(troncal => (
+                          <option key={troncal} value={troncal}>{troncal}</option>
+                        ));
+                      })()}
+                    </select>
+                  </div>
+
+                  {/* CIV Selector */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">CIV</label>
+                    <select
+                      className="w-full border border-purple-300 rounded-md p-2 bg-white text-sm"
+                      value={tempTramoSelection.civ || ''}
+                      onChange={(e) => {
+                        setTempTramoSelection({
+                          ...tempTramoSelection,
+                          civ: e.target.value,
+                          pk: ''
+                        });
+                      }}
+                      disabled={!tempTramoSelection.troncal}
+                    >
+                      <option value="">Seleccionar CIV...</option>
+                      {tempTramoSelection.troncal && (() => {
+                        // Extract unique CIVs for selected troncal
+                        const civsSet = new Set<string>();
+                        locationSegmentCatalog.forEach(item => {
+                          if (item.name.startsWith(tempTramoSelection.troncal!)) {
+                            const match = item.name.match(/CIV (\d+)/);
+                            if (match) civsSet.add(match[1]);
+                          }
+                        });
+                        return Array.from(civsSet).sort().map(civ => (
+                          <option key={civ} value={civ}>CIV {civ}</option>
+                        ));
+                      })()}
+                    </select>
+                  </div>
+
+                  {/* PK Selector */}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">PK</label>
+                    <select
+                      className="w-full border border-purple-300 rounded-md p-2 bg-white text-sm"
+                      value={tempTramoSelection.pk || ''}
+                      onChange={(e) => {
+                        setTempTramoSelection({
+                          ...tempTramoSelection,
+                          pk: e.target.value
+                        });
+                      }}
+                      disabled={!tempTramoSelection.civ}
+                    >
+                      <option value="">Seleccionar PK...</option>
+                      {tempTramoSelection.troncal && tempTramoSelection.civ && (() => {
+                        // Extract PKs for selected troncal and CIV
+                        return locationSegmentCatalog
+                          .filter(item => 
+                            item.name.startsWith(tempTramoSelection.troncal!) &&
+                            item.name.includes(`CIV ${tempTramoSelection.civ}`)
+                          )
+                          .map(item => {
+                            const match = item.name.match(/PK (\S+)$/);
+                            return match ? { id: item.id, pk: match[1], name: item.name } : null;
+                          })
+                          .filter(Boolean)
+                          .map(item => (
+                            <option key={item!.id} value={item!.pk}>PK {item!.pk}</option>
+                          ));
+                      })()}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Add Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!tempTramoSelection.troncal || !tempTramoSelection.civ || !tempTramoSelection.pk) {
+                      return;
+                    }
+                    
+                    // Find the full catalog item
+                    const fullName = `${tempTramoSelection.troncal} - CIV ${tempTramoSelection.civ} - PK ${tempTramoSelection.pk}`;
+                    const catalogItem = locationSegmentCatalog.find(c => c.name === fullName);
+                    
+                    if (catalogItem && !socialTramos.find(t => t.tramoId === catalogItem.id)) {
                       setSocialTramos([...socialTramos, {
-                        tramoId: selectedId,
+                        tramoId: catalogItem.id,
                         tramoName: catalogItem.name,
                         pqrsds: [],
                         actaCompromiso: { required: false },
@@ -1029,20 +1141,18 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                         volantes: { delivered: false },
                         psi: { installed: false }
                       }]);
+                      // Reset selection
+                      setTempTramoSelection({ troncal: '', civ: '', pk: '' });
                     }
-                    e.target.value = '';
                   }}
+                  disabled={!tempTramoSelection.troncal || !tempTramoSelection.civ || !tempTramoSelection.pk}
+                  className="w-full bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
                 >
-                  <option value="">+ Agregar tramo...</option>
-                  {locationSegmentCatalog
-                    .filter(c => !socialTramos.find(t => t.tramoId === c.id))
-                    .map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))
-                  }
-                </select>
+                  + Agregar Tramo
+                </button>
+
                 {socialTramos.length === 0 && (
-                  <p className="text-sm text-purple-600">Seleccione al menos un tramo para registrar la información social.</p>
+                  <p className="text-sm text-purple-600 mt-2">Seleccione al menos un tramo para registrar la información social.</p>
                 )}
               </div>
               
