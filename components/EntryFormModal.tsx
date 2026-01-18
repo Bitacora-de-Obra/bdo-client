@@ -1398,12 +1398,15 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                 label="Localización / Tramo(s)"
                 showSelectAll={true}
                 onSelectAll={() => {
-                  // Add all tramos to locationDetails
-                  const allTramos = locationSegmentCatalog.map(c => c.name).join(', ');
-                  setLocationDetails(allTramos);
+                  // Add a single "All tramos" marker instead of listing all
+                  setLocationDetails('Todos los tramos');
                 }}
                 onAdd={(catalogItem) => {
                   const current = locationDetails.split(',').map(s => s.trim()).filter(Boolean);
+                  // Don't allow adding individual tramos if "All" is selected
+                  if (current.includes('Todos los tramos')) {
+                    return; // Ignore, already covers all
+                  }
                   if (!current.includes(catalogItem.name)) {
                     setLocationDetails([...current, catalogItem.name].join(', '));
                   }
