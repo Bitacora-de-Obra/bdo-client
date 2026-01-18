@@ -1012,7 +1012,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             />
           </div>
 
-          {((entryType as any) === EntryType.ENVIRONMENTAL || (entryType as any) === EntryType.MEV) && (
+          {(entryType as any) === EntryType.MEV && (
             <div className="mb-6">
               {isLegacyTenant ? (
                 <Input
