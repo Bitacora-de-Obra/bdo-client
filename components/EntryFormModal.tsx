@@ -1085,11 +1085,11 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                     <textarea
                       value={socialObservations}
                       onChange={(e) => setSocialObservations(e.target.value)}
-                      disabled={!isInterventor && !isAdmin}
-                      title={!isInterventor && !isAdmin ? "Solo la interventoría puede editar este campo" : ""}
+                      disabled={!isInterventor}
+                      title={!isInterventor ? "Solo la interventoría puede editar este campo" : ""}
                       placeholder="Espacio reservado para el interventor/supervisor."
                       rows={3}
-                      className={`block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2 ${(!isInterventor && !isAdmin) ? 'bg-gray-100 text-gray-500' : ''}`}
+                      className={`block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2 ${(!isInterventor) ? 'bg-gray-100 text-gray-500' : ''}`}
                     />
                   </div>
                 </div>

@@ -2114,7 +2114,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                   Registro diario de actividades
                 </p>
                 {isEditing ? (
-                  !isInterventoriaUser || isAdmin ? (
+                  !isInterventoriaUser ? (
                     <textarea
                       value={listToPlainText(socialActivities)}
                       onChange={(e) =>
@@ -2150,7 +2150,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                   Observaciones de la interventoría
                 </p>
                 {isEditing ? (
-                  isInterventoriaUser || isAdmin ? (
+                  isInterventoriaUser ? (
                     <textarea
                       name="socialObservations"
                       value={socialObservations}
