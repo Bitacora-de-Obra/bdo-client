@@ -607,6 +607,12 @@ export const adminApi = {
       body: JSON.stringify({ category, name }),
     });
   },
+  createCatalogItems: async (items: { category: string; name: string }[]) => {
+    return apiFetch(`/catalogs/bulk`, {
+      method: "POST",
+      body: JSON.stringify({ items }),
+    });
+  },
   deleteCatalogItem: async (id: string) => {
     return apiFetch(`/catalogs/${id}`, {
       method: "DELETE",

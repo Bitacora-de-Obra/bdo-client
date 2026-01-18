@@ -16,6 +16,8 @@ const APP_ROLE_OPTIONS: { value: AppRole; label: string }[] = [
   { value: "admin", label: "Admin" },
 ];
 
+import InfrastructureManager from "./InfrastructureManager";
+
 const PROJECT_ROLE_OPTIONS: { value: string; label: string; entity: string }[] = [
   { value: "IDU", label: "IDU", entity: "IDU" },
   { value: "Interventoría", label: "Interventoría", entity: "INTERVENTORIA" },
@@ -99,7 +101,7 @@ type SettingsViewProps = {
 };
 
 const AdminDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<"users" | "audit" | "settings" | "catalogs">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "audit" | "settings" | "catalogs" | "infrastructure">("users");
 
   const admin = useAdminApi();
   const { showToast } = useToast();
@@ -109,6 +111,7 @@ const AdminDashboard: React.FC = () => {
         const allTabs = [
             { id: "users", label: "Usuarios y Permisos" },
             { id: "catalogs", label: "Catálogos" },
+            { id: "infrastructure", label: "Infraestructura" },
             { id: "audit", label: "Registro de Auditoría" },
             { id: "settings", label: "Configuración" },
         ];
@@ -150,7 +153,7 @@ const AdminDashboard: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() =>
-                  setActiveTab(tab.id as "users" | "audit" | "settings" | "catalogs")
+                  setActiveTab(tab.id as "users" | "audit" | "settings" | "catalogs" | "infrastructure")
                 }
                 className={`${
                   activeTab === tab.id
@@ -244,6 +247,10 @@ const AdminDashboard: React.FC = () => {
               )}
             </div>
 
+
+          )}
+          {activeTab === "infrastructure" && (
+             <InfrastructureManager />
           )}
         </div>
       </div>
