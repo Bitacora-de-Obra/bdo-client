@@ -307,6 +307,19 @@ export interface EquipmentResourceEntry {
 
 
 // LOGBOOK ENTRIES (ANOTACIONES)
+export interface EnvironmentalDetail {
+  sewerProtection: string;
+  materialStorage: string;
+  cleanliness: string;
+  coveredTrucks: string;
+  greenZones: string;
+  treeProtection: string;
+  upsCount: string;
+  enclosure: string;
+  emergency: boolean;
+  emergencyDescription: string;
+}
+
 export enum EntryStatus {
   DRAFT = 'Borrador',
   SUBMITTED = 'Revisión contratista',
@@ -367,6 +380,9 @@ export interface LogEntry {
   
   // MEV (Maquinaria y Equipos)
   mevNovelties?: string | null;
+
+  // Environmental
+  environmentalDetail?: EnvironmentalDetail | null;
   
   contractorReviewCompleted?: boolean;
   contractorReviewCompletedAt?: string | null;

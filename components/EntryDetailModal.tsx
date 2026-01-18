@@ -12,6 +12,7 @@ import {
   SignatureConsentPayload,
   ReviewTask,
   Comment,
+  EnvironmentalDetail,
 } from "../types";
 import Modal from "./ui/Modal";
 import Badge from "./ui/Badge";
@@ -1626,6 +1627,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     socialPhotoSummary = "",
     socialTramos = [],
     mevNovelties = null,
+    environmentalDetail = null,
     type,
     status,
     isConfidential,
@@ -2095,6 +2097,31 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                   {environmentContractorResponse || "Sin respuesta registrada."}
                 </p>
               </div>
+
+              
+              {isContractorUser && environmentalDetail && (
+                <div className="mt-4 border-t pt-4">
+                  <h5 className="text-sm font-bold text-gray-800 mb-3 bg-green-50 p-2 rounded">
+                    3. ESTADO DE COMPONENTES (Control interno Contratista)
+                  </h5>
+                  <div className="space-y-2 text-sm text-gray-700 grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+                     <p><strong>Alcantarillado/Sumideros:</strong> <span className={environmentalDetail.sewerProtection === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{environmentalDetail.sewerProtection}</span></p>
+                     <p><strong>Manejo de acopios/RCD:</strong> <span className={environmentalDetail.materialStorage === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{environmentalDetail.materialStorage}</span></p>
+                     <p><strong>Orden y aseo:</strong> <span className={environmentalDetail.cleanliness === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{environmentalDetail.cleanliness}</span></p>
+                     <p><strong>Carpado/Llantas:</strong> <span className={environmentalDetail.coveredTrucks === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{environmentalDetail.coveredTrucks}</span></p>
+                     <p><strong>Zonas verdes:</strong> <span className={environmentalDetail.greenZones === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{environmentalDetail.greenZones}</span></p>
+                     <p><strong>Protección árboles:</strong> <span className={environmentalDetail.treeProtection === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{environmentalDetail.treeProtection}</span></p>
+                     <p><strong>Cerramiento:</strong> <span className={environmentalDetail.enclosure === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{environmentalDetail.enclosure}</span></p>
+                     <p><strong>Cantidad UPS:</strong> {environmentalDetail.upsCount || '0'}</p>
+                     <div className="col-span-1 sm:col-span-2 mt-2">
+                       <p><strong>¿Emergencias?:</strong> {environmentalDetail.emergency ? <span className="text-red-600 font-bold">SI</span> : 'NO'}</p>
+                       {environmentalDetail.emergency && (
+                          <p className="mt-1 p-2 bg-red-50 rounded border border-red-100 text-red-800 italic">{environmentalDetail.emergencyDescription}</p>
+                       )}
+                     </div>
+                  </div>
+                </div>
+              )}
             </div>
             )}
 

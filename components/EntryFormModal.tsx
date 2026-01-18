@@ -13,7 +13,7 @@ import api, { CatalogItem } from "../src/services/api";
 import ProgressIndicator from "./ui/ProgressIndicator";
 import SSTIncidentForm from "./SSTIncidentForm";
 import SocialTramoForm from "./SocialTramoForm";
-import { SSTAccidentData, SSTDiseaseData, SocialTramoData } from "../types";
+import { SSTAccidentData, SSTDiseaseData, SocialTramoData, EnvironmentalDetail } from "../types";
 import { CascadingLocationSelector } from "./CascadingLocationSelector";
 
 interface EntryFormModalProps {
@@ -152,6 +152,20 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   // MEV (Maquinaria y Equipos) State
   const [mevHasNovelties, setMevHasNovelties] = useState(false);
   const [mevNovelties, setMevNovelties] = useState('');
+  
+  // Environmental State
+  const [envDetail, setEnvDetail] = useState<EnvironmentalDetail>({
+    sewerProtection: 'CUMPLE',
+    materialStorage: 'CUMPLE',
+    cleanliness: 'CUMPLE',
+    coveredTrucks: 'CUMPLE',
+    greenZones: 'CUMPLE',
+    treeProtection: 'CUMPLE',
+    upsCount: '',
+    enclosure: 'CUMPLE',
+    emergency: false,
+    emergencyDescription: ''
+  });
 
   // Camera states for photo capture
   const [showCamera, setShowCamera] = useState(false);
@@ -894,6 +908,9 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           mevNovelties: entryType === EntryType.MEV 
             ? (mevHasNovelties ? mevNovelties.trim() : null) 
             : null,
+
+          // Environmental Detail
+          environmentalDetail: entryType === EntryType.ENVIRONMENTAL ? envDetail : null,
           
           activityStartDate: startOfDay.toISOString(),
           activityEndDate: endOfDay.toISOString(),
@@ -2014,6 +2031,73 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                 />
               </div>
             </div>
+
+            
+            {!isInterventor && (
+              <div className="mt-4 border-t pt-4">
+                <h5 className="text-sm font-bold text-gray-800 mb-3 bg-green-50 p-2 rounded">
+                  3. ESTADO DE COMPONENTES (Control interno Contratista)
+                </h5>
+                <div className="space-y-3">
+                  {[
+                    { key: 'sewerProtection', label: 'Protección a sistema alcantarillado y sumideros' },
+                    { key: 'materialStorage', label: 'Adecuado manejo de acopios de materiales y RCD' },
+                    { key: 'cleanliness', label: 'Orden y aseo en campamentos y frentes de obra' },
+                    { key: 'coveredTrucks', label: 'Carpado de volquetas y llantas limpias' },
+                    { key: 'greenZones', label: 'Zonas verdes libres de materiales y equipos' },
+                    { key: 'treeProtection', label: 'Protección de arboles' },
+                    { key: 'enclosure', label: 'Cerramiento de obra' },
+                  ].map((item) => (
+                    <div key={item.key} className="flex items-center justify-between border-b border-gray-100 pb-1">
+                      <span className="text-sm text-gray-700">{item.label}</span>
+                      <select
+                        className="w-40 border border-gray-300 rounded-md p-1 text-sm form-select"
+                        value={(envDetail as any)[item.key]}
+                        onChange={(e) => setEnvDetail(prev => ({ ...prev, [item.key]: e.target.value }))}
+                      >
+                        <option value="CUMPLE">Cumple</option>
+                        <option value="NO_CUMPLE">No Cumple</option>
+                        <option value="NA">No Aplica</option>
+                      </select>
+                    </div>
+                  ))}
+
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-1 pt-2">
+                    <span className="text-sm text-gray-700">Cantidad de UPS</span>
+                    <input
+                      type="number"
+                      value={envDetail.upsCount}
+                      onChange={(e) => setEnvDetail(prev => ({ ...prev, upsCount: e.target.value }))}
+                      className="w-40 border border-gray-300 rounded-md p-1 text-sm"
+                      placeholder="#"
+                    />
+                  </div>
+
+                  <div className="pt-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-700 font-medium">¿Se presentaron emergencias ambientales?</span>
+                      <select
+                        className="w-40 border border-gray-300 rounded-md p-1 text-sm"
+                        value={envDetail.emergency ? 'SI' : 'NO'}
+                        onChange={(e) => setEnvDetail(prev => ({ ...prev, emergency: e.target.value === 'SI' }))}
+                      >
+                         <option value="NO">No</option>
+                         <option value="SI">Sí</option>
+                      </select>
+                    </div>
+                    {envDetail.emergency && (
+                      <textarea
+                        value={envDetail.emergencyDescription}
+                        onChange={(e) => setEnvDetail(prev => ({ ...prev, emergencyDescription: e.target.value }))}
+                        rows={2}
+                        className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                        placeholder="Descripción de la emergencia..."
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
