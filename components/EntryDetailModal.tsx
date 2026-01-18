@@ -1625,6 +1625,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     socialContractorResponse = "",
     socialPhotoSummary = "",
     socialTramos = [],
+    mevNovelties = null,
     type,
     status,
     isConfidential,
@@ -1651,6 +1652,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       'TECHNICAL': EntryType.TECHNICAL,
       'ADMINISTRATIVE': EntryType.ADMINISTRATIVE,
       'QUALITY': EntryType.QUALITY,
+      'MEV': EntryType.MEV,
       // Old display values (from backend reverse map)
       'HSE': EntryType.SAFETY,
       'Ambiental': EntryType.ENVIRONMENTAL,
@@ -1660,6 +1662,8 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       'Técnico': EntryType.TECHNICAL,
       'Administrativo': EntryType.ADMINISTRATIVE,
       'Calidad': EntryType.QUALITY,
+      'Maquinaria y Equipos (MEV)': EntryType.MEV,
+      'MEV': EntryType.MEV,
     };
     return typeMap[t] || EntryType.GENERAL;
   };
@@ -1680,6 +1684,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const showSafetyPanel = entryTypeValue === EntryType.SAFETY;
   const showEnvironmentalPanel = entryTypeValue === EntryType.ENVIRONMENTAL;
   const showSocialPanel = entryTypeValue === EntryType.SOCIAL;
+  const showMevPanel = entryTypeValue === EntryType.MEV;
 
   // DEBUG: Log type values
   console.log('[DETAIL DEBUG] type from entry:', type);
@@ -2180,6 +2185,62 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
           </div>
           )}
           
+            {showMevPanel && (
+              <div className="border border-gray-200 rounded-lg p-4 space-y-4 shadow-sm bg-white">
+                <div>
+                  <h4 className="text-md font-semibold text-gray-800">
+                    Maquinaria y Equipos (MEV)
+                  </h4>
+                  <p className="text-sm text-gray-500">
+                    Reporte de novedades.
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-700">
+                    Novedades registradas
+                  </p>
+                  {isEditing ? (
+                     <div className="space-y-3">
+                        <label className="flex items-center space-x-2">
+                           <input 
+                             type="checkbox"
+                             className="h-4 w-4 text-brand-primary border-gray-300 rounded focus:ring-brand-primary"
+                             checked={mevNovelties !== null}
+                             onChange={(e) => {
+                                setEditedEntry(prev => ({
+                                   ...prev,
+                                   mevNovelties: e.target.checked ? (mevNovelties || "Novedad registrada.") : null
+                                }));
+                             }}
+                           />
+                           <span className="text-sm text-gray-700">Reportar novedad</span>
+                        </label>
+                        {mevNovelties !== null && (
+                            <textarea
+                              value={mevNovelties || ""}
+                              onChange={(e) =>
+                                setEditedEntry((prev) => ({
+                                  ...prev,
+                                  mevNovelties: e.target.value,
+                                }))
+                              }
+                              rows={4}
+                              className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                              placeholder="Describe las novedades..."
+                            />
+                        )}
+                     </div>
+                  ) : (
+                    <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-md text-sm text-gray-800">
+                      {mevNovelties ? mevNovelties : (
+                         <span className="text-gray-500 italic">No hubo novedades desde el área de maquinaria y equipos (Sin reporte).</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
           {/* Estado y Acciones Permitidas */}
           {!isEditing && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
