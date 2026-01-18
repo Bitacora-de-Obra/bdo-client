@@ -2100,10 +2100,10 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
               </div>
 
               
-              {isContractorUser && (environmentalTramos?.length > 0 || environmentalDetail) && (
+              {(environmentalTramos?.length > 0 || environmentalDetail) && (
                 <div className="mt-4 border-t pt-4">
                   <h5 className="text-sm font-bold text-gray-800 mb-3 bg-green-50 p-2 rounded">
-                    3. ESTADO DE COMPONENTES (Control interno Contratista)
+                    Componente Ambiental por Tramo
                   </h5>
                   
                   {/* Multi-Tramo Display */}
@@ -2117,22 +2117,46 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                             </span>
                             <span className="text-sm">{tramo.tramoName}</span>
                           </h6>
-                          <div className="space-y-2 text-sm text-gray-700 grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-                            <p><strong>Alcantarillado/Sumideros:</strong> <span className={tramo.sewerProtection === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{tramo.sewerProtection}</span></p>
-                            <p><strong>Manejo de acopios/RCD:</strong> <span className={tramo.materialStorage === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{tramo.materialStorage}</span></p>
-                            <p><strong>Orden y aseo:</strong> <span className={tramo.cleanliness === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{tramo.cleanliness}</span></p>
-                            <p><strong>Carpado/Llantas:</strong> <span className={tramo.coveredTrucks === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{tramo.coveredTrucks}</span></p>
-                            <p><strong>Zonas verdes:</strong> <span className={tramo.greenZones === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{tramo.greenZones}</span></p>
-                            <p><strong>Protección árboles:</strong> <span className={tramo.treeProtection === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{tramo.treeProtection}</span></p>
-                            <p><strong>Cerramiento:</strong> <span className={tramo.enclosure === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{tramo.enclosure}</span></p>
-                            <p><strong>Cantidad UPS:</strong> {tramo.upsCount || '0'}</p>
-                            <div className="col-span-1 sm:col-span-2 mt-2">
-                              <p><strong>¿Emergencias?:</strong> {tramo.emergency ? <span className="text-red-600 font-bold">SI</span> : 'NO'}</p>
-                              {tramo.emergency && (
-                                <p className="mt-1 p-2 bg-red-50 rounded border border-red-100 text-red-800 italic">{tramo.emergencyDescription}</p>
-                              )}
+                          
+                          {/* Summary */}
+                          {tramo.summary && (
+                            <div className="mb-3 p-2 bg-white rounded border border-gray-200">
+                              <p className="text-xs font-medium text-gray-500 mb-1">Resumen del día</p>
+                              <p className="text-sm text-gray-700 whitespace-pre-wrap">{tramo.summary}</p>
+                            </div>
+                          )}
+                          
+                          {/* Observations */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                            <div className="p-2 bg-white rounded border border-gray-200">
+                              <p className="text-xs font-medium text-gray-500 mb-1">Observaciones Interventoría</p>
+                              <p className="text-sm text-gray-700 whitespace-pre-wrap">{tramo.interventorObservations || 'Sin observaciones'}</p>
+                            </div>
+                            <div className="p-2 bg-white rounded border border-gray-200">
+                              <p className="text-xs font-medium text-gray-500 mb-1">Observaciones Contratista</p>
+                              <p className="text-sm text-gray-700 whitespace-pre-wrap">{tramo.contractorObservations || 'Sin observaciones'}</p>
                             </div>
                           </div>
+                          
+                          {/* Checklist - visible to contractor users */}
+                          {isContractorUser && (
+                            <div className="space-y-2 text-sm text-gray-700 grid grid-cols-1 sm:grid-cols-2 gap-x-4 mt-3 p-2 bg-white rounded border border-gray-200">
+                              <p><strong>Alcantarillado/Sumideros:</strong> <span className={tramo.sewerProtection === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{tramo.sewerProtection}</span></p>
+                              <p><strong>Manejo de acopios/RCD:</strong> <span className={tramo.materialStorage === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{tramo.materialStorage}</span></p>
+                              <p><strong>Orden y aseo:</strong> <span className={tramo.cleanliness === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{tramo.cleanliness}</span></p>
+                              <p><strong>Carpado/Llantas:</strong> <span className={tramo.coveredTrucks === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{tramo.coveredTrucks}</span></p>
+                              <p><strong>Zonas verdes:</strong> <span className={tramo.greenZones === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{tramo.greenZones}</span></p>
+                              <p><strong>Protección árboles:</strong> <span className={tramo.treeProtection === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{tramo.treeProtection}</span></p>
+                              <p><strong>Cerramiento:</strong> <span className={tramo.enclosure === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{tramo.enclosure}</span></p>
+                              <p><strong>Cantidad UPS:</strong> {tramo.upsCount || '0'}</p>
+                              <div className="col-span-1 sm:col-span-2 mt-2">
+                                <p><strong>¿Emergencias?:</strong> {tramo.emergency ? <span className="text-red-600 font-bold">SI</span> : 'NO'}</p>
+                                {tramo.emergency && (
+                                  <p className="mt-1 p-2 bg-red-50 rounded border border-red-100 text-red-800 italic">{tramo.emergencyDescription}</p>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
