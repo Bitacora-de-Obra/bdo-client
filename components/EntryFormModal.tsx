@@ -991,6 +991,104 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             </div>
           )}
 
+          {entryType === EntryType.SOCIAL && !isLegacyTenant && (
+            <div className="space-y-5 border border-gray-200 rounded-lg p-4 bg-gray-50 mb-6">
+              <h4 className="text-sm font-semibold text-gray-800">
+                Componente Social - Tramos Visitados
+              </h4>
+              
+              <div className="p-4 bg-purple-100 rounded-lg border border-purple-200">
+                <label className="block text-sm font-semibold text-purple-800 mb-2">
+                  Localización / Tramo (seleccione los tramos visitados)
+                </label>
+                <select
+                  className="w-full border border-purple-300 rounded-md p-2 mb-2 bg-white"
+                  onChange={(e) => {
+                    const selectedId = e.target.value;
+                    if (!selectedId) return;
+                    const catalogItem = locationSegmentCatalog.find(c => c.id === selectedId);
+                    if (catalogItem && !socialTramos.find(t => t.tramoId === selectedId)) {
+                      setSocialTramos([...socialTramos, {
+                        tramoId: selectedId,
+                        tramoName: catalogItem.name,
+                        pqrsds: [],
+                        actaCompromiso: { required: false },
+                        articulacion: { performed: false },
+                        vallasMobiles: false,
+                        volantes: { delivered: false },
+                        psi: { installed: false }
+                      }]);
+                    }
+                    e.target.value = '';
+                  }}
+                >
+                  <option value="">+ Agregar tramo...</option>
+                  {locationSegmentCatalog
+                    .filter(c => !socialTramos.find(t => t.tramoId === c.id))
+                    .map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))
+                  }
+                </select>
+                {socialTramos.length === 0 && (
+                  <p className="text-sm text-purple-600">Seleccione al menos un tramo para registrar la información social.</p>
+                )}
+              </div>
+              
+              {socialTramos.map((tramo, idx) => (
+                <SocialTramoForm
+                  key={tramo.tramoId}
+                  data={tramo}
+                  onChange={(updated) => {
+                    const newTramos = [...socialTramos];
+                    newTramos[idx] = updated;
+                    setSocialTramos(newTramos);
+                  }}
+                  onRemove={() => {
+                    setSocialTramos(socialTramos.filter((_, i) => i !== idx));
+                  }}
+                  index={idx}
+                  total={socialTramos.length}
+                />
+              ))}
+              
+              <div className="space-y-3 mt-4 pt-4 border-t border-gray-200">
+                <label className="block text-sm font-medium text-gray-700">
+                  Registro diario de actividades
+                </label>
+                <textarea
+                  value={socialActivitiesText}
+                  onChange={(e) => setSocialActivitiesText(e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Describe cada actividad social en una línea."
+                />
+                <label className="block text-sm font-medium text-gray-700">
+                  Registro fotográfico (referencia)
+                </label>
+                <textarea
+                  value={socialPhotoSummary}
+                  onChange={(e) => setSocialPhotoSummary(e.target.value)}
+                  rows={2}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Observaciones de la interventoría
+                    </label>
+                    <textarea
+                      value={socialObservations}
+                      onChange={(e) => setSocialObservations(e.target.value)}
+                      rows={3}
+                      className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div>
             <h4 className="text-sm font-semibold text-gray-800 mb-1">
               {contractorLabel}
