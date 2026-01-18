@@ -54,7 +54,21 @@ const EnvironmentalTramoForm: React.FC<EnvironmentalTramoFormProps> = ({
       </div>
 
       <div className="space-y-4">
-        {/* Observations Section - for both roles */}
+        {/* Summary Section - Per Tramo */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Resumen general del día (para este tramo)
+          </label>
+          <textarea 
+            value={data.summary || ''}
+            onChange={e => updateField('summary', e.target.value)}
+            rows={3}
+            className="block w-full border border-gray-300 rounded sm:text-sm p-2"
+            placeholder="Describe las actividades y hallazgos del día en este tramo..."
+          />
+        </div>
+
+        {/* Observations Section - TWO observation fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -71,15 +85,15 @@ const EnvironmentalTramoForm: React.FC<EnvironmentalTramoFormProps> = ({
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Respuesta del contratista
+              Observaciones del contratista
             </label>
             <textarea 
-              value={data.contractorResponse || ''}
-              onChange={e => updateField('contractorResponse', e.target.value)}
+              value={data.contractorObservations || ''}
+              onChange={e => updateField('contractorObservations', e.target.value)}
               rows={3}
               className="block w-full border border-gray-300 rounded sm:text-sm p-2"
               disabled={isInterventor}
-              placeholder={isInterventor ? 'Sin respuesta registrada' : 'Registre la respuesta...'}
+              placeholder={isInterventor ? 'Sin observaciones registradas' : 'Registre las observaciones...'}
             />
           </div>
         </div>

@@ -1195,8 +1195,9 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                         setEnvironmentalTramos([{
                           tramoId: 'ALL_TRAMOS',
                           tramoName: 'Todos los tramos',
+                          summary: '',
                           interventorObservations: '',
-                          contractorResponse: '',
+                          contractorObservations: '',
                           sewerProtection: 'CUMPLE',
                           materialStorage: 'CUMPLE',
                           cleanliness: 'CUMPLE',
@@ -1215,8 +1216,9 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                         setEnvironmentalTramos([...environmentalTramos, {
                           tramoId: catalogItem.id,
                           tramoName: catalogItem.name,
+                          summary: '',
                           interventorObservations: '',
-                          contractorResponse: '',
+                          contractorObservations: '',
                           sewerProtection: 'CUMPLE',
                           materialStorage: 'CUMPLE',
                           cleanliness: 'CUMPLE',
@@ -2137,8 +2139,9 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                     setEnvironmentalTramos([{
                       tramoId: 'ALL_TRAMOS',
                       tramoName: 'Todos los tramos',
+                      summary: '',
                       interventorObservations: '',
-                      contractorResponse: '',
+                      contractorObservations: '',
                       sewerProtection: 'CUMPLE',
                       materialStorage: 'CUMPLE',
                       cleanliness: 'CUMPLE',
@@ -2157,8 +2160,9 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                     setEnvironmentalTramos([...environmentalTramos, {
                       tramoId: catalogItem.id,
                       tramoName: catalogItem.name,
+                      summary: '',
                       interventorObservations: '',
-                      contractorResponse: '',
+                      contractorObservations: '',
                       sewerProtection: 'CUMPLE',
                       materialStorage: 'CUMPLE',
                       cleanliness: 'CUMPLE',
