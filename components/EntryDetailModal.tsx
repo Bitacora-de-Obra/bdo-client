@@ -1663,7 +1663,6 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       'Administrativo': EntryType.ADMINISTRATIVE,
       'Calidad': EntryType.QUALITY,
       'Maquinaria y Equipos (MEV)': EntryType.MEV,
-      'MEV': EntryType.MEV,
     };
     return typeMap[t] || EntryType.GENERAL;
   };
