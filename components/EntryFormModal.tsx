@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useRef } from "react";
-import { LogEntry, EntryStatus, EntryType, User, LogEntryListItem } from "../types";
+import { LogEntry, EntryStatus, EntryType, User, LogEntryListItem, UserRole, AppRole } from "../types";
 import Modal from "./ui/Modal";
 import Button from "./ui/Button";
 import Input from "./ui/Input";
@@ -157,6 +157,17 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   const streamRef = useRef<MediaStream | null>(null);
 
   const isLegacyTenant = typeof window !== 'undefined' && window.location.hostname.toLowerCase().includes("mutis");
+
+  // Role Logic
+  const isInterventor = [
+      UserRole.SUPERVISOR,
+      "supervisor",
+      "director",
+      // @ts-ignore
+      UserRole.DIRECTOR, // Safe fallback
+    ].includes(currentUser?.projectRole as any);
+
+  const isAdmin = currentUser?.appRole === "admin" || currentUser?.projectRole === UserRole.ADMIN;
 
   const SAVE_STEPS = [
     { message: 'Validando datos...', percentage: 20 },
@@ -1062,17 +1073,11 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                   rows={3}
                   className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
                   placeholder="Describe cada actividad social en una línea."
+                  disabled={isInterventor}
+                  title={isInterventor ? "Solo el contratista puede editar este campo" : ""}
                 />
-                <label className="block text-sm font-medium text-gray-700">
-                  Registro fotográfico (referencia)
-                </label>
-                <textarea
-                  value={socialPhotoSummary}
-                  onChange={(e) => setSocialPhotoSummary(e.target.value)}
-                  rows={2}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Observaciones de la interventoría
@@ -1080,39 +1085,17 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                     <textarea
                       value={socialObservations}
                       onChange={(e) => setSocialObservations(e.target.value)}
+                      disabled={!isInterventor && !isAdmin}
+                      title={!isInterventor && !isAdmin ? "Solo la interventoría puede editar este campo" : ""}
+                      placeholder="Espacio reservado para el interventor/supervisor."
                       rows={3}
-                      className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                      className={`block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2 ${(!isInterventor && !isAdmin) ? 'bg-gray-100 text-gray-500' : ''}`}
                     />
                   </div>
                 </div>
               </div>
             </div>
           )}
-
-          <div>
-            <h4 className="text-sm font-semibold text-gray-800 mb-1">
-              {contractorLabel}
-            </h4>
-            <textarea
-              value={
-                entryType === EntryType.SAFETY
-                  ? safetyContractorResponse
-                  : entryType === EntryType.ENVIRONMENTAL
-                  ? environmentContractorResponse
-                  : socialContractorResponse
-              }
-              onChange={(e) => {
-                const val = e.target.value;
-                if (entryType === EntryType.SAFETY) setSafetyContractorResponse(val);
-                else if (entryType === EntryType.ENVIRONMENTAL)
-                  setEnvironmentContractorResponse(val);
-                else setSocialContractorResponse(val);
-              }}
-              rows={3}
-              className="w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-              placeholder="Respuesta del contratista"
-            />
-          </div>
 
           <div>
             <h4 className="text-sm font-semibold text-gray-800 mb-1">
