@@ -1628,6 +1628,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     socialTramos = [],
     mevNovelties = null,
     environmentalDetail = null,
+    environmentalTramos = [],
     type,
     status,
     isConfidential,
@@ -2099,27 +2100,61 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
               </div>
 
               
-              {isContractorUser && environmentalDetail && (
+              {isContractorUser && (environmentalTramos?.length > 0 || environmentalDetail) && (
                 <div className="mt-4 border-t pt-4">
                   <h5 className="text-sm font-bold text-gray-800 mb-3 bg-green-50 p-2 rounded">
                     3. ESTADO DE COMPONENTES (Control interno Contratista)
                   </h5>
-                  <div className="space-y-2 text-sm text-gray-700 grid grid-cols-1 sm:grid-cols-2 gap-x-4">
-                     <p><strong>Alcantarillado/Sumideros:</strong> <span className={environmentalDetail.sewerProtection === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{environmentalDetail.sewerProtection}</span></p>
-                     <p><strong>Manejo de acopios/RCD:</strong> <span className={environmentalDetail.materialStorage === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{environmentalDetail.materialStorage}</span></p>
-                     <p><strong>Orden y aseo:</strong> <span className={environmentalDetail.cleanliness === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{environmentalDetail.cleanliness}</span></p>
-                     <p><strong>Carpado/Llantas:</strong> <span className={environmentalDetail.coveredTrucks === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{environmentalDetail.coveredTrucks}</span></p>
-                     <p><strong>Zonas verdes:</strong> <span className={environmentalDetail.greenZones === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{environmentalDetail.greenZones}</span></p>
-                     <p><strong>Protección árboles:</strong> <span className={environmentalDetail.treeProtection === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{environmentalDetail.treeProtection}</span></p>
-                     <p><strong>Cerramiento:</strong> <span className={environmentalDetail.enclosure === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{environmentalDetail.enclosure}</span></p>
-                     <p><strong>Cantidad UPS:</strong> {environmentalDetail.upsCount || '0'}</p>
-                     <div className="col-span-1 sm:col-span-2 mt-2">
-                       <p><strong>¿Emergencias?:</strong> {environmentalDetail.emergency ? <span className="text-red-600 font-bold">SI</span> : 'NO'}</p>
-                       {environmentalDetail.emergency && (
+                  
+                  {/* Multi-Tramo Display */}
+                  {environmentalTramos?.length > 0 ? (
+                    <div className="space-y-4">
+                      {(environmentalTramos as any[]).map((tramo: any, idx: number) => (
+                        <div key={tramo.tramoId || idx} className="border-2 border-green-200 rounded-lg p-4 bg-green-50">
+                          <h6 className="font-semibold text-green-800 mb-3 flex items-center gap-2">
+                            <span className="bg-green-200 text-green-900 px-2 py-0.5 rounded-full text-xs">
+                              Tramo {idx + 1}
+                            </span>
+                            <span className="text-sm">{tramo.tramoName}</span>
+                          </h6>
+                          <div className="space-y-2 text-sm text-gray-700 grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+                            <p><strong>Alcantarillado/Sumideros:</strong> <span className={tramo.sewerProtection === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{tramo.sewerProtection}</span></p>
+                            <p><strong>Manejo de acopios/RCD:</strong> <span className={tramo.materialStorage === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{tramo.materialStorage}</span></p>
+                            <p><strong>Orden y aseo:</strong> <span className={tramo.cleanliness === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{tramo.cleanliness}</span></p>
+                            <p><strong>Carpado/Llantas:</strong> <span className={tramo.coveredTrucks === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{tramo.coveredTrucks}</span></p>
+                            <p><strong>Zonas verdes:</strong> <span className={tramo.greenZones === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{tramo.greenZones}</span></p>
+                            <p><strong>Protección árboles:</strong> <span className={tramo.treeProtection === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{tramo.treeProtection}</span></p>
+                            <p><strong>Cerramiento:</strong> <span className={tramo.enclosure === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{tramo.enclosure}</span></p>
+                            <p><strong>Cantidad UPS:</strong> {tramo.upsCount || '0'}</p>
+                            <div className="col-span-1 sm:col-span-2 mt-2">
+                              <p><strong>¿Emergencias?:</strong> {tramo.emergency ? <span className="text-red-600 font-bold">SI</span> : 'NO'}</p>
+                              {tramo.emergency && (
+                                <p className="mt-1 p-2 bg-red-50 rounded border border-red-100 text-red-800 italic">{tramo.emergencyDescription}</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : environmentalDetail && (
+                    // Legacy single detail display
+                    <div className="space-y-2 text-sm text-gray-700 grid grid-cols-1 sm:grid-cols-2 gap-x-4">
+                      <p><strong>Alcantarillado/Sumideros:</strong> <span className={environmentalDetail.sewerProtection === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{environmentalDetail.sewerProtection}</span></p>
+                      <p><strong>Manejo de acopios/RCD:</strong> <span className={environmentalDetail.materialStorage === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{environmentalDetail.materialStorage}</span></p>
+                      <p><strong>Orden y aseo:</strong> <span className={environmentalDetail.cleanliness === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{environmentalDetail.cleanliness}</span></p>
+                      <p><strong>Carpado/Llantas:</strong> <span className={environmentalDetail.coveredTrucks === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{environmentalDetail.coveredTrucks}</span></p>
+                      <p><strong>Zonas verdes:</strong> <span className={environmentalDetail.greenZones === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{environmentalDetail.greenZones}</span></p>
+                      <p><strong>Protección árboles:</strong> <span className={environmentalDetail.treeProtection === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{environmentalDetail.treeProtection}</span></p>
+                      <p><strong>Cerramiento:</strong> <span className={environmentalDetail.enclosure === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{environmentalDetail.enclosure}</span></p>
+                      <p><strong>Cantidad UPS:</strong> {environmentalDetail.upsCount || '0'}</p>
+                      <div className="col-span-1 sm:col-span-2 mt-2">
+                        <p><strong>¿Emergencias?:</strong> {environmentalDetail.emergency ? <span className="text-red-600 font-bold">SI</span> : 'NO'}</p>
+                        {environmentalDetail.emergency && (
                           <p className="mt-1 p-2 bg-red-50 rounded border border-red-100 text-red-800 italic">{environmentalDetail.emergencyDescription}</p>
-                       )}
-                     </div>
-                  </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
