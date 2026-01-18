@@ -320,6 +320,21 @@ export interface EnvironmentalDetail {
   emergencyDescription: string;
 }
 
+export interface EnvironmentalTramoData {
+  tramoId: string;
+  tramoName: string;
+  sewerProtection: string;
+  materialStorage: string;
+  cleanliness: string;
+  coveredTrucks: string;
+  greenZones: string;
+  treeProtection: string;
+  upsCount: string;
+  enclosure: string;
+  emergency: boolean;
+  emergencyDescription: string;
+}
+
 export enum EntryStatus {
   DRAFT = 'Borrador',
   SUBMITTED = 'Revisión contratista',
@@ -383,6 +398,7 @@ export interface LogEntry {
 
   // Environmental
   environmentalDetail?: EnvironmentalDetail | null;
+  environmentalTramos?: EnvironmentalTramoData[];
   
   contractorReviewCompleted?: boolean;
   contractorReviewCompletedAt?: string | null;

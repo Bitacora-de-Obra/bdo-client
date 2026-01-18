@@ -13,7 +13,8 @@ import api, { CatalogItem } from "../src/services/api";
 import ProgressIndicator from "./ui/ProgressIndicator";
 import SSTIncidentForm from "./SSTIncidentForm";
 import SocialTramoForm from "./SocialTramoForm";
-import { SSTAccidentData, SSTDiseaseData, SocialTramoData, EnvironmentalDetail } from "../types";
+import EnvironmentalTramoForm from "./EnvironmentalTramoForm";
+import { SSTAccidentData, SSTDiseaseData, SocialTramoData, EnvironmentalDetail, EnvironmentalTramoData } from "../types";
 import { CascadingLocationSelector } from "./CascadingLocationSelector";
 
 interface EntryFormModalProps {
@@ -153,19 +154,8 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   const [mevHasNovelties, setMevHasNovelties] = useState(false);
   const [mevNovelties, setMevNovelties] = useState('');
   
-  // Environmental State
-  const [envDetail, setEnvDetail] = useState<EnvironmentalDetail>({
-    sewerProtection: 'CUMPLE',
-    materialStorage: 'CUMPLE',
-    cleanliness: 'CUMPLE',
-    coveredTrucks: 'CUMPLE',
-    greenZones: 'CUMPLE',
-    treeProtection: 'CUMPLE',
-    upsCount: '',
-    enclosure: 'CUMPLE',
-    emergency: false,
-    emergencyDescription: ''
-  });
+  // Environmental Multi-Tramo State
+  const [environmentalTramos, setEnvironmentalTramos] = useState<EnvironmentalTramoData[]>([]);
 
   // Camera states for photo capture
   const [showCamera, setShowCamera] = useState(false);
@@ -910,7 +900,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             : null,
 
           // Environmental Detail
-          environmentalDetail: entryType === EntryType.ENVIRONMENTAL ? envDetail : null,
+          environmentalTramos: entryType === EntryType.ENVIRONMENTAL ? environmentalTramos : undefined,
           
           activityStartDate: startOfDay.toISOString(),
           activityEndDate: endOfDay.toISOString(),
@@ -1189,7 +1179,6 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           )}
 
 
-
           {(entryType as any) === EntryType.ENVIRONMENTAL && (
             <div className="space-y-5 border border-gray-200 rounded-lg p-4 bg-gray-50 mb-6">
                 <h4 className="text-sm font-semibold text-gray-800">Componente Ambiental</h4>
@@ -1216,70 +1205,75 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                   </div>
                 </div>
                 
-                {/* CHECKLIST */}
-                {!isInterventor && (
+                {/* Multi-Tramo Environmental Checklist - Contractor Only */}
+                {!isInterventor && !isLegacyTenant && (
                   <div className="mt-4 border-t pt-4">
                     <h5 className="text-sm font-bold text-gray-800 mb-3 bg-green-50 p-2 rounded">
                       3. ESTADO DE COMPONENTES (Control interno Contratista)
                     </h5>
-                    <div className="space-y-3">
-                      {[
-                        { key: 'sewerProtection', label: 'Protección a sistema alcantarillado y sumideros' },
-                        { key: 'materialStorage', label: 'Adecuado manejo de acopios de materiales y RCD' },
-                        { key: 'cleanliness', label: 'Orden y aseo en campamentos y frentes de obra' },
-                        { key: 'coveredTrucks', label: 'Carpado de volquetas y llantas limpias' },
-                        { key: 'greenZones', label: 'Zonas verdes libres de materiales y equipos' },
-                        { key: 'treeProtection', label: 'Protección de arboles' },
-                        { key: 'enclosure', label: 'Cerramiento de obra' },
-                      ].map((item) => (
-                        <div key={item.key} className="flex items-center justify-between border-b border-gray-100 pb-1">
-                          <span className="text-sm text-gray-700">{item.label}</span>
-                          <select
-                            className="w-40 border border-gray-300 rounded-md p-1 text-sm form-select"
-                            value={(envDetail as any)[item.key]}
-                            onChange={(e) => setEnvDetail(prev => ({ ...prev, [item.key]: e.target.value }))}
-                          >
-                            <option value="CUMPLE">Cumple</option>
-                            <option value="NO_CUMPLE">No Cumple</option>
-                            <option value="NA">No Aplica</option>
-                          </select>
-                        </div>
-                      ))}
+                    
+                    <CascadingLocationSelector
+                      locationSegmentCatalog={locationSegmentCatalog}
+                      selectedIds={environmentalTramos.map(t => t.tramoId)}
+                      variant="blue"
+                      label="Seleccione Tramo(s) para registrar"
+                      showSelectAll={true}
+                      onSelectAll={() => {
+                        setEnvironmentalTramos([{
+                          tramoId: 'ALL_TRAMOS',
+                          tramoName: 'Todos los tramos',
+                          sewerProtection: 'CUMPLE',
+                          materialStorage: 'CUMPLE',
+                          cleanliness: 'CUMPLE',
+                          coveredTrucks: 'CUMPLE',
+                          greenZones: 'CUMPLE',
+                          treeProtection: 'CUMPLE',
+                          upsCount: '',
+                          enclosure: 'CUMPLE',
+                          emergency: false,
+                          emergencyDescription: ''
+                        }]);
+                      }}
+                      onAdd={(catalogItem) => {
+                        if (environmentalTramos.find(t => t.tramoId === 'ALL_TRAMOS')) return;
+                        if (environmentalTramos.find(t => t.tramoId === catalogItem.id)) return;
+                        setEnvironmentalTramos([...environmentalTramos, {
+                          tramoId: catalogItem.id,
+                          tramoName: catalogItem.name,
+                          sewerProtection: 'CUMPLE',
+                          materialStorage: 'CUMPLE',
+                          cleanliness: 'CUMPLE',
+                          coveredTrucks: 'CUMPLE',
+                          greenZones: 'CUMPLE',
+                          treeProtection: 'CUMPLE',
+                          upsCount: '',
+                          enclosure: 'CUMPLE',
+                          emergency: false,
+                          emergencyDescription: ''
+                        }]);
+                      }}
+                    />
 
-                      <div className="flex items-center justify-between border-b border-gray-100 pb-1 pt-2">
-                        <span className="text-sm text-gray-700">Cantidad de UPS</span>
-                        <input
-                          type="number"
-                          value={envDetail.upsCount}
-                          onChange={(e) => setEnvDetail(prev => ({ ...prev, upsCount: e.target.value }))}
-                          className="w-40 border border-gray-300 rounded-md p-1 text-sm"
-                          placeholder="#"
-                        />
-                      </div>
-
-                      <div className="pt-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-700 font-medium">¿Se presentaron emergencias ambientales?</span>
-                          <select
-                            className="w-40 border border-gray-300 rounded-md p-1 text-sm"
-                            value={envDetail.emergency ? 'SI' : 'NO'}
-                            onChange={(e) => setEnvDetail(prev => ({ ...prev, emergency: e.target.value === 'SI' }))}
-                          >
-                            <option value="NO">No</option>
-                            <option value="SI">Sí</option>
-                          </select>
-                        </div>
-                        {envDetail.emergency && (
-                          <textarea
-                            value={envDetail.emergencyDescription}
-                            onChange={(e) => setEnvDetail(prev => ({ ...prev, emergencyDescription: e.target.value }))}
-                            rows={2}
-                            className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                            placeholder="Descripción de la emergencia..."
-                          />
-                        )}
-                      </div>
-                    </div>
+                    {environmentalTramos.length === 0 && (
+                      <p className="text-sm text-green-600 mt-2">Seleccione al menos un tramo para registrar la información ambiental.</p>
+                    )}
+                    
+                    {environmentalTramos.map((tramo, idx) => (
+                      <EnvironmentalTramoForm
+                        key={tramo.tramoId}
+                        data={tramo}
+                        onChange={(updated) => {
+                          const newTramos = [...environmentalTramos];
+                          newTramos[idx] = updated;
+                          setEnvironmentalTramos(newTramos);
+                        }}
+                        onRemove={() => {
+                          setEnvironmentalTramos(environmentalTramos.filter((_, i) => i !== idx));
+                        }}
+                        index={idx}
+                        total={environmentalTramos.length}
+                      />
+                    ))}
                   </div>
                 )}
             </div>
@@ -2179,69 +2173,74 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             </div>
 
             
-            {!isInterventor && (
+            {!isInterventor && !isLegacyTenant && (
               <div className="mt-4 border-t pt-4">
                 <h5 className="text-sm font-bold text-gray-800 mb-3 bg-green-50 p-2 rounded">
                   3. ESTADO DE COMPONENTES (Control interno Contratista)
                 </h5>
-                <div className="space-y-3">
-                  {[
-                    { key: 'sewerProtection', label: 'Protección a sistema alcantarillado y sumideros' },
-                    { key: 'materialStorage', label: 'Adecuado manejo de acopios de materiales y RCD' },
-                    { key: 'cleanliness', label: 'Orden y aseo en campamentos y frentes de obra' },
-                    { key: 'coveredTrucks', label: 'Carpado de volquetas y llantas limpias' },
-                    { key: 'greenZones', label: 'Zonas verdes libres de materiales y equipos' },
-                    { key: 'treeProtection', label: 'Protección de arboles' },
-                    { key: 'enclosure', label: 'Cerramiento de obra' },
-                  ].map((item) => (
-                    <div key={item.key} className="flex items-center justify-between border-b border-gray-100 pb-1">
-                      <span className="text-sm text-gray-700">{item.label}</span>
-                      <select
-                        className="w-40 border border-gray-300 rounded-md p-1 text-sm form-select"
-                        value={(envDetail as any)[item.key]}
-                        onChange={(e) => setEnvDetail(prev => ({ ...prev, [item.key]: e.target.value }))}
-                      >
-                        <option value="CUMPLE">Cumple</option>
-                        <option value="NO_CUMPLE">No Cumple</option>
-                        <option value="NA">No Aplica</option>
-                      </select>
-                    </div>
-                  ))}
+                
+                <CascadingLocationSelector
+                  locationSegmentCatalog={locationSegmentCatalog}
+                  selectedIds={environmentalTramos.map(t => t.tramoId)}
+                  variant="blue"
+                  label="Seleccione Tramo(s) para registrar"
+                  showSelectAll={true}
+                  onSelectAll={() => {
+                    setEnvironmentalTramos([{
+                      tramoId: 'ALL_TRAMOS',
+                      tramoName: 'Todos los tramos',
+                      sewerProtection: 'CUMPLE',
+                      materialStorage: 'CUMPLE',
+                      cleanliness: 'CUMPLE',
+                      coveredTrucks: 'CUMPLE',
+                      greenZones: 'CUMPLE',
+                      treeProtection: 'CUMPLE',
+                      upsCount: '',
+                      enclosure: 'CUMPLE',
+                      emergency: false,
+                      emergencyDescription: ''
+                    }]);
+                  }}
+                  onAdd={(catalogItem) => {
+                    if (environmentalTramos.find(t => t.tramoId === 'ALL_TRAMOS')) return;
+                    if (environmentalTramos.find(t => t.tramoId === catalogItem.id)) return;
+                    setEnvironmentalTramos([...environmentalTramos, {
+                      tramoId: catalogItem.id,
+                      tramoName: catalogItem.name,
+                      sewerProtection: 'CUMPLE',
+                      materialStorage: 'CUMPLE',
+                      cleanliness: 'CUMPLE',
+                      coveredTrucks: 'CUMPLE',
+                      greenZones: 'CUMPLE',
+                      treeProtection: 'CUMPLE',
+                      upsCount: '',
+                      enclosure: 'CUMPLE',
+                      emergency: false,
+                      emergencyDescription: ''
+                    }]);
+                  }}
+                />
 
-                  <div className="flex items-center justify-between border-b border-gray-100 pb-1 pt-2">
-                    <span className="text-sm text-gray-700">Cantidad de UPS</span>
-                    <input
-                      type="number"
-                      value={envDetail.upsCount}
-                      onChange={(e) => setEnvDetail(prev => ({ ...prev, upsCount: e.target.value }))}
-                      className="w-40 border border-gray-300 rounded-md p-1 text-sm"
-                      placeholder="#"
-                    />
-                  </div>
-
-                  <div className="pt-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700 font-medium">¿Se presentaron emergencias ambientales?</span>
-                      <select
-                        className="w-40 border border-gray-300 rounded-md p-1 text-sm"
-                        value={envDetail.emergency ? 'SI' : 'NO'}
-                        onChange={(e) => setEnvDetail(prev => ({ ...prev, emergency: e.target.value === 'SI' }))}
-                      >
-                         <option value="NO">No</option>
-                         <option value="SI">Sí</option>
-                      </select>
-                    </div>
-                    {envDetail.emergency && (
-                      <textarea
-                        value={envDetail.emergencyDescription}
-                        onChange={(e) => setEnvDetail(prev => ({ ...prev, emergencyDescription: e.target.value }))}
-                        rows={2}
-                        className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                        placeholder="Descripción de la emergencia..."
-                      />
-                    )}
-                  </div>
-                </div>
+                {environmentalTramos.length === 0 && (
+                  <p className="text-sm text-green-600 mt-2">Seleccione al menos un tramo para registrar la información ambiental.</p>
+                )}
+                
+                {environmentalTramos.map((tramo, idx) => (
+                  <EnvironmentalTramoForm
+                    key={tramo.tramoId}
+                    data={tramo}
+                    onChange={(updated) => {
+                      const newTramos = [...environmentalTramos];
+                      newTramos[idx] = updated;
+                      setEnvironmentalTramos(newTramos);
+                    }}
+                    onRemove={() => {
+                      setEnvironmentalTramos(environmentalTramos.filter((_, i) => i !== idx));
+                    }}
+                    index={idx}
+                    total={environmentalTramos.length}
+                  />
+                ))}
               </div>
             )}
           </div>
