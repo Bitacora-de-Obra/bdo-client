@@ -1178,40 +1178,13 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             </div>
           )}
 
-
           {(entryType as any) === EntryType.ENVIRONMENTAL && (
             <div className="space-y-5 border border-gray-200 rounded-lg p-4 bg-gray-50 mb-6">
                 <h4 className="text-sm font-semibold text-gray-800">Componente Ambiental</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Observaciones ambientales (Interventoría)</label>
-                    <textarea 
-                      value={environmentFindings}
-                      onChange={e => setEnvironmentFindings(e.target.value)}
-                      rows={3}
-                      className="block w-full border border-gray-300 rounded sm:text-sm p-2"
-                      disabled={!isInterventor}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Respuesta del contratista</label>
-                    <textarea 
-                      value={environmentContractorResponse}
-                      onChange={e => setEnvironmentContractorResponse(e.target.value)}
-                      rows={3}
-                      className="block w-full border border-gray-300 rounded sm:text-sm p-2"
-                      disabled={isInterventor}
-                    />
-                  </div>
-                </div>
                 
-                {/* Multi-Tramo Environmental Checklist - Contractor Only */}
-                {!isInterventor && !isLegacyTenant && (
-                  <div className="mt-4 border-t pt-4">
-                    <h5 className="text-sm font-bold text-gray-800 mb-3 bg-green-50 p-2 rounded">
-                      3. ESTADO DE COMPONENTES (Control interno Contratista)
-                    </h5>
-                    
+                {/* Tramo Selector - visible for EVERYONE */}
+                {!isLegacyTenant && (
+                  <div>
                     <CascadingLocationSelector
                       locationSegmentCatalog={locationSegmentCatalog}
                       selectedIds={environmentalTramos.map(t => t.tramoId)}
@@ -1222,6 +1195,8 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                         setEnvironmentalTramos([{
                           tramoId: 'ALL_TRAMOS',
                           tramoName: 'Todos los tramos',
+                          interventorObservations: '',
+                          contractorResponse: '',
                           sewerProtection: 'CUMPLE',
                           materialStorage: 'CUMPLE',
                           cleanliness: 'CUMPLE',
@@ -1240,6 +1215,8 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                         setEnvironmentalTramos([...environmentalTramos, {
                           tramoId: catalogItem.id,
                           tramoName: catalogItem.name,
+                          interventorObservations: '',
+                          contractorResponse: '',
                           sewerProtection: 'CUMPLE',
                           materialStorage: 'CUMPLE',
                           cleanliness: 'CUMPLE',
@@ -1272,6 +1249,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                         }}
                         index={idx}
                         total={environmentalTramos.length}
+                        isInterventor={isInterventor}
                       />
                     ))}
                   </div>
@@ -2145,40 +2123,10 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             <h4 className="text-sm font-semibold text-gray-800">
               Componente ambiental (ambiental, forestal, fauna)
             </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Observaciones ambientales (Interventoría)
-                </label>
-                <textarea
-                  value={environmentFindings}
-                  onChange={(e) => setEnvironmentFindings(e.target.value)}
-                  rows={3}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Respuesta del contratista
-                </label>
-                <textarea
-                  value={environmentContractorResponse}
-                  onChange={(e) =>
-                    setEnvironmentContractorResponse(e.target.value)
-                  }
-                  rows={3}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                />
-              </div>
-            </div>
 
-            
-            {!isInterventor && !isLegacyTenant && (
-              <div className="mt-4 border-t pt-4">
-                <h5 className="text-sm font-bold text-gray-800 mb-3 bg-green-50 p-2 rounded">
-                  3. ESTADO DE COMPONENTES (Control interno Contratista)
-                </h5>
-                
+            {/* Tramo Selector - visible for EVERYONE */}
+            {!isLegacyTenant && (
+              <div>
                 <CascadingLocationSelector
                   locationSegmentCatalog={locationSegmentCatalog}
                   selectedIds={environmentalTramos.map(t => t.tramoId)}
@@ -2189,6 +2137,8 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                     setEnvironmentalTramos([{
                       tramoId: 'ALL_TRAMOS',
                       tramoName: 'Todos los tramos',
+                      interventorObservations: '',
+                      contractorResponse: '',
                       sewerProtection: 'CUMPLE',
                       materialStorage: 'CUMPLE',
                       cleanliness: 'CUMPLE',
@@ -2207,6 +2157,8 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                     setEnvironmentalTramos([...environmentalTramos, {
                       tramoId: catalogItem.id,
                       tramoName: catalogItem.name,
+                      interventorObservations: '',
+                      contractorResponse: '',
                       sewerProtection: 'CUMPLE',
                       materialStorage: 'CUMPLE',
                       cleanliness: 'CUMPLE',
@@ -2239,6 +2191,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                     }}
                     index={idx}
                     total={environmentalTramos.length}
+                    isInterventor={isInterventor}
                   />
                 ))}
               </div>

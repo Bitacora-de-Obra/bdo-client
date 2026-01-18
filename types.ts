@@ -323,6 +323,10 @@ export interface EnvironmentalDetail {
 export interface EnvironmentalTramoData {
   tramoId: string;
   tramoName: string;
+  // Observations per tramo
+  interventorObservations: string;
+  contractorResponse: string;
+  // Checklist fields
   sewerProtection: string;
   materialStorage: string;
   cleanliness: string;
