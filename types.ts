@@ -324,6 +324,7 @@ export enum EntryType {
   QUALITY = 'QUALITY',
   ADMINISTRATIVE = 'ADMINISTRATIVE',
   TECHNICAL = 'TECHNICAL',
+  MEV = 'MEV',
 }
 
 export interface LogEntry {
@@ -363,6 +364,10 @@ export interface LogEntry {
   socialContractorResponse: string;
   socialPhotoSummary: string;
   socialTramos?: SocialTramoData[]; // Multi-segment social data
+  
+  // MEV (Maquinaria y Equipos)
+  mevNovelties?: string | null;
+  
   contractorReviewCompleted?: boolean;
   contractorReviewCompletedAt?: string | null;
   contractorReviewer?: User | null;

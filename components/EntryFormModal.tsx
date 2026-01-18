@@ -149,6 +149,10 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   // Social Multi-Tramo Data State
   const [socialTramos, setSocialTramos] = useState<SocialTramoData[]>([]);
 
+  // MEV (Maquinaria y Equipos) State
+  const [mevHasNovelties, setMevHasNovelties] = useState(false);
+  const [mevNovelties, setMevNovelties] = useState('');
+
   // Camera states for photo capture
   const [showCamera, setShowCamera] = useState(false);
   const [cameraAvailable, setCameraAvailable] = useState(false);
@@ -485,6 +489,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
     { value: EntryType.SAFETY, label: "SST / HSE" },
     { value: EntryType.ENVIRONMENTAL, label: "Ambiental" },
     { value: EntryType.SOCIAL, label: "Social" },
+    { value: EntryType.MEV, label: "Maquinaria y Equipos (MEV)" },
     { value: EntryType.ADMINISTRATIVE, label: "Administrativo" },
     { value: EntryType.QUALITY, label: "Calidad" },
   ];
@@ -493,6 +498,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   const showSafetySection = entryType === EntryType.SAFETY;
   const showEnvironmentalSection = entryType === EntryType.ENVIRONMENTAL;
   const showSocialSection = entryType === EntryType.SOCIAL;
+  const showMevSection = entryType === EntryType.MEV;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -883,6 +889,12 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             entryType === EntryType.SOCIAL ? contractorResponse.trim() : "",
           socialPhotoSummary: entryType === EntryType.SOCIAL ? socialPhotoSummary.trim() : "",
           socialTramos: entryType === EntryType.SOCIAL ? socialTramos : undefined,
+          
+          // MEV (Maquinaria y Equipos)
+          mevNovelties: entryType === EntryType.MEV 
+            ? (mevHasNovelties ? mevNovelties.trim() : null) 
+            : null,
+          
           activityStartDate: startOfDay.toISOString(),
           activityEndDate: endOfDay.toISOString(),
           subject: "",
@@ -2114,6 +2126,63 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             </div>
           </div>
         )}
+
+        {/* MEV (Maquinaria y Equipos) Section */}
+        {showMevSection && (
+          <div className="space-y-4 border border-gray-200 rounded-lg p-4 bg-gray-50">
+            <h4 className="text-sm font-semibold text-gray-800">
+              Maquinaria y Equipos (MEV)
+            </h4>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                ¿Hubo novedades en el área de maquinaria y equipos?
+              </label>
+              <div className="flex gap-4">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="mevNovelties"
+                    checked={!mevHasNovelties}
+                    onChange={() => {
+                      setMevHasNovelties(false);
+                      setMevNovelties('');
+                    }}
+                    className="h-4 w-4 text-brand-primary border-gray-300 focus:ring-brand-primary"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">No</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="mevNovelties"
+                    checked={mevHasNovelties}
+                    onChange={() => setMevHasNovelties(true)}
+                    className="h-4 w-4 text-brand-primary border-gray-300 focus:ring-brand-primary"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Sí</span>
+                </label>
+              </div>
+            </div>
+
+            {mevHasNovelties && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Describe las novedades
+                </label>
+                <textarea
+                  value={mevNovelties}
+                  onChange={(e) => setMevNovelties(e.target.value)}
+                  rows={4}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Describe las novedades encontradas en el área de maquinaria y equipos..."
+                  required
+                />
+              </div>
+            )}
+          </div>
+        )}
+
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
