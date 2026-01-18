@@ -1816,6 +1816,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
         </div>
         )}
 
+        {!showMevSection && (
         <div>
           <h4 className="text-sm font-semibold text-gray-800 mb-1">
             Ejecución y avance
@@ -1846,6 +1847,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             </>
           )}
         </div>
+        )}
 
         {showGeneralSections && (
         <div>
