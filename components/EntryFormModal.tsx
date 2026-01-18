@@ -1393,9 +1393,15 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             <div>
               <CascadingLocationSelector
                 locationSegmentCatalog={locationSegmentCatalog}
-                selectedIds={[]} // Don't filter, allow all
+                selectedIds={[]}
                 variant="blue"
                 label="Localización / Tramo(s)"
+                showSelectAll={true}
+                onSelectAll={() => {
+                  // Add all tramos to locationDetails
+                  const allTramos = locationSegmentCatalog.map(c => c.name).join(', ');
+                  setLocationDetails(allTramos);
+                }}
                 onAdd={(catalogItem) => {
                   const current = locationDetails.split(',').map(s => s.trim()).filter(Boolean);
                   if (!current.includes(catalogItem.name)) {
