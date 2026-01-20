@@ -806,6 +806,8 @@ export const logEntriesApi = {
     );
     appendIfDefined("socialPhotoSummary", (data as any).socialPhotoSummary);
     appendJson("socialTramos", (data as any).socialTramos);
+    appendJson("environmentalDetail", (data as any).environmentalDetail);
+    appendJson("environmentalTramos", (data as any).environmentalTramos);
 
     const serializeUsers = (users?: Array<Partial<User> | string>) => {
       if (!users || users.length === 0) {
