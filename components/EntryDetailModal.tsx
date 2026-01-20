@@ -2200,41 +2200,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                 <SocialTramoViewer tramos={socialTramos} />
               )}
               
-              <div>
-                <p className="text-sm font-semibold text-gray-700">
-                  Registro diario de actividades
-                </p>
-                {isEditing ? (
-                  !isInterventoriaUser ? (
-                    <textarea
-                      value={listToPlainText(socialActivities)}
-                      onChange={(e) =>
-                        handleListChange("socialActivities", e.target.value)
-                      }
-                      rows={4}
-                      className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                      placeholder="Describe cada actividad en una línea."
-                    />
-                  ) : (
-                    <div className="mt-2 p-2 bg-gray-50 border border-gray-200 rounded">
-                      <p className="text-sm text-gray-500 italic mb-2">Solo el contratista puede editar este campo.</p>
-                      <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
-                        {socialActivities.map((item, index) => (
-                          <li key={`social-act-${index}`}>{item.text}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )
-                ) : socialActivities.length ? (
-                  <ul className="mt-2 list-disc list-inside space-y-1 text-sm text-gray-700">
-                    {socialActivities.map((item, index) => (
-                      <li key={`social-act-${index}`}>{item.text}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="mt-2 text-sm text-gray-500">Sin registro.</p>
-                )}
-              </div>
+              {/* Redundant global activities block removed */}
 
               <div>
                 <p className="text-sm font-semibold text-gray-700">
