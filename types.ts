@@ -284,6 +284,9 @@ export interface SocialTramoData {
     location?: string;
     piece?: string;
   };
+
+  // 7. Registro diario de actividades por tramo
+  activities?: string;
 }
 
 export interface LogEntryListItem {

@@ -64,6 +64,20 @@ const SocialTramoForm: React.FC<SocialTramoFormProps> = ({
       </div>
 
       <div className="space-y-6">
+        {/* 0. Registro de Actividades por Tramo */}
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <h5 className="font-semibold text-gray-800 mb-3">
+             Registro diario de actividades
+          </h5>
+          <textarea
+            value={data.activities || ''}
+            onChange={(e) => updateField('activities', e.target.value)}
+            rows={3}
+            className="w-full border border-gray-300 rounded p-2 text-sm"
+            placeholder="Describa las actividades realizadas en este tramo..."
+          />
+        </div>
+
         {/* 1. PQRSD */}
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <h5 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">

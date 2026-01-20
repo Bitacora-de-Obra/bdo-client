@@ -998,19 +998,21 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             placeholder="Ej. Registro diario"
           />
 
-          <div>
-            <h4 className="text-sm font-semibold text-gray-800 mb-1">
-              Resumen general del día
-            </h4>
-            <textarea
-              value={summary}
-              onChange={(e) => setSummary(e.target.value)}
-              rows={4}
-              className="w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-              placeholder="Describe las actividades y hallazgos del día"
-              required
-            />
-          </div>
+          {entryType !== EntryType.SOCIAL && (
+            <div>
+              <h4 className="text-sm font-semibold text-gray-800 mb-1">
+                Resumen general del día
+              </h4>
+              <textarea
+                value={summary}
+                onChange={(e) => setSummary(e.target.value)}
+                rows={4}
+                className="w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                placeholder="Describe las actividades y hallazgos del día"
+                required
+              />
+            </div>
+          )}
 
           {(entryType as any) === EntryType.MEV && (
             <div className="mb-6">
