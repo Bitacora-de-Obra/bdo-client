@@ -292,6 +292,12 @@ export interface SocialTramoData {
 
   // 7. Registro diario de actividades por tramo
   activities?: string;
+  
+  // 8. Observaciones del contratista (por tramo)
+  contractorObservations?: string;
+  
+  // 9. Observaciones adicionales (por tramo)
+  observations?: string;
 }
 
 export interface LogEntryListItem {

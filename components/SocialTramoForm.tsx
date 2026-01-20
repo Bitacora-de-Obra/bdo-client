@@ -389,6 +389,36 @@ const SocialTramoForm: React.FC<SocialTramoFormProps> = ({
             + Agregar PSI
           </button>
         </div>
+
+        {/* 7. Observaciones del Contratista */}
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <h5 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <span className="bg-gray-100 text-gray-800 px-2 py-0.5 rounded text-xs">7</span>
+            Observaciones del contratista
+          </h5>
+          <textarea
+            value={data.contractorObservations || ''}
+            onChange={(e) => updateField('contractorObservations', e.target.value)}
+            rows={3}
+            className="w-full border border-gray-300 rounded p-2 text-sm"
+            placeholder="Observaciones del contratista para este tramo..."
+          />
+        </div>
+
+        {/* 8. Observaciones Adicionales */}
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <h5 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <span className="bg-gray-100 text-gray-800 px-2 py-0.5 rounded text-xs">8</span>
+            Observaciones adicionales
+          </h5>
+          <textarea
+            value={data.observations || ''}
+            onChange={(e) => updateField('observations', e.target.value)}
+            rows={3}
+            className="w-full border border-gray-300 rounded p-2 text-sm"
+            placeholder="Observaciones adicionales..."
+          />
+        </div>
       </div>
     </div>
   );
