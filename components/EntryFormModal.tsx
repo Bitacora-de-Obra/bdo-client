@@ -1149,23 +1149,15 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
               
               <div className="space-y-3 mt-4 pt-4 border-t border-gray-200">
 
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Observaciones de la interventoría
-                    </label>
-                    <textarea
-                      value={socialObservations}
-                      onChange={(e) => setSocialObservations(e.target.value)}
-                      disabled={!isInterventor}
-                      title={!isInterventor ? "Solo la interventoría puede editar este campo" : ""}
-                      placeholder="Espacio reservado para el interventor/supervisor."
-                      rows={3}
-                      className={`block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2 ${(!isInterventor) ? 'bg-gray-100 text-gray-500' : ''}`}
-                    />
-                  </div>
-                </div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Registro fotográfico (referencia)
+                </label>
+                <textarea
+                  value={socialPhotoSummary}
+                  onChange={(e) => setSocialPhotoSummary(e.target.value)}
+                  rows={2}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                />
               </div>
             </div>
           )}
