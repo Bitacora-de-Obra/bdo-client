@@ -2451,18 +2451,20 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
               value={scheduleDay || (projectStartDate ? calculateScheduleDay(entryDateIso) : "No registrado")}
             />
           )}
-          {isEditing ? (
-            <Input
-              label="Localización / Tramo"
-              name="locationDetails"
-              value={locationDetails}
-              onChange={handleInputChange}
-            />
-          ) : (
-            <DetailRow
-              label="Localización / Tramo"
-              value={locationDetails || "No registrado"}
-            />
+          {entryTypeValue !== EntryType.SOCIAL && (
+            isEditing ? (
+              <Input
+                label="Localización / Tramo"
+                name="locationDetails"
+                value={locationDetails}
+                onChange={handleInputChange}
+              />
+            ) : (
+              <DetailRow
+                label="Localización / Tramo"
+                value={locationDetails || "No registrado"}
+              />
+            )
           )}
         </dl>
 
@@ -3044,7 +3046,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
           </div>
           )}
 
-          {isSpecialType && (
+          {isSpecialType && entryTypeValue !== EntryType.SOCIAL && (
             <div className="space-y-4">
               <div>
                 <h4 className="text-sm font-semibold text-gray-800 mb-1">
