@@ -413,10 +413,31 @@ const SocialTramoForm: React.FC<SocialTramoFormProps> = ({
           )}
         </div>
 
-        {/* 8. Observaciones Adicionales */}
+        {/* 8. Observaciones de la Interventoría */}
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <h5 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
             <span className="bg-gray-100 text-gray-800 px-2 py-0.5 rounded text-xs">8</span>
+            Observaciones de la interventoría
+          </h5>
+          {!isInterventoriaUser ? (
+             <div className="p-2 bg-gray-50 border border-gray-200 rounded text-sm text-gray-500 italic">
+               {data.interventoriaObservations || 'Espacio reservado para la interventoría.'}
+            </div>
+          ) : (
+            <textarea
+              value={data.interventoriaObservations || ''}
+              onChange={(e) => updateField('interventoriaObservations', e.target.value)}
+              rows={3}
+              className="w-full border border-gray-300 rounded p-2 text-sm"
+              placeholder="Observaciones de la interventoría..."
+            />
+          )}
+        </div>
+
+        {/* 9. Observaciones Adicionales */}
+        <div className="bg-white p-4 rounded-lg border border-gray-200">
+          <h5 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <span className="bg-gray-100 text-gray-800 px-2 py-0.5 rounded text-xs">9</span>
             Observaciones adicionales
           </h5>
           <textarea

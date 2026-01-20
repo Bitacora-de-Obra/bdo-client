@@ -170,13 +170,22 @@ const SocialTramoViewer: React.FC<SocialTramoViewerProps> = ({ tramos }) => {
             </div>
           </div>
           
-          {/* Observaciones del Contratista */}
           {tramo.contractorObservations && (
             <div className="bg-white p-3 rounded border mt-4">
               <h6 className="font-semibold text-gray-800 mb-2">
                 Observaciones del contratista
               </h6>
               <p className="text-sm text-gray-700 whitespace-pre-wrap">{tramo.contractorObservations}</p>
+            </div>
+          )}
+
+          {/* Observaciones de la Interventoría */}
+          {tramo.interventoriaObservations && (
+            <div className="bg-white p-3 rounded border mt-4">
+              <h6 className="font-semibold text-gray-800 mb-2">
+                Observaciones de la interventoría
+              </h6>
+              <p className="text-sm text-gray-700 whitespace-pre-wrap">{tramo.interventoriaObservations}</p>
             </div>
           )}
           

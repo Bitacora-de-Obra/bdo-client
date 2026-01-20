@@ -295,8 +295,11 @@ export interface SocialTramoData {
   
   // 8. Observaciones del contratista (por tramo)
   contractorObservations?: string;
+
+  // 9. Observaciones de la interventoría (por tramo)
+  interventoriaObservations?: string;
   
-  // 9. Observaciones adicionales (por tramo)
+  // 10. Observaciones adicionales (por tramo)
   observations?: string;
 }
 
