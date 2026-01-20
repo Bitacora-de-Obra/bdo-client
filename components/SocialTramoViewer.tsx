@@ -63,15 +63,19 @@ const SocialTramoViewer: React.FC<SocialTramoViewerProps> = ({ tramos }) => {
                 <span className="bg-green-100 px-2 py-0.5 rounded text-xs">2</span>
                 Acta de Compromiso
               </h6>
-              {tramo.actaCompromiso.required ? (
-                <div>
-                  <span className="text-green-600 font-medium">✅ Sí</span>
-                  <div className="mt-1 text-gray-600">
-                    No. {tramo.actaCompromiso.actaNumber || 'N/A'} - {tramo.actaCompromiso.subject || 'Sin asunto'}
-                  </div>
-                </div>
-              ) : (
+              {(!tramo.actasCompromiso || tramo.actasCompromiso.length === 0) ? (
                 <span className="text-gray-500">No se requirió</span>
+              ) : (
+                <div className="space-y-2">
+                   {tramo.actasCompromiso.map((acta, i) => (
+                      <div key={i}>
+                        <span className="text-green-600 font-medium">✅ Acta #{i+1}</span>
+                        <div className="mt-1 text-gray-600 text-xs">
+                          No. {acta.actaNumber || 'N/A'} - {acta.subject || 'Sin asunto'}
+                        </div>
+                      </div>
+                   ))}
+                </div>
               )}
             </div>
             
@@ -81,15 +85,19 @@ const SocialTramoViewer: React.FC<SocialTramoViewerProps> = ({ tramos }) => {
                 <span className="bg-yellow-100 px-2 py-0.5 rounded text-xs">3</span>
                 Articulación Interinstitucional
               </h6>
-              {tramo.articulacion.performed ? (
-                <div>
-                  <span className="text-green-600 font-medium">✅ Sí</span>
-                  <div className="mt-1 text-gray-600">
-                    {tramo.articulacion.entity || 'N/A'} - {tramo.articulacion.subject || 'Sin asunto'}
-                  </div>
-                </div>
-              ) : (
+              {(!tramo.articulaciones || tramo.articulaciones.length === 0) ? (
                 <span className="text-gray-500">No se realizó</span>
+              ) : (
+                <div className="space-y-2">
+                  {tramo.articulaciones.map((art, i) => (
+                    <div key={i}>
+                      <span className="text-green-600 font-medium">✅ Registro #{i+1}</span>
+                      <div className="mt-1 text-gray-600 text-xs">
+                        {art.entity || 'N/A'} - {art.subject || 'Sin asunto'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
             
@@ -112,15 +120,19 @@ const SocialTramoViewer: React.FC<SocialTramoViewerProps> = ({ tramos }) => {
                 <span className="bg-pink-100 px-2 py-0.5 rounded text-xs">5</span>
                 Volantes
               </h6>
-              {tramo.volantes.delivered ? (
-                <div>
-                  <span className="text-green-600 font-medium">✅ Entregados</span>
-                  <div className="mt-1 text-gray-600">
-                    No. {tramo.volantes.number || 'N/A'} - {tramo.volantes.type || 'N/A'} ({tramo.volantes.quantity || 0})
-                  </div>
-                </div>
-              ) : (
+              {(!tramo.volantes || tramo.volantes.length === 0) ? (
                 <span className="text-gray-500">No se entregaron</span>
+              ) : (
+                <div className="space-y-2">
+                  {tramo.volantes.map((vol, i) => (
+                    <div key={i}>
+                      <span className="text-green-600 font-medium">✅ Entrega #{i+1}</span>
+                      <div className="mt-1 text-gray-600 text-xs">
+                        No. {vol.number || 'N/A'} - {vol.type || 'N/A'} ({vol.quantity || 0})
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
             
@@ -130,16 +142,20 @@ const SocialTramoViewer: React.FC<SocialTramoViewerProps> = ({ tramos }) => {
                 <span className="bg-indigo-100 px-2 py-0.5 rounded text-xs">6</span>
                 PSI
               </h6>
-              {tramo.psi.installed ? (
-                <div>
-                  <span className="text-green-600 font-medium">✅ Instalado/Actualizado</span>
-                  <div className="mt-1 text-gray-600">
-                    {tramo.psi.location && <div>Ubicación: {tramo.psi.location}</div>}
-                    {tramo.psi.piece && <div>Pieza: {tramo.psi.piece}</div>}
-                  </div>
-                </div>
+              {(!tramo.psis || tramo.psis.length === 0) ? (
+                  <span className="text-gray-500">No se instaló/actualizó</span>
               ) : (
-                <span className="text-gray-500">No se instaló/actualizó</span>
+                <div className="space-y-2">
+                  {tramo.psis.map((psi, i) => (
+                    <div key={i}>
+                      <span className="text-green-600 font-medium">✅ {psi.isUpdate ? 'Actualización' : 'Instalación'}</span>
+                      <div className="mt-1 text-gray-600 text-xs">
+                        {psi.location && <div>Ubicación: {psi.location}</div>}
+                        {psi.piece && <div>Pieza: {psi.piece}</div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </div>
