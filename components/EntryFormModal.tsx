@@ -1100,11 +1100,11 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                     tramoId: 'ALL_TRAMOS',
                     tramoName: 'Todos los tramos',
                     pqrsds: [],
-                    actaCompromiso: { required: false },
-                    articulacion: { performed: false },
+                    actasCompromiso: [],
+                    articulaciones: [],
                     vallasMobiles: false,
-                    volantes: { delivered: false },
-                    psi: { installed: false }
+                    volantes: [],
+                    psis: []
                   }]);
                 }}
                 onAdd={(catalogItem) => {
@@ -1116,11 +1116,11 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                     tramoId: catalogItem.id,
                     tramoName: catalogItem.name,
                     pqrsds: [],
-                    actaCompromiso: { required: false },
-                    articulacion: { performed: false },
+                    actasCompromiso: [],
+                    articulaciones: [],
                     vallasMobiles: false,
-                    volantes: { delivered: false },
-                    psi: { installed: false }
+                    volantes: [],
+                    psis: []
                   }]);
                 }}
               />
@@ -2137,11 +2137,11 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                       tramoId: selectedId,
                       tramoName: catalogItem.name,
                       pqrsds: [],
-                      actaCompromiso: { required: false },
-                      articulacion: { performed: false },
+                      actasCompromiso: [],
+                      articulaciones: [],
                       vallasMobiles: false,
-                      volantes: { delivered: false },
-                      psi: { installed: false }
+                      volantes: [],
+                      psis: []
                     }]);
                   }
                   e.target.value = '';

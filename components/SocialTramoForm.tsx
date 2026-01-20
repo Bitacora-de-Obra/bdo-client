@@ -1,6 +1,13 @@
 import React from 'react';
 import Input from './ui/Input';
-import { SocialTramoData, PQRSD } from '../types';
+import { 
+  SocialTramoData, 
+  PQRSD, 
+  ActaCompromiso, 
+  ArticulacionInterinstitucional, 
+  VolanteEntrega, 
+  PSIInstalacion 
+} from '../types';
 
 interface SocialTramoFormProps {
   data: SocialTramoData;
@@ -17,6 +24,28 @@ const createEmptyPQRSD = (): PQRSD => ({
   status: 'ABIERTA'
 });
 
+const createEmptyActa = (): ActaCompromiso => ({
+  actaNumber: '',
+  subject: ''
+});
+
+const createEmptyArticulacion = (): ArticulacionInterinstitucional => ({
+  entity: '',
+  subject: ''
+});
+
+const createEmptyVolante = (): VolanteEntrega => ({
+  number: '',
+  type: '',
+  quantity: 0
+});
+
+const createEmptyPSI = (): PSIInstalacion => ({
+  location: '',
+  piece: '',
+  isUpdate: false
+});
+
 const SocialTramoForm: React.FC<SocialTramoFormProps> = ({
   data,
   onChange,
@@ -29,18 +58,22 @@ const SocialTramoForm: React.FC<SocialTramoFormProps> = ({
     onChange({ ...data, [field]: value });
   };
 
-  const addPQRSD = () => {
-    updateField('pqrsds', [...data.pqrsds, createEmptyPQRSD()]);
+  // --- HELPERS FOR ARRAYS ---
+  const addItem = <T,>(field: keyof SocialTramoData, item: T) => {
+    const list = (data[field] as T[]) || [];
+    updateField(field, [...list, item] as any);
   };
 
-  const updatePQRSD = (idx: number, field: keyof PQRSD, value: any) => {
-    const updated = [...data.pqrsds];
-    updated[idx] = { ...updated[idx], [field]: value };
-    updateField('pqrsds', updated);
+  const removeItem = <T,>(field: keyof SocialTramoData, idx: number) => {
+    const list = (data[field] as T[]) || [];
+    updateField(field, list.filter((_, i) => i !== idx) as any);
   };
 
-  const removePQRSD = (idx: number) => {
-    updateField('pqrsds', data.pqrsds.filter((_, i) => i !== idx));
+  const updateItem = <T,>(field: keyof SocialTramoData, idx: number, key: keyof T, value: any) => {
+    const list = (data[field] as T[]) || [];
+    const updatedList = [...list];
+    updatedList[idx] = { ...updatedList[idx], [key]: value };
+    updateField(field, updatedList as any);
   };
 
   return (
@@ -84,17 +117,24 @@ const SocialTramoForm: React.FC<SocialTramoFormProps> = ({
             <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs">1</span>
             PQRSD Recibidas
           </h5>
-          
-          {data.pqrsds.length === 0 ? (
+          {(!data.pqrsds || data.pqrsds.length === 0) ? (
             <p className="text-gray-500 text-sm mb-2">No hay PQRSD registradas</p>
           ) : (
             data.pqrsds.map((pqrsd, idx) => (
-              <div key={idx} className="grid grid-cols-1 md:grid-cols-5 gap-2 mb-3 p-3 bg-gray-50 rounded border items-end">
+              <div key={idx} className="grid grid-cols-1 md:grid-cols-5 gap-2 mb-3 p-3 bg-gray-50 rounded border items-end relative">
+                <button
+                    type="button"
+                    onClick={() => removeItem('pqrsds', idx)}
+                    className="absolute top-1 right-1 text-red-500 hover:text-red-700 font-bold"
+                    title="Eliminar registro"
+                  >
+                    ✕
+                </button>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Origen</label>
                   <select
                     value={pqrsd.origin}
-                    onChange={(e) => updatePQRSD(idx, 'origin', e.target.value)}
+                    onChange={(e) => updateItem('pqrsds', idx, 'origin', e.target.value)}
                     className="w-full border border-gray-300 rounded p-2 text-sm"
                   >
                     <option value="CAMPO">Campo</option>
@@ -107,7 +147,7 @@ const SocialTramoForm: React.FC<SocialTramoFormProps> = ({
                     type="number"
                     min="1"
                     value={pqrsd.quantity}
-                    onChange={(e) => updatePQRSD(idx, 'quantity', parseInt(e.target.value) || 1)}
+                    onChange={(e) => updateItem('pqrsds', idx, 'quantity', parseInt(e.target.value) || 1)}
                     className="w-full border border-gray-300 rounded p-2 text-sm"
                   />
                 </div>
@@ -116,131 +156,124 @@ const SocialTramoForm: React.FC<SocialTramoFormProps> = ({
                   <input
                     type="text"
                     value={pqrsd.subject}
-                    onChange={(e) => updatePQRSD(idx, 'subject', e.target.value)}
+                    onChange={(e) => updateItem('pqrsds', idx, 'subject', e.target.value)}
                     className="w-full border border-gray-300 rounded p-2 text-sm"
                     placeholder="Describa el asunto"
                   />
                 </div>
-                <div className="flex items-end gap-2">
-                  <div className="flex-1">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Estado</label>
-                    <select
-                      value={pqrsd.status}
-                      onChange={(e) => updatePQRSD(idx, 'status', e.target.value)}
-                      className="w-full border border-gray-300 rounded p-2 text-sm"
-                    >
-                      <option value="ABIERTA">Abierta</option>
-                      <option value="CERRADA">Cerrada</option>
-                    </select>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removePQRSD(idx)}
-                    className="text-red-500 hover:text-red-700 p-2"
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Estado</label>
+                  <select
+                    value={pqrsd.status}
+                    onChange={(e) => updateItem('pqrsds', idx, 'status', e.target.value)}
+                    className="w-full border border-gray-300 rounded p-2 text-sm"
                   >
-                    ✕
-                  </button>
+                    <option value="ABIERTA">Abierta</option>
+                    <option value="CERRADA">Cerrada</option>
+                  </select>
                 </div>
               </div>
             ))
           )}
           <button
             type="button"
-            onClick={addPQRSD}
+            onClick={() => addItem('pqrsds', createEmptyPQRSD())}
             className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
           >
             + Agregar PQRSD
           </button>
         </div>
 
-        {/* 2. Acta de Compromiso */}
+        {/* 2. Acta de Compromiso (MULTI) */}
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <h5 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
             <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs">2</span>
-            ¿Se requirió el diligenciamiento de Acta de Compromiso?
+            Actas de Compromiso
           </h5>
-          <div className="flex gap-4 mb-3">
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                checked={!data.actaCompromiso.required}
-                onChange={() => updateField('actaCompromiso', { ...data.actaCompromiso, required: false })}
-              />
-              No
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                checked={data.actaCompromiso.required}
-                onChange={() => updateField('actaCompromiso', { ...data.actaCompromiso, required: true })}
-              />
-              Sí
-            </label>
-          </div>
-          {data.actaCompromiso.required && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
-              <Input
-                label="No. de Acta"
-                value={data.actaCompromiso.actaNumber || ''}
-                onChange={(e) => updateField('actaCompromiso', { ...data.actaCompromiso, actaNumber: e.target.value })}
-              />
-              <Input
-                label="Asunto"
-                value={data.actaCompromiso.subject || ''}
-                onChange={(e) => updateField('actaCompromiso', { ...data.actaCompromiso, subject: e.target.value })}
-              />
-            </div>
+          {(!data.actasCompromiso || data.actasCompromiso.length === 0) ? (
+            <p className="text-gray-500 text-sm mb-2">No hay actas registradas</p>
+          ) : (
+            data.actasCompromiso.map((acta, idx) => (
+              <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 p-3 bg-gray-50 rounded border relative pt-6">
+                <button
+                    type="button"
+                    onClick={() => removeItem('actasCompromiso', idx)}
+                    className="absolute top-1 right-2 text-red-500 hover:text-red-700 font-bold"
+                    title="Eliminar registro"
+                  >
+                    ✕
+                </button>
+                <Input
+                  label="No. de Acta"
+                  value={acta.actaNumber}
+                  onChange={(e) => updateItem('actasCompromiso', idx, 'actaNumber', e.target.value)}
+                />
+                <Input
+                  label="Asunto"
+                  value={acta.subject}
+                  onChange={(e) => updateItem('actasCompromiso', idx, 'subject', e.target.value)}
+                />
+              </div>
+            ))
           )}
+          <button
+            type="button"
+            onClick={() => addItem('actasCompromiso', createEmptyActa())}
+            className="text-green-600 hover:text-green-800 text-sm font-medium flex items-center gap-1"
+          >
+            + Agregar Acta
+          </button>
         </div>
 
-        {/* 3. Articulación Interinstitucional */}
+        {/* 3. Articulación Interinstitucional (MULTI) */}
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <h5 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
             <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-xs">3</span>
-            ¿Se realizó alguna Articulación Interinstitucional?
+            Articulación Interinstitucional
           </h5>
-          <div className="flex gap-4 mb-3">
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                checked={!data.articulacion.performed}
-                onChange={() => updateField('articulacion', { ...data.articulacion, performed: false })}
-              />
-              No
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                checked={data.articulacion.performed}
-                onChange={() => updateField('articulacion', { ...data.articulacion, performed: true })}
-              />
-              Sí
-            </label>
-          </div>
-          {data.articulacion.performed && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
-              <Input
-                label="¿Cuál entidad?"
-                value={data.articulacion.entity || ''}
-                onChange={(e) => updateField('articulacion', { ...data.articulacion, entity: e.target.value })}
-              />
-              <Input
-                label="Asunto"
-                value={data.articulacion.subject || ''}
-                onChange={(e) => updateField('articulacion', { ...data.articulacion, subject: e.target.value })}
-              />
-            </div>
+          {(!data.articulaciones || data.articulaciones.length === 0) ? (
+            <p className="text-gray-500 text-sm mb-2">No hay articulaciones registradas</p>
+          ) : (
+            data.articulaciones.map((art, idx) => (
+              <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 p-3 bg-gray-50 rounded border relative pt-6">
+                 <button
+                    type="button"
+                    onClick={() => removeItem('articulaciones', idx)}
+                    className="absolute top-1 right-2 text-red-500 hover:text-red-700 font-bold"
+                    title="Eliminar registro"
+                  >
+                    ✕
+                </button>
+                <Input
+                  label="¿Cuál entidad?"
+                  value={art.entity}
+                  onChange={(e) => updateItem('articulaciones', idx, 'entity', e.target.value)}
+                />
+                <Input
+                  label="Asunto"
+                  value={art.subject}
+                  onChange={(e) => updateItem('articulaciones', idx, 'subject', e.target.value)}
+                />
+              </div>
+            ))
           )}
+          <button
+            type="button"
+            onClick={() => addItem('articulaciones', createEmptyArticulacion())}
+            className="text-yellow-600 hover:text-yellow-800 text-sm font-medium flex items-center gap-1"
+          >
+            + Agregar Articulación
+          </button>
         </div>
 
-        {/* 4. Vallas Móviles */}
+        {/* 4. Vallas Móviles (SINGLE - Boolean) */}
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <h5 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
             <span className="bg-orange-100 text-orange-800 px-2 py-0.5 rounded text-xs">4</span>
             Se encuentran instaladas las dos (2) vallas móviles
           </h5>
           <div className="flex gap-4">
-            <label className="flex items-center gap-2">
+            <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="radio"
                 checked={!data.vallasMobiles}
@@ -248,10 +281,10 @@ const SocialTramoForm: React.FC<SocialTramoFormProps> = ({
               />
               No
             </label>
-            <label className="flex items-center gap-2">
+            <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="radio"
-                checked={data.vallasMobiles}
+                checked={!!data.vallasMobiles}
                 onChange={() => updateField('vallasMobiles', true)}
               />
               Sí
@@ -259,90 +292,102 @@ const SocialTramoForm: React.FC<SocialTramoFormProps> = ({
           </div>
         </div>
 
-        {/* 5. Volantes */}
+        {/* 5. Volantes (MULTI) */}
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <h5 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
             <span className="bg-pink-100 text-pink-800 px-2 py-0.5 rounded text-xs">5</span>
-            ¿Se entregaron Volantes?
+            Entrega de Volantes
           </h5>
-          <div className="flex gap-4 mb-3">
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                checked={!data.volantes.delivered}
-                onChange={() => updateField('volantes', { ...data.volantes, delivered: false })}
-              />
-              No
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                checked={data.volantes.delivered}
-                onChange={() => updateField('volantes', { ...data.volantes, delivered: true })}
-              />
-              Sí
-            </label>
-          </div>
-          {data.volantes.delivered && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
-              <Input
-                label="No. de Volante"
-                value={data.volantes.number || ''}
-                onChange={(e) => updateField('volantes', { ...data.volantes, number: e.target.value })}
-              />
-              <Input
-                label="¿Cuál?"
-                value={data.volantes.type || ''}
-                onChange={(e) => updateField('volantes', { ...data.volantes, type: e.target.value })}
-              />
-              <Input
-                label="¿Cuántos?"
-                type="number"
-                value={data.volantes.quantity?.toString() || ''}
-                onChange={(e) => updateField('volantes', { ...data.volantes, quantity: parseInt(e.target.value) || 0 })}
-              />
-            </div>
+          {(!data.volantes || data.volantes.length === 0) ? (
+            <p className="text-gray-500 text-sm mb-2">No hay volantes registrados</p>
+          ) : (
+            data.volantes.map((vol, idx) => (
+              <div key={idx} className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3 p-3 bg-gray-50 rounded border relative pt-6">
+                <button
+                    type="button"
+                    onClick={() => removeItem('volantes', idx)}
+                    className="absolute top-1 right-2 text-red-500 hover:text-red-700 font-bold"
+                    title="Eliminar registro"
+                  >
+                    ✕
+                </button>
+                <Input
+                  label="No. de Volante"
+                  value={vol.number}
+                  onChange={(e) => updateItem('volantes', idx, 'number', e.target.value)}
+                />
+                <Input
+                  label="¿Cuál?"
+                  value={vol.type}
+                  onChange={(e) => updateItem('volantes', idx, 'type', e.target.value)}
+                />
+                <Input
+                  label="¿Cuántos?"
+                  type="number"
+                  value={vol.quantity?.toString()}
+                  onChange={(e) => updateItem('volantes', idx, 'quantity', parseInt(e.target.value) || 0)}
+                />
+              </div>
+            ))
           )}
+          <button
+            type="button"
+            onClick={() => addItem('volantes', createEmptyVolante())}
+            className="text-pink-600 hover:text-pink-800 text-sm font-medium flex items-center gap-1"
+          >
+            + Agregar Volante
+          </button>
         </div>
 
-        {/* 6. PSI */}
+        {/* 6. PSI (MULTI) */}
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <h5 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
             <span className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded text-xs">6</span>
-            ¿Se instalaron y/o actualizaron PSI?
+            Instalación/Actualización de PSI
           </h5>
-          <div className="flex gap-4 mb-3">
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                checked={!data.psi.installed}
-                onChange={() => updateField('psi', { ...data.psi, installed: false })}
-              />
-              No
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                checked={data.psi.installed}
-                onChange={() => updateField('psi', { ...data.psi, installed: true })}
-              />
-              Sí
-            </label>
-          </div>
-          {data.psi.installed && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2">
-              <Input
-                label="¿Dónde se instaló?"
-                value={data.psi.location || ''}
-                onChange={(e) => updateField('psi', { ...data.psi, location: e.target.value })}
-              />
-              <Input
-                label="Si se actualizó, ¿cuál y con qué pieza?"
-                value={data.psi.piece || ''}
-                onChange={(e) => updateField('psi', { ...data.psi, piece: e.target.value })}
-              />
-            </div>
+          {(!data.psis || data.psis.length === 0) ? (
+            <p className="text-gray-500 text-sm mb-2">No hay PSI registrados</p>
+          ) : (
+            data.psis.map((psi, idx) => (
+              <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3 p-3 bg-gray-50 rounded border relative pt-6">
+                 <button
+                    type="button"
+                    onClick={() => removeItem('psis', idx)}
+                    className="absolute top-1 right-2 text-red-500 hover:text-red-700 font-bold"
+                    title="Eliminar registro"
+                  >
+                    ✕
+                </button>
+                <div className="col-span-1 md:col-span-2 flex gap-4 mb-2">
+                    <label className="flex items-center gap-2 cursor-pointer text-sm">
+                        <input 
+                            type="checkbox" 
+                            checked={psi.isUpdate} 
+                            onChange={(e) => updateItem('psis', idx, 'isUpdate', e.target.checked)}
+                        />
+                        ¿Es actualización?
+                    </label>
+                </div>
+                <Input
+                  label="¿Dónde se instaló?"
+                  value={psi.location}
+                  onChange={(e) => updateItem('psis', idx, 'location', e.target.value)}
+                />
+                <Input
+                  label={psi.isUpdate ? "Pieza actualizada" : "Pieza instalada"}
+                  value={psi.piece}
+                  onChange={(e) => updateItem('psis', idx, 'piece', e.target.value)}
+                />
+              </div>
+            ))
           )}
+          <button
+            type="button"
+            onClick={() => addItem('psis', createEmptyPSI())}
+            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center gap-1"
+          >
+            + Agregar PSI
+          </button>
         </div>
       </div>
     </div>

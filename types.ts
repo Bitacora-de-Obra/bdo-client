@@ -246,6 +246,28 @@ export interface PQRSD {
   status: 'ABIERTA' | 'CERRADA';
 }
 
+export interface ActaCompromiso {
+  actaNumber: string;
+  subject: string;
+}
+
+export interface ArticulacionInterinstitucional {
+  entity: string;
+  subject: string;
+}
+
+export interface VolanteEntrega {
+  number: string;
+  type: string;
+  quantity: number;
+}
+
+export interface PSIInstalacion {
+  location: string;
+  piece: string;
+  isUpdate: boolean;
+}
+
 export interface SocialTramoData {
   tramoId: string;
   tramoName: string;
@@ -254,36 +276,19 @@ export interface SocialTramoData {
   pqrsds: PQRSD[];
   
   // 2. Acta de Compromiso
-  actaCompromiso: {
-    required: boolean;
-    actaNumber?: string;
-    subject?: string;
-  };
+  actasCompromiso: ActaCompromiso[];
   
   // 3. Articulación Interinstitucional
-  articulacion: {
-    performed: boolean;
-    entity?: string;
-    subject?: string;
-  };
+  articulaciones: ArticulacionInterinstitucional[];
   
   // 4. Vallas Móviles
   vallasMobiles: boolean;
   
   // 5. Volantes
-  volantes: {
-    delivered: boolean;
-    number?: string;
-    type?: string;
-    quantity?: number;
-  };
+  volantes: VolanteEntrega[];
   
   // 6. PSI (Instalación/Actualización)
-  psi: {
-    installed: boolean;
-    location?: string;
-    piece?: string;
-  };
+  psis: PSIInstalacion[];
 
   // 7. Registro diario de actividades por tramo
   activities?: string;
