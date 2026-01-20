@@ -2202,35 +2202,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
               
               {/* Redundant global activities block removed */}
 
-              <div>
-                <p className="text-sm font-semibold text-gray-700">
-                  Observaciones de la interventoría
-                </p>
-                {isEditing ? (
-                  isInterventoriaUser ? (
-                    <textarea
-                      name="socialObservations"
-                      value={socialObservations}
-                      onChange={(e) =>
-                        setEditedEntry((prev) => ({
-                          ...prev,
-                          socialObservations: e.target.value,
-                        }))
-                      }
-                      rows={3}
-                      className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                    />
-                  ) : (
-                     <p className="mt-2 text-sm text-gray-500 italic bg-gray-50 p-2 rounded">
-                        Espacio reservado para la interventoría.
-                     </p>
-                  )
-                ) : (
-                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
-                    {socialObservations || "Sin observaciones."}
-                  </p>
-                )}
-              </div>
+
 
             </div>
             )}
@@ -3355,7 +3327,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
           </div>
           )}
 
-        {(!isSpecialType || showMevPanel) && (
+        {(!isSpecialType || showMevPanel) && entryTypeValue !== EntryType.SOCIAL && (
           <div>
             <h4 className="text-md font-semibold text-gray-800">
               Observaciones adicionales
