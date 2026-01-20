@@ -105,4 +105,8 @@ storybook-static/
 # Secrets and API keys (should never be committed)
 secrets/
 *.pem
-*.key
+
+# Documentation
+docs/Info*.xlsx
+docs/PK_ID.csv
+docs/bitacorasocial.docx
