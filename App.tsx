@@ -15,20 +15,23 @@ import MonthlyReportsDashboard from "./components/MonthlyReportsDashboard";
 import PendingTasksDashboard from "./components/PendingTasksDashboard";
 import ExportDashboard from "./components/ExportDashboard";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import { ToastProvider } from "./components/ui/ToastProvider";
+import { ToastProvider, useToast } from "./components/ui/ToastProvider";
 import LoginScreen from "./components/auth/LoginScreen";
-import { ReportScope, Notification, User } from "./types";
+import { ReportScope, Notification, User, LogEntry } from "./types";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import DrawingsDashboard from "./components/DrawingsDashboard";
 import ContractDocumentsDashboard from "./components/ContractDocumentsDashboard";
 import { ChatbotWidget } from "./components/chatbot/ChatbotWidget";
 import ThemeManager from "./components/ThemeManager";
+import EntryFormModal from "./components/EntryFormModal";
 
 // ... existing imports ...
 import SignatureManagerModal from "./components/account/SignatureManagerModal";
 import ProjectChat from "./components/chat/ProjectChat";
 import api from "./src/services/api";
 import { OfflineIndicator } from "./src/components/offline/OfflineIndicator";
+import { PlusIcon } from "./components/icons/Icon";
+import { usePermissions } from "./src/hooks/usePermissions";
 
 type InitialItemToOpen = { type: "acta" | "logEntry" | "communication" | "drawing"; id: string };
 
@@ -46,14 +49,24 @@ const MainApp = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
 
+  // Global Entry Modal State
+  const [isGlobalEntryModalOpen, setIsGlobalEntryModalOpen] = useState(false);
+
   const { user } = useAuth();
+  const { showToast } = useToast();
+  const { canEditContent } = usePermissions();
+  
   const { data: projectDetails, isLoading: isProjectLoading } =
     useApi.projectDetails();
+    
   const {
     data: contractModifications,
     isLoading: isModificationsLoading,
     retry: refetchContractModifications,
   } = useApi.contractModifications();
+
+  // Need users for the global modal
+  const { data: users } = useApi.users();
 
   const isLoading =
     isProjectLoading || (isModificationsLoading && !contractModifications);
@@ -109,6 +122,53 @@ const MainApp = () => {
 
   const clearInitialItem = () => {
     setInitialItemToOpen(null);
+  };
+
+  const handleGlobalSaveEntry = async (
+    newEntryData: Omit<
+      LogEntry,
+      | "id"
+      | "folioNumber"
+      | "createdAt"
+      | "author"
+      | "comments"
+      | "history"
+      | "updatedAt"
+      | "attachments"
+    >,
+    files: File[]
+  ) => {
+    if (!user || !projectDetails) return;
+
+    try {
+      await api.logEntries.create(
+        {
+          ...newEntryData,
+          authorId: user.id,
+          projectId: projectDetails.id,
+        },
+        files
+      );
+      
+      showToast({
+         title: "Anotación creada",
+         message: "La anotación se ha guardado exitosamente.",
+         variant: "success"
+      });
+      setIsGlobalEntryModalOpen(false);
+      
+      // If we are currently in the logbook view, we might want to refresh it.
+      // Since passing a refresh callback down the tree is complex here without context,
+      // users will see the new entry if they navigate or refresh. 
+      // Ideally, React Query or SWR would handle cache invalidation automatically.
+      
+    } catch (err: any) {
+      showToast({
+        title: "Error",
+        message: err.message || "Error al guardar la anotación",
+        variant: "error"
+      });
+    }
   };
 
   const renderContent = () => {
@@ -266,6 +326,35 @@ const MainApp = () => {
           isOpen={isSignatureModalOpen}
           onClose={() => setIsSignatureModalOpen(false)}
         />
+        
+        {/* Global Create Entry FAB */}
+        {canEditContent && projectDetails && (
+          <button
+             onClick={() => setIsGlobalEntryModalOpen(true)}
+             className="fixed z-50 rounded-full shadow-lg bg-brand-primary text-white hover:bg-brand-secondary transition-all duration-200 flex items-center justify-center"
+             style={{ 
+               bottom: '90px', 
+               right: '25px', 
+               width: '50px', 
+               height: '50px',
+             }}
+             title="Crear nueva anotación"
+          >
+            <PlusIcon className="w-6 h-6" />
+          </button>
+        )}
+        
+        {isGlobalEntryModalOpen && projectDetails && (
+          <EntryFormModal
+             isOpen={isGlobalEntryModalOpen}
+             onClose={() => setIsGlobalEntryModalOpen(false)}
+             onSave={handleGlobalSaveEntry}
+             availableUsers={users || []}
+             currentUser={user}
+             projectStartDate={projectDetails.startDate}
+             contractNumber={projectDetails.contractId}
+          />
+        )}
       </div>
     </div>
   );
