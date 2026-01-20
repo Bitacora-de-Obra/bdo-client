@@ -223,7 +223,7 @@ const SocialTramoForm: React.FC<SocialTramoFormProps> = ({
         <div className="bg-white p-4 rounded-lg border border-gray-200">
           <h5 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
             <span className="bg-orange-100 text-orange-800 px-2 py-0.5 rounded text-xs">4</span>
-            ¿Hay presencia de Vallas Móviles?
+            Se encuentran instaladas las dos (2) vallas móviles
           </h5>
           <div className="flex gap-4">
             <label className="flex items-center gap-2">

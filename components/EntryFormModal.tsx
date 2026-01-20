@@ -1145,18 +1145,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
               ))}
               
               <div className="space-y-3 mt-4 pt-4 border-t border-gray-200">
-                <label className="block text-sm font-medium text-gray-700">
-                  Registro diario de actividades
-                </label>
-                <textarea
-                  value={socialActivitiesText}
-                  onChange={(e) => setSocialActivitiesText(e.target.value)}
-                  rows={3}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                  placeholder="Describe cada actividad social en una línea."
-                  disabled={isInterventor}
-                  title={isInterventor ? "Solo el contratista puede editar este campo" : ""}
-                />
+
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                   <div>
@@ -2189,16 +2178,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             
             {/* General observations after tramos */}
             <div className="space-y-3 mt-4 pt-4 border-t border-gray-200">
-              <label className="block text-sm font-medium text-gray-700">
-                Registro diario de actividades
-              </label>
-              <textarea
-                value={socialActivitiesText}
-                onChange={(e) => setSocialActivitiesText(e.target.value)}
-                rows={3}
-                className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                placeholder="Describe cada actividad social en una línea."
-              />
+
               <label className="block text-sm font-medium text-gray-700">
                 Registro fotográfico (referencia)
               </label>

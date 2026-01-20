@@ -257,7 +257,7 @@ export const CascadingLocationSelector: React.FC<CascadingLocationSelectorProps>
         disabled={!tempSelection.troncal || !tempSelection.civ || !tempSelection.pk}
         className={`w-full ${colors.button} text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition`}
       >
-        + Agregar Tramo
+        + Agregar reporte
       </button>
     </div>
   );
