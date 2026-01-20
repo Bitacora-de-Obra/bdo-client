@@ -15,6 +15,7 @@ interface SocialTramoFormProps {
   onRemove?: () => void;
   index: number;
   total: number;
+  isInterventoriaUser?: boolean;
 }
 
 const createEmptyPQRSD = (): PQRSD => ({
@@ -51,7 +52,8 @@ const SocialTramoForm: React.FC<SocialTramoFormProps> = ({
   onChange,
   onRemove,
   index,
-  total
+  total,
+  isInterventoriaUser = false
 }) => {
 
   const updateField = <K extends keyof SocialTramoData>(field: K, value: SocialTramoData[K]) => {
@@ -396,13 +398,19 @@ const SocialTramoForm: React.FC<SocialTramoFormProps> = ({
             <span className="bg-gray-100 text-gray-800 px-2 py-0.5 rounded text-xs">7</span>
             Observaciones del contratista
           </h5>
-          <textarea
-            value={data.contractorObservations || ''}
-            onChange={(e) => updateField('contractorObservations', e.target.value)}
-            rows={3}
-            className="w-full border border-gray-300 rounded p-2 text-sm"
-            placeholder="Observaciones del contratista para este tramo..."
-          />
+          {isInterventoriaUser ? (
+            <div className="p-2 bg-gray-50 border border-gray-200 rounded text-sm text-gray-500 italic">
+              {data.contractorObservations || 'Solo el contratista puede editar este campo.'}
+            </div>
+          ) : (
+            <textarea
+              value={data.contractorObservations || ''}
+              onChange={(e) => updateField('contractorObservations', e.target.value)}
+              rows={3}
+              className="w-full border border-gray-300 rounded p-2 text-sm"
+              placeholder="Observaciones del contratista para este tramo..."
+            />
+          )}
         </div>
 
         {/* 8. Observaciones Adicionales */}

@@ -1143,6 +1143,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                   }}
                   index={idx}
                   total={socialTramos.length}
+                  isInterventoriaUser={isInterventor}
                 />
               ))}
               
@@ -2175,6 +2176,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                 }}
                 index={idx}
                 total={socialTramos.length}
+                isInterventoriaUser={isInterventor}
               />
             ))}
             
