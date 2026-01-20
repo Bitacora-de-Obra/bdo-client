@@ -2052,21 +2052,19 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                 className={`block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2 ${currentUser?.entity === 'INTERVENTORIA' ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
               />
             </div>
-            {entryType !== EntryType.SOCIAL && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Observaciones de la interventoría
-                  {currentUser?.entity === 'CONTRACTOR' && <span className="text-xs text-gray-400 ml-1">(Solo lectura)</span>}
-                </label>
-                <textarea
-                  value={interventoriaObservations}
-                  onChange={(e) => setInterventoriaObservations(e.target.value)}
-                  rows={3}
-                  disabled={currentUser?.entity === 'CONTRACTOR'}
-                  className={`block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2 ${currentUser?.entity === 'CONTRACTOR' ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
-                />
-              </div>
-            )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Observaciones de la interventoría
+                {currentUser?.entity === 'CONTRACTOR' && <span className="text-xs text-gray-400 ml-1">(Solo lectura)</span>}
+              </label>
+              <textarea
+                value={interventoriaObservations}
+                onChange={(e) => setInterventoriaObservations(e.target.value)}
+                rows={3}
+                disabled={currentUser?.entity === 'CONTRACTOR'}
+                className={`block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2 ${currentUser?.entity === 'CONTRACTOR' ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
+              />
+            </div>
           </div>
         )}
 
