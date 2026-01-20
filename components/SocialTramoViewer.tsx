@@ -29,6 +29,16 @@ const SocialTramoViewer: React.FC<SocialTramoViewerProps> = ({ tramos }) => {
             {tramo.tramoName}
           </h5>
           
+          {/* Actividades del Tramo */}
+          {tramo.activities && (
+            <div className="bg-white p-3 rounded border mb-4">
+              <h6 className="font-semibold text-gray-800 mb-2">
+                Registro diario de actividades
+              </h6>
+              <p className="text-sm text-gray-700 whitespace-pre-wrap">{tramo.activities}</p>
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             {/* PQRSD */}
             <div className="bg-white p-3 rounded border">
