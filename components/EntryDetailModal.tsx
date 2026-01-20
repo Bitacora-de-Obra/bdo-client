@@ -3327,7 +3327,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
           </div>
           )}
 
-        {(!isSpecialType || showMevPanel) && entryTypeValue !== EntryType.SOCIAL && (
+        {(!isSpecialType || showMevPanel) && (
           <div>
             <h4 className="text-md font-semibold text-gray-800">
               Observaciones adicionales
