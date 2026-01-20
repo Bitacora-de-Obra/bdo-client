@@ -2194,30 +2194,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                 rows={2}
                 className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
               />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Observaciones de la interventoría
-                  </label>
-                  <textarea
-                    value={socialObservations}
-                    onChange={(e) => setSocialObservations(e.target.value)}
-                    rows={3}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Respuesta del contratista
-                  </label>
-                  <textarea
-                    value={socialContractorResponse}
-                    onChange={(e) => setSocialContractorResponse(e.target.value)}
-                    rows={3}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                  />
-                </div>
-              </div>
+
             </div>
           </div>
         )}
