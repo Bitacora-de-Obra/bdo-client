@@ -3254,7 +3254,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
           </div>
           )}
 
-          {!showMevPanel && (
+          {!showMevPanel && entryTypeValue !== EntryType.SOCIAL && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
               <h4 className="text-md font-semibold text-gray-800">
