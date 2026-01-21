@@ -353,6 +353,7 @@ export interface EnvironmentalTramoData {
   greenZones: string;
   treeProtection: string;
   upsCount: string;
+  boalPersonnelCount?: string;
   enclosure: string;
   emergency: boolean;
   emergencyDescription: string;

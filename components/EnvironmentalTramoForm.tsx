@@ -133,6 +133,17 @@ const EnvironmentalTramoForm: React.FC<EnvironmentalTramoFormProps> = ({
                 />
               </div>
 
+              <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                <span className="text-sm text-gray-700">Cantidad de personal BOAL</span>
+                <input
+                  type="number"
+                  value={data.boalPersonnelCount || ''}
+                  onChange={(e) => updateField('boalPersonnelCount', e.target.value)}
+                  className="w-36 border border-gray-300 rounded-md p-1 text-sm"
+                  placeholder="#"
+                />
+              </div>
+
               <div className="pt-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-700 font-medium">¿Se presentaron emergencias ambientales?</span>

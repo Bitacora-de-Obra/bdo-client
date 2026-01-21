@@ -2149,6 +2149,9 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                               <p><strong>Protección árboles:</strong> <span className={tramo.treeProtection === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{tramo.treeProtection}</span></p>
                               <p><strong>Cerramiento:</strong> <span className={tramo.enclosure === 'NO_CUMPLE' ? 'text-red-600 font-bold' : ''}>{tramo.enclosure}</span></p>
                               <p><strong>Cantidad UPS:</strong> {tramo.upsCount || '0'}</p>
+                              {tramo.boalPersonnelCount && (
+                                <p><strong>Cantidad personal BOAL:</strong> {tramo.boalPersonnelCount}</p>
+                              )}
                               <div className="col-span-1 sm:col-span-2 mt-2">
                                 <p><strong>¿Emergencias?:</strong> {tramo.emergency ? <span className="text-red-600 font-bold">SI</span> : 'NO'}</p>
                                 {tramo.emergency && (
