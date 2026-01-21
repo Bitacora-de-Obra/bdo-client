@@ -153,6 +153,8 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   // MEV (Maquinaria y Equipos) State
   const [mevHasNovelties, setMevHasNovelties] = useState(false);
   const [mevNovelties, setMevNovelties] = useState('');
+  const [mevFindings, setMevFindings] = useState('');
+  const [mevContractorResponse, setMevContractorResponse] = useState('');
   
   // Environmental Multi-Tramo State
   const [environmentalTramos, setEnvironmentalTramos] = useState<EnvironmentalTramoData[]>([]);
@@ -898,6 +900,8 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           mevNovelties: entryType === EntryType.MEV 
             ? (mevHasNovelties ? mevNovelties.trim() : null) 
             : null,
+          mevFindings: entryType === EntryType.MEV ? mevFindings.trim() : "",
+          mevContractorResponse: entryType === EntryType.MEV ? mevContractorResponse.trim() : "",
 
           // Environmental Detail
           environmentalTramos: entryType === EntryType.ENVIRONMENTAL ? environmentalTramos : undefined,
@@ -2230,6 +2234,38 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                   className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
                   placeholder="Describe las novedades encontradas en el área de maquinaria y equipos..."
                   required
+                />
+              </div>
+            )}
+
+            {/* Observaciones de la interventoría */}
+            {isInterventor && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Observaciones de la interventoría
+                </label>
+                <textarea
+                  value={mevFindings}
+                  onChange={(e) => setMevFindings(e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Observaciones generales de la interventoría sobre maquinaria y equipos..."
+                />
+              </div>
+            )}
+
+            {/* Observaciones del contratista */}
+            {!isInterventor && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Observaciones del contratista
+                </label>
+                <textarea
+                  value={mevContractorResponse}
+                  onChange={(e) => setMevContractorResponse(e.target.value)}
+                  rows={3}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  placeholder="Observaciones del contratista sobre maquinaria y equipos..."
                 />
               </div>
             )}

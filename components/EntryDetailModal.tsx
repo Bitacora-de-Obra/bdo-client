@@ -230,11 +230,13 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       safetyContractorResponse: entry.safetyContractorResponse || "",
       environmentContractorResponse: entry.environmentContractorResponse || "",
       socialContractorResponse: entry.socialContractorResponse || "",
+      mevContractorResponse: entry.mevContractorResponse || "",
     }),
     [entry.contractorObservations,
       entry.environmentContractorResponse,
       entry.safetyContractorResponse,
-      entry.socialContractorResponse]
+      entry.socialContractorResponse,
+      entry.mevContractorResponse]
   );
   const [contractorResponsesDraft, setContractorResponsesDraft] = useState(
     initialContractorResponses
@@ -480,6 +482,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       safetyContractorResponse: entryData.safetyContractorResponse || "",
       environmentContractorResponse: entryData.environmentContractorResponse || "",
       socialContractorResponse: entryData.socialContractorResponse || "",
+      mevContractorResponse: entryData.mevContractorResponse || "",
     });
     setIsContractorEditingNotes(false);
 
@@ -876,6 +879,10 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       activityStartDate: entryDateIso,
       activityEndDate: endOfDay.toISOString(),
       attachments: [...(editedEntry.attachments || []), ...newAttachments],
+      // Ensure MEV novelties are not lost if text is empty but checkbox was checked
+      mevNovelties: (editedEntry.mevNovelties !== null && (editedEntry.mevNovelties || "").trim() === "") 
+        ? "Novedad registrada." 
+        : editedEntry.mevNovelties,
     } as LogEntry;
 
     const normalizePersonnelDraftEntries = (
@@ -1627,6 +1634,8 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     socialPhotoSummary = "",
     socialTramos = [],
     mevNovelties = null,
+    mevFindings = "",
+    mevContractorResponse = "",
     environmentalDetail = null,
     environmentalTramos = [],
     type,
@@ -2051,7 +2060,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
               </div>
               <div>
                 <p className="text-sm font-semibold text-gray-700">
-                  Respuesta del contratista
+                  Observaciones del contratista
                 </p>
                 <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">
                   {safetyContractorResponse || "Sin respuesta registrada."}
@@ -2251,11 +2260,61 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                      </div>
                   ) : (
                     <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-md text-sm text-gray-800">
-                      {mevNovelties ? mevNovelties : (
+                      {mevNovelties !== null ? (mevNovelties || "Sin descripción.") : (
                          <span className="text-gray-500 italic">No hubo novedades desde el área de maquinaria y equipos (Sin reporte).</span>
                       )}
                     </div>
                   )}
+                </div>
+
+                {/* Observaciones Interventoría MEV */}
+                <div>
+                   <p className="text-sm font-semibold text-gray-700">
+                     Observaciones de la interventoría
+                   </p>
+                   {isEditing ? (
+                     <textarea
+                       value={mevFindings || ""}
+                       onChange={(e) =>
+                         setEditedEntry((prev) => ({
+                           ...prev,
+                           mevFindings: e.target.value,
+                         }))
+                       }
+                       rows={3}
+                       className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                       placeholder="Observaciones adicionales..."
+                     />
+                   ) : (
+                     <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                       {mevFindings || "Sin observaciones."}
+                     </p>
+                   )}
+                </div>
+
+                {/* Respuesta Contratista MEV */}
+                <div>
+                   <p className="text-sm font-semibold text-gray-700">
+                     Observaciones del contratista
+                   </p>
+                   {isContractorEditingNotes ? (
+                      <textarea
+                        value={contractorResponsesDraft.mevContractorResponse || ""}
+                        onChange={(e) =>
+                           setContractorResponsesDraft((prev) => ({
+                              ...prev,
+                              mevContractorResponse: e.target.value
+                           }))
+                        }
+                        rows={3}
+                        className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                        placeholder="Escribe tu respuesta..."
+                      />
+                   ) : (
+                      <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                        {contractorResponsesDraft.mevContractorResponse || "Sin respuesta registrada."}
+                      </p>
+                   )}
                 </div>
               </div>
             )}

@@ -419,6 +419,8 @@ export interface LogEntry {
   
   // MEV (Maquinaria y Equipos)
   mevNovelties?: string | null;
+  mevFindings?: string | null;
+  mevContractorResponse?: string | null;
 
   // Environmental
   environmentalDetail?: EnvironmentalDetail | null;

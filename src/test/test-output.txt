@@ -1,0 +1,2523 @@
+
+> bdo-appd@0.0.0 test
+> vitest src/test/consistency/EnvironmentalEntry.test.tsx --no-color
+
+
+ DEV  v4.0.17 /Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+Error: useToast debe usarse dentro de un ToastProvider
+    at useToast (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/components/ui/ToastProvider.tsx:131:11)
+    at EntryDetailModal (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/components/EntryDetailModal.tsx:491:25)
+    at renderWithHooks (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:360:16)
+    at invokeEventListeners (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:243:9)
+Error: useToast debe usarse dentro de un ToastProvider
+    at useToast (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/components/ui/ToastProvider.tsx:131:11)
+    at EntryDetailModal (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/components/EntryDetailModal.tsx:491:25)
+    at renderWithHooks (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:360:16)
+    at invokeEventListeners (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:243:9)
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+The above error occurred in the <EntryDetailModal> component:
+
+    at EntryDetailModal (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/components/EntryDetailModal.tsx:116:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+
+Error: useToast debe usarse dentro de un ToastProvider
+    at useToast (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/components/ui/ToastProvider.tsx:131:11)
+    at EntryDetailModal (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/components/EntryDetailModal.tsx:491:25)
+    at renderWithHooks (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:360:16)
+    at invokeEventListeners (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:243:9)
+Error: useToast debe usarse dentro de un ToastProvider
+    at useToast (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/components/ui/ToastProvider.tsx:131:11)
+    at EntryDetailModal (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/components/EntryDetailModal.tsx:491:25)
+    at renderWithHooks (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:360:16)
+    at invokeEventListeners (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:243:9)
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+The above error occurred in the <EntryDetailModal> component:
+
+    at EntryDetailModal (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/components/EntryDetailModal.tsx:116:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+
+Error: useToast debe usarse dentro de un ToastProvider
+    at useToast (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/components/ui/ToastProvider.tsx:131:11)
+    at EntryDetailModal (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/components/EntryDetailModal.tsx:491:25)
+    at renderWithHooks (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:360:16)
+    at invokeEventListeners (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:243:9)
+Error: useToast debe usarse dentro de un ToastProvider
+    at useToast (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/components/ui/ToastProvider.tsx:131:11)
+    at EntryDetailModal (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/components/EntryDetailModal.tsx:491:25)
+    at renderWithHooks (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:360:16)
+    at invokeEventListeners (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:296:3)
+    at HTMLUnknownElementImpl._dispatch (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:243:9)
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+The above error occurred in the <EntryDetailModal> component:
+
+    at EntryDetailModal (/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/components/EntryDetailModal.tsx:116:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+
+ ❯ src/test/consistency/EnvironmentalEntry.test.tsx (3 tests | 3 failed) 28ms
+     × should SHOW checklist and BOAL personnel for CONTRACTOR 24ms
+     × should HIDE checklist and BOAL personnel for INTERVENTORIA 2ms
+     × should NOT show global non-tramo fields 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+ FAIL  src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+ FAIL  src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+Error: useToast debe usarse dentro de un ToastProvider
+ ❯ useToast components/ui/ToastProvider.tsx:131:11
+    129|   const context = useContext(ToastContext);
+    130|   if (!context) {
+    131|     throw new Error("useToast debe usarse dentro de un ToastProvider");
+       |           ^
+    132|   }
+    133|   return context;
+ ❯ EntryDetailModal components/EntryDetailModal.tsx:491:25
+ ❯ renderWithHooks node_modules/react-dom/cjs/react-dom.development.js:15486:18
+ ❯ mountIndeterminateComponent node_modules/react-dom/cjs/react-dom.development.js:20103:13
+ ❯ beginWork node_modules/react-dom/cjs/react-dom.development.js:21626:16
+ ❯ beginWork$1 node_modules/react-dom/cjs/react-dom.development.js:27465:14
+ ❯ performUnitOfWork node_modules/react-dom/cjs/react-dom.development.js:26599:12
+ ❯ workLoopSync node_modules/react-dom/cjs/react-dom.development.js:26505:5
+ ❯ renderRootSync node_modules/react-dom/cjs/react-dom.development.js:26473:7
+ ❯ recoverFromConcurrentError node_modules/react-dom/cjs/react-dom.development.js:25889:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed (3)
+   Start at  12:33:30
+   Duration  1.23s (transform 294ms, setup 149ms, import 328ms, tests 28ms, environment 614ms)
+
+ FAIL  Tests failed. Watching for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  src/test/consistency/EnvironmentalEntry.test.tsx x1 
+        Filename pattern: src/test/consistency/EnvironmentalEntry.test.tsx
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:499:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:505:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:499:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:505:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:499:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:505:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+ ✓ src/test/consistency/EnvironmentalEntry.test.tsx (3 tests) 1595ms
+     ✓ should SHOW checklist and BOAL personnel for CONTRACTOR  636ms
+     ✓ should HIDE checklist and BOAL personnel for INTERVENTORIA  913ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  12:33:57
+   Duration  12.52s
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  components/EntryDetailModal.tsx x2 
+        Filename pattern: src/test/consistency/EnvironmentalEntry.test.tsx
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:499:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:505:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:499:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:505:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:499:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:505:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+ ❯ src/test/consistency/EnvironmentalEntry.test.tsx (3 tests | 1 failed) 19741ms
+     × should SHOW checklist and BOAL personnel for CONTRACTOR 19544ms
+     ✓ should HIDE checklist and BOAL personnel for INTERVENTORIA 26ms
+     ✓ should NOT show global non-tramo fields 52ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/test/consistency/EnvironmentalEntry.test.tsx:101:3
+     99| describe('Environmental Entry Consistency', () => {
+    100|     
+    101|   it('should SHOW checklist and BOAL personnel for CONTRACTOR', () => {
+       |   ^
+    102|     // Setup user as Contractor
+    103|     mockUser.projectRole = UserRole.CONTRACTOR_REP;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  13:43:36
+   Duration  90.97s
+
+ FAIL  Tests failed. Watching for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  components/EntryDetailModal.tsx x3 
+        Filename pattern: src/test/consistency/EnvironmentalEntry.test.tsx
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:499:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:505:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:499:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:505:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:499:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:505:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+ ✓ src/test/consistency/EnvironmentalEntry.test.tsx (3 tests) 648ms
+     ✓ should SHOW checklist and BOAL personnel for CONTRACTOR  529ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  14:33:03
+   Duration  74.18s
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  components/EntryDetailModal.tsx x4 
+        Filename pattern: src/test/consistency/EnvironmentalEntry.test.tsx
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯⎯⎯ Unhandled Error ⎯⎯⎯⎯⎯⎯⎯
+Error: [vitest-pool]: Failed to start forks worker for test files /Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/src/test/consistency/EnvironmentalEntry.test.tsx.
+ ❯ node_modules/vitest/dist/chunks/cli-api.Cx2DW4Bc.js:8046:94
+ ❯ Pool.schedule node_modules/vitest/dist/chunks/cli-api.Cx2DW4Bc.js:8046:5
+
+Caused by: Error: [vitest-pool-runner]: Timeout waiting for worker to respond
+ ❯ Timeout.<anonymous> node_modules/vitest/dist/chunks/cli-api.Cx2DW4Bc.js:7626:58
+ ❯ listOnTimeout node:internal/timers:608:17
+ ❯ processTimers node:internal/timers:543:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+     Errors  1 error
+   Start at  14:35:35
+   Duration  74.18s
+
+ FAIL  Tests failed. Watching for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  components/EntryDetailModal.tsx x5 
+        Filename pattern: src/test/consistency/EnvironmentalEntry.test.tsx
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:499:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:505:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:499:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:505:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:499:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:505:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+ ✓ src/test/consistency/EnvironmentalEntry.test.tsx (3 tests) 1728ms
+     ✓ should SHOW checklist and BOAL personnel for CONTRACTOR  1597ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  14:36:41
+   Duration  36.32s
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  components/EntryDetailModal.tsx x6 
+        Filename pattern: src/test/consistency/EnvironmentalEntry.test.tsx
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:500:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:506:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:500:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:506:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:500:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:506:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+ ✓ src/test/consistency/EnvironmentalEntry.test.tsx (3 tests) 1254ms
+     ✓ should SHOW checklist and BOAL personnel for CONTRACTOR  1187ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  14:39:28
+   Duration  52.63s
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  components/EntryDetailModal.tsx x7 
+        Filename pattern: src/test/consistency/EnvironmentalEntry.test.tsx
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:500:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:506:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:500:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:506:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:500:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:506:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+ ✓ src/test/consistency/EnvironmentalEntry.test.tsx (3 tests) 1421ms
+     ✓ should SHOW checklist and BOAL personnel for CONTRACTOR  1011ms
+     ✓ should HIDE checklist and BOAL personnel for INTERVENTORIA  386ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  14:41:14
+   Duration  3.13s
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  components/EntryDetailModal.tsx x8 
+        Filename pattern: src/test/consistency/EnvironmentalEntry.test.tsx
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:501:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:507:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:501:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:507:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:501:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:507:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+ ✓ src/test/consistency/EnvironmentalEntry.test.tsx (3 tests) 4589ms
+     ✓ should SHOW checklist and BOAL personnel for CONTRACTOR  4397ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  14:41:35
+   Duration  34.64s
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  components/EntryDetailModal.tsx x9 
+        Filename pattern: src/test/consistency/EnvironmentalEntry.test.tsx
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:501:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:507:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:501:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:507:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:501:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:507:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+ ✓ src/test/consistency/EnvironmentalEntry.test.tsx (3 tests) 3170ms
+     ✓ should SHOW checklist and BOAL personnel for CONTRACTOR  2037ms
+     ✓ should HIDE checklist and BOAL personnel for INTERVENTORIA  1053ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  14:42:34
+   Duration  9.35s
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  components/EntryDetailModal.tsx x10 
+        Filename pattern: src/test/consistency/EnvironmentalEntry.test.tsx
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:501:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:507:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:501:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:507:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:501:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:507:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+ ✓ src/test/consistency/EnvironmentalEntry.test.tsx (3 tests) 2597ms
+     ✓ should SHOW checklist and BOAL personnel for CONTRACTOR  1679ms
+     ✓ should HIDE checklist and BOAL personnel for INTERVENTORIA  845ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  14:44:38
+   Duration  113.54s
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  types.ts x11 
+        Filename pattern: src/test/consistency/EnvironmentalEntry.test.tsx
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:501:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:507:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:501:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:507:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:501:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:507:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+ ❯ src/test/consistency/EnvironmentalEntry.test.tsx (3 tests | 1 failed) 12810ms
+     × should SHOW checklist and BOAL personnel for CONTRACTOR 12700ms
+     ✓ should HIDE checklist and BOAL personnel for INTERVENTORIA 53ms
+     ✓ should NOT show global non-tramo fields 39ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/test/consistency/EnvironmentalEntry.test.tsx:101:3
+     99| describe('Environmental Entry Consistency', () => {
+    100|     
+    101|   it('should SHOW checklist and BOAL personnel for CONTRACTOR', () => {
+       |   ^
+    102|     // Setup user as Contractor
+    103|     mockUser.projectRole = UserRole.CONTRACTOR_REP;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  14:54:50
+   Duration  73.30s
+
+ FAIL  Tests failed. Watching for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  components/EntryDetailModal.tsx x12 
+        Filename pattern: src/test/consistency/EnvironmentalEntry.test.tsx
+
+ ❯ src/test/consistency/EnvironmentalEntry.test.tsx (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/consistency/EnvironmentalEntry.test.tsx [ src/test/consistency/EnvironmentalEntry.test.tsx ]
+Error: Transform failed with 1 error:
+/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/components/EntryDetailModal.tsx:242:2: ERROR: Unexpected ")"
+  Plugin: vite:esbuild
+  File: /Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/components/EntryDetailModal.tsx:242:2
+  
+  Unexpected ")"
+  240 |    );
+  241 |      initialContractorResponses
+  242 |    );
+      |    ^
+  243 |    console.log('DEBUG MODAL - entry:', entry);
+  244 |    console.log('DEBUG MODAL - initialContractorResponses:', initialContractorResponses);
+  
+ ❯ failureErrorWithLog node_modules/esbuild/lib/main.js:1467:15
+ ❯ node_modules/esbuild/lib/main.js:736:50
+ ❯ responseCallbacks.<computed> node_modules/esbuild/lib/main.js:603:9
+ ❯ handleIncomingPacket node_modules/esbuild/lib/main.js:658:12
+ ❯ Socket.readFromStdout node_modules/esbuild/lib/main.js:581:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  14:57:40
+   Duration  21.02s
+
+ FAIL  Tests failed. Watching for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  components/EntryDetailModal.tsx x13 
+        Filename pattern: src/test/consistency/EnvironmentalEntry.test.tsx
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+DEBUG MODAL - entry: {
+  id: [32m'entry-123'[39m,
+  folioNumber: [33m1[39m,
+  type: [32m'ENVIRONMENTAL'[39m,
+  status: [32m'Borrador'[39m,
+  createdAt: [32m'2026-01-21T14:02:19.846Z'[39m,
+  updatedAt: [32m'2026-01-21T14:02:20.516Z'[39m,
+  entryDate: [32m'2026-01-21T14:02:20.516Z'[39m,
+  author: {
+    id: [32m'author-123'[39m,
+    fullName: [32m'Author Name'[39m,
+    projectRole: [32m'Contratista'[39m,
+    avatarUrl: [32m''[39m
+  },
+  environmentalTramos: [
+    {
+      tramoId: [32m'tramo-1'[39m,
+      tramoName: [32m'Tramo Test 1'[39m,
+      summary: [32m'Actividad diaria del tramo 1'[39m,
+      interventorObservations: [32m'Obs Interventoria 1'[39m,
+      contractorObservations: [32m'Obs Contratista 1'[39m,
+      sewerProtection: [32m'CUMPLE'[39m,
+      materialStorage: [32m'NO_CUMPLE'[39m,
+      cleanliness: [32m'CUMPLE'[39m,
+      coveredTrucks: [32m'CUMPLE'[39m,
+      greenZones: [32m'CUMPLE'[39m,
+      treeProtection: [32m'CUMPLE'[39m,
+      enclosure: [32m'CUMPLE'[39m,
+      upsCount: [32m'5'[39m,
+      boalPersonnelCount: [32m'10'[39m,
+      emergency: [33mtrue[39m,
+      emergencyDescription: [32m'Emergency Test'[39m
+    }
+  ],
+  environmentalDetail: [1mnull[22m,
+  description: [32m'Global Description'[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  additionalObservations: [32m'Global Additional Obs'[39m,
+  reviewTasks: [],
+  signatureTasks: []
+}
+DEBUG MODAL - initialContractorResponses: {
+  contractorObservations: [32m''[39m,
+  safetyContractorResponse: [32m''[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  socialContractorResponse: [32m''[39m,
+  mevContractorResponse: [32m''[39m
+}
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+DEBUG MODAL - entry: {
+  id: [32m'entry-123'[39m,
+  folioNumber: [33m1[39m,
+  type: [32m'ENVIRONMENTAL'[39m,
+  status: [32m'Borrador'[39m,
+  createdAt: [32m'2026-01-21T14:02:19.846Z'[39m,
+  updatedAt: [32m'2026-01-21T14:02:20.516Z'[39m,
+  entryDate: [32m'2026-01-21T14:02:20.516Z'[39m,
+  author: {
+    id: [32m'author-123'[39m,
+    fullName: [32m'Author Name'[39m,
+    projectRole: [32m'Contratista'[39m,
+    avatarUrl: [32m''[39m
+  },
+  environmentalTramos: [
+    {
+      tramoId: [32m'tramo-1'[39m,
+      tramoName: [32m'Tramo Test 1'[39m,
+      summary: [32m'Actividad diaria del tramo 1'[39m,
+      interventorObservations: [32m'Obs Interventoria 1'[39m,
+      contractorObservations: [32m'Obs Contratista 1'[39m,
+      sewerProtection: [32m'CUMPLE'[39m,
+      materialStorage: [32m'NO_CUMPLE'[39m,
+      cleanliness: [32m'CUMPLE'[39m,
+      coveredTrucks: [32m'CUMPLE'[39m,
+      greenZones: [32m'CUMPLE'[39m,
+      treeProtection: [32m'CUMPLE'[39m,
+      enclosure: [32m'CUMPLE'[39m,
+      upsCount: [32m'5'[39m,
+      boalPersonnelCount: [32m'10'[39m,
+      emergency: [33mtrue[39m,
+      emergencyDescription: [32m'Emergency Test'[39m
+    }
+  ],
+  environmentalDetail: [1mnull[22m,
+  description: [32m'Global Description'[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  additionalObservations: [32m'Global Additional Obs'[39m,
+  reviewTasks: [],
+  signatureTasks: []
+}
+DEBUG MODAL - initialContractorResponses: {
+  contractorObservations: [32m''[39m,
+  safetyContractorResponse: [32m''[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  socialContractorResponse: [32m''[39m,
+  mevContractorResponse: [32m''[39m
+}
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:503:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:509:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+DEBUG MODAL - entry: {
+  id: [32m'entry-123'[39m,
+  folioNumber: [33m1[39m,
+  type: [32m'ENVIRONMENTAL'[39m,
+  status: [32m'Borrador'[39m,
+  createdAt: [32m'2026-01-21T14:02:19.846Z'[39m,
+  updatedAt: [32m'2026-01-21T14:02:20.516Z'[39m,
+  entryDate: [32m'2026-01-21T14:02:20.516Z'[39m,
+  author: {
+    id: [32m'author-123'[39m,
+    fullName: [32m'Author Name'[39m,
+    projectRole: [32m'Contratista'[39m,
+    avatarUrl: [32m''[39m
+  },
+  environmentalTramos: [
+    {
+      tramoId: [32m'tramo-1'[39m,
+      tramoName: [32m'Tramo Test 1'[39m,
+      summary: [32m'Actividad diaria del tramo 1'[39m,
+      interventorObservations: [32m'Obs Interventoria 1'[39m,
+      contractorObservations: [32m'Obs Contratista 1'[39m,
+      sewerProtection: [32m'CUMPLE'[39m,
+      materialStorage: [32m'NO_CUMPLE'[39m,
+      cleanliness: [32m'CUMPLE'[39m,
+      coveredTrucks: [32m'CUMPLE'[39m,
+      greenZones: [32m'CUMPLE'[39m,
+      treeProtection: [32m'CUMPLE'[39m,
+      enclosure: [32m'CUMPLE'[39m,
+      upsCount: [32m'5'[39m,
+      boalPersonnelCount: [32m'10'[39m,
+      emergency: [33mtrue[39m,
+      emergencyDescription: [32m'Emergency Test'[39m
+    }
+  ],
+  environmentalDetail: [1mnull[22m,
+  description: [32m'Global Description'[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  additionalObservations: [32m'Global Additional Obs'[39m,
+  reviewTasks: [],
+  signatureTasks: []
+}
+DEBUG MODAL - initialContractorResponses: {
+  contractorObservations: [32m''[39m,
+  safetyContractorResponse: [32m''[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  socialContractorResponse: [32m''[39m,
+  mevContractorResponse: [32m''[39m
+}
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+DEBUG MODAL - entry: {
+  id: [32m'entry-123'[39m,
+  folioNumber: [33m1[39m,
+  type: [32m'ENVIRONMENTAL'[39m,
+  status: [32m'Borrador'[39m,
+  createdAt: [32m'2026-01-21T14:02:19.846Z'[39m,
+  updatedAt: [32m'2026-01-21T14:02:20.516Z'[39m,
+  entryDate: [32m'2026-01-21T14:02:20.516Z'[39m,
+  author: {
+    id: [32m'author-123'[39m,
+    fullName: [32m'Author Name'[39m,
+    projectRole: [32m'Contratista'[39m,
+    avatarUrl: [32m''[39m
+  },
+  environmentalTramos: [
+    {
+      tramoId: [32m'tramo-1'[39m,
+      tramoName: [32m'Tramo Test 1'[39m,
+      summary: [32m'Actividad diaria del tramo 1'[39m,
+      interventorObservations: [32m'Obs Interventoria 1'[39m,
+      contractorObservations: [32m'Obs Contratista 1'[39m,
+      sewerProtection: [32m'CUMPLE'[39m,
+      materialStorage: [32m'NO_CUMPLE'[39m,
+      cleanliness: [32m'CUMPLE'[39m,
+      coveredTrucks: [32m'CUMPLE'[39m,
+      greenZones: [32m'CUMPLE'[39m,
+      treeProtection: [32m'CUMPLE'[39m,
+      enclosure: [32m'CUMPLE'[39m,
+      upsCount: [32m'5'[39m,
+      boalPersonnelCount: [32m'10'[39m,
+      emergency: [33mtrue[39m,
+      emergencyDescription: [32m'Emergency Test'[39m
+    }
+  ],
+  environmentalDetail: [1mnull[22m,
+  description: [32m'Global Description'[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  additionalObservations: [32m'Global Additional Obs'[39m,
+  reviewTasks: [],
+  signatureTasks: []
+}
+DEBUG MODAL - initialContractorResponses: {
+  contractorObservations: [32m''[39m,
+  safetyContractorResponse: [32m''[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  socialContractorResponse: [32m''[39m,
+  mevContractorResponse: [32m''[39m
+}
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:503:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:509:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+DEBUG MODAL - entry: {
+  id: [32m'entry-123'[39m,
+  folioNumber: [33m1[39m,
+  type: [32m'ENVIRONMENTAL'[39m,
+  status: [32m'Borrador'[39m,
+  createdAt: [32m'2026-01-21T14:02:19.846Z'[39m,
+  updatedAt: [32m'2026-01-21T14:02:20.516Z'[39m,
+  entryDate: [32m'2026-01-21T14:02:20.516Z'[39m,
+  author: {
+    id: [32m'author-123'[39m,
+    fullName: [32m'Author Name'[39m,
+    projectRole: [32m'Contratista'[39m,
+    avatarUrl: [32m''[39m
+  },
+  environmentalTramos: [
+    {
+      tramoId: [32m'tramo-1'[39m,
+      tramoName: [32m'Tramo Test 1'[39m,
+      summary: [32m'Actividad diaria del tramo 1'[39m,
+      interventorObservations: [32m'Obs Interventoria 1'[39m,
+      contractorObservations: [32m'Obs Contratista 1'[39m,
+      sewerProtection: [32m'CUMPLE'[39m,
+      materialStorage: [32m'NO_CUMPLE'[39m,
+      cleanliness: [32m'CUMPLE'[39m,
+      coveredTrucks: [32m'CUMPLE'[39m,
+      greenZones: [32m'CUMPLE'[39m,
+      treeProtection: [32m'CUMPLE'[39m,
+      enclosure: [32m'CUMPLE'[39m,
+      upsCount: [32m'5'[39m,
+      boalPersonnelCount: [32m'10'[39m,
+      emergency: [33mtrue[39m,
+      emergencyDescription: [32m'Emergency Test'[39m
+    }
+  ],
+  environmentalDetail: [1mnull[22m,
+  description: [32m'Global Description'[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  additionalObservations: [32m'Global Additional Obs'[39m,
+  reviewTasks: [],
+  signatureTasks: []
+}
+DEBUG MODAL - initialContractorResponses: {
+  contractorObservations: [32m''[39m,
+  safetyContractorResponse: [32m''[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  socialContractorResponse: [32m''[39m,
+  mevContractorResponse: [32m''[39m
+}
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+DEBUG MODAL - entry: {
+  id: [32m'entry-123'[39m,
+  folioNumber: [33m1[39m,
+  type: [32m'ENVIRONMENTAL'[39m,
+  status: [32m'Borrador'[39m,
+  createdAt: [32m'2026-01-21T14:02:19.846Z'[39m,
+  updatedAt: [32m'2026-01-21T14:02:20.516Z'[39m,
+  entryDate: [32m'2026-01-21T14:02:20.516Z'[39m,
+  author: {
+    id: [32m'author-123'[39m,
+    fullName: [32m'Author Name'[39m,
+    projectRole: [32m'Contratista'[39m,
+    avatarUrl: [32m''[39m
+  },
+  environmentalTramos: [
+    {
+      tramoId: [32m'tramo-1'[39m,
+      tramoName: [32m'Tramo Test 1'[39m,
+      summary: [32m'Actividad diaria del tramo 1'[39m,
+      interventorObservations: [32m'Obs Interventoria 1'[39m,
+      contractorObservations: [32m'Obs Contratista 1'[39m,
+      sewerProtection: [32m'CUMPLE'[39m,
+      materialStorage: [32m'NO_CUMPLE'[39m,
+      cleanliness: [32m'CUMPLE'[39m,
+      coveredTrucks: [32m'CUMPLE'[39m,
+      greenZones: [32m'CUMPLE'[39m,
+      treeProtection: [32m'CUMPLE'[39m,
+      enclosure: [32m'CUMPLE'[39m,
+      upsCount: [32m'5'[39m,
+      boalPersonnelCount: [32m'10'[39m,
+      emergency: [33mtrue[39m,
+      emergencyDescription: [32m'Emergency Test'[39m
+    }
+  ],
+  environmentalDetail: [1mnull[22m,
+  description: [32m'Global Description'[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  additionalObservations: [32m'Global Additional Obs'[39m,
+  reviewTasks: [],
+  signatureTasks: []
+}
+DEBUG MODAL - initialContractorResponses: {
+  contractorObservations: [32m''[39m,
+  safetyContractorResponse: [32m''[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  socialContractorResponse: [32m''[39m,
+  mevContractorResponse: [32m''[39m
+}
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:503:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:509:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+ ✓ src/test/consistency/EnvironmentalEntry.test.tsx (3 tests) 4766ms
+     ✓ should SHOW checklist and BOAL personnel for CONTRACTOR  4573ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  15:00:05
+   Duration  77.55s
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  components/EntryDetailModal.tsx x14 
+        Filename pattern: src/test/consistency/EnvironmentalEntry.test.tsx
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+DEBUG MODAL - entry: {
+  id: [32m'entry-123'[39m,
+  folioNumber: [33m1[39m,
+  type: [32m'ENVIRONMENTAL'[39m,
+  status: [32m'Borrador'[39m,
+  createdAt: [32m'2026-01-21T14:07:58.876Z'[39m,
+  updatedAt: [32m'2026-01-21T14:07:58.947Z'[39m,
+  entryDate: [32m'2026-01-21T14:07:58.947Z'[39m,
+  author: {
+    id: [32m'author-123'[39m,
+    fullName: [32m'Author Name'[39m,
+    projectRole: [32m'Contratista'[39m,
+    avatarUrl: [32m''[39m
+  },
+  environmentalTramos: [
+    {
+      tramoId: [32m'tramo-1'[39m,
+      tramoName: [32m'Tramo Test 1'[39m,
+      summary: [32m'Actividad diaria del tramo 1'[39m,
+      interventorObservations: [32m'Obs Interventoria 1'[39m,
+      contractorObservations: [32m'Obs Contratista 1'[39m,
+      sewerProtection: [32m'CUMPLE'[39m,
+      materialStorage: [32m'NO_CUMPLE'[39m,
+      cleanliness: [32m'CUMPLE'[39m,
+      coveredTrucks: [32m'CUMPLE'[39m,
+      greenZones: [32m'CUMPLE'[39m,
+      treeProtection: [32m'CUMPLE'[39m,
+      enclosure: [32m'CUMPLE'[39m,
+      upsCount: [32m'5'[39m,
+      boalPersonnelCount: [32m'10'[39m,
+      emergency: [33mtrue[39m,
+      emergencyDescription: [32m'Emergency Test'[39m
+    }
+  ],
+  environmentalDetail: [1mnull[22m,
+  description: [32m'Global Description'[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  additionalObservations: [32m'Global Additional Obs'[39m,
+  reviewTasks: [],
+  signatureTasks: []
+}
+DEBUG MODAL - initialContractorResponses: {
+  contractorObservations: [32m''[39m,
+  safetyContractorResponse: [32m''[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  socialContractorResponse: [32m''[39m,
+  mevContractorResponse: [32m''[39m
+}
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+DEBUG MODAL - entry: {
+  id: [32m'entry-123'[39m,
+  folioNumber: [33m1[39m,
+  type: [32m'ENVIRONMENTAL'[39m,
+  status: [32m'Borrador'[39m,
+  createdAt: [32m'2026-01-21T14:07:58.876Z'[39m,
+  updatedAt: [32m'2026-01-21T14:07:58.947Z'[39m,
+  entryDate: [32m'2026-01-21T14:07:58.947Z'[39m,
+  author: {
+    id: [32m'author-123'[39m,
+    fullName: [32m'Author Name'[39m,
+    projectRole: [32m'Contratista'[39m,
+    avatarUrl: [32m''[39m
+  },
+  environmentalTramos: [
+    {
+      tramoId: [32m'tramo-1'[39m,
+      tramoName: [32m'Tramo Test 1'[39m,
+      summary: [32m'Actividad diaria del tramo 1'[39m,
+      interventorObservations: [32m'Obs Interventoria 1'[39m,
+      contractorObservations: [32m'Obs Contratista 1'[39m,
+      sewerProtection: [32m'CUMPLE'[39m,
+      materialStorage: [32m'NO_CUMPLE'[39m,
+      cleanliness: [32m'CUMPLE'[39m,
+      coveredTrucks: [32m'CUMPLE'[39m,
+      greenZones: [32m'CUMPLE'[39m,
+      treeProtection: [32m'CUMPLE'[39m,
+      enclosure: [32m'CUMPLE'[39m,
+      upsCount: [32m'5'[39m,
+      boalPersonnelCount: [32m'10'[39m,
+      emergency: [33mtrue[39m,
+      emergencyDescription: [32m'Emergency Test'[39m
+    }
+  ],
+  environmentalDetail: [1mnull[22m,
+  description: [32m'Global Description'[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  additionalObservations: [32m'Global Additional Obs'[39m,
+  reviewTasks: [],
+  signatureTasks: []
+}
+DEBUG MODAL - initialContractorResponses: {
+  contractorObservations: [32m''[39m,
+  safetyContractorResponse: [32m''[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  socialContractorResponse: [32m''[39m,
+  mevContractorResponse: [32m''[39m
+}
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:503:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:509:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+DEBUG MODAL - entry: {
+  id: [32m'entry-123'[39m,
+  folioNumber: [33m1[39m,
+  type: [32m'ENVIRONMENTAL'[39m,
+  status: [32m'Borrador'[39m,
+  createdAt: [32m'2026-01-21T14:07:58.876Z'[39m,
+  updatedAt: [32m'2026-01-21T14:07:58.947Z'[39m,
+  entryDate: [32m'2026-01-21T14:07:58.947Z'[39m,
+  author: {
+    id: [32m'author-123'[39m,
+    fullName: [32m'Author Name'[39m,
+    projectRole: [32m'Contratista'[39m,
+    avatarUrl: [32m''[39m
+  },
+  environmentalTramos: [
+    {
+      tramoId: [32m'tramo-1'[39m,
+      tramoName: [32m'Tramo Test 1'[39m,
+      summary: [32m'Actividad diaria del tramo 1'[39m,
+      interventorObservations: [32m'Obs Interventoria 1'[39m,
+      contractorObservations: [32m'Obs Contratista 1'[39m,
+      sewerProtection: [32m'CUMPLE'[39m,
+      materialStorage: [32m'NO_CUMPLE'[39m,
+      cleanliness: [32m'CUMPLE'[39m,
+      coveredTrucks: [32m'CUMPLE'[39m,
+      greenZones: [32m'CUMPLE'[39m,
+      treeProtection: [32m'CUMPLE'[39m,
+      enclosure: [32m'CUMPLE'[39m,
+      upsCount: [32m'5'[39m,
+      boalPersonnelCount: [32m'10'[39m,
+      emergency: [33mtrue[39m,
+      emergencyDescription: [32m'Emergency Test'[39m
+    }
+  ],
+  environmentalDetail: [1mnull[22m,
+  description: [32m'Global Description'[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  additionalObservations: [32m'Global Additional Obs'[39m,
+  reviewTasks: [],
+  signatureTasks: []
+}
+DEBUG MODAL - initialContractorResponses: {
+  contractorObservations: [32m''[39m,
+  safetyContractorResponse: [32m''[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  socialContractorResponse: [32m''[39m,
+  mevContractorResponse: [32m''[39m
+}
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+DEBUG MODAL - entry: {
+  id: [32m'entry-123'[39m,
+  folioNumber: [33m1[39m,
+  type: [32m'ENVIRONMENTAL'[39m,
+  status: [32m'Borrador'[39m,
+  createdAt: [32m'2026-01-21T14:07:58.876Z'[39m,
+  updatedAt: [32m'2026-01-21T14:07:58.947Z'[39m,
+  entryDate: [32m'2026-01-21T14:07:58.947Z'[39m,
+  author: {
+    id: [32m'author-123'[39m,
+    fullName: [32m'Author Name'[39m,
+    projectRole: [32m'Contratista'[39m,
+    avatarUrl: [32m''[39m
+  },
+  environmentalTramos: [
+    {
+      tramoId: [32m'tramo-1'[39m,
+      tramoName: [32m'Tramo Test 1'[39m,
+      summary: [32m'Actividad diaria del tramo 1'[39m,
+      interventorObservations: [32m'Obs Interventoria 1'[39m,
+      contractorObservations: [32m'Obs Contratista 1'[39m,
+      sewerProtection: [32m'CUMPLE'[39m,
+      materialStorage: [32m'NO_CUMPLE'[39m,
+      cleanliness: [32m'CUMPLE'[39m,
+      coveredTrucks: [32m'CUMPLE'[39m,
+      greenZones: [32m'CUMPLE'[39m,
+      treeProtection: [32m'CUMPLE'[39m,
+      enclosure: [32m'CUMPLE'[39m,
+      upsCount: [32m'5'[39m,
+      boalPersonnelCount: [32m'10'[39m,
+      emergency: [33mtrue[39m,
+      emergencyDescription: [32m'Emergency Test'[39m
+    }
+  ],
+  environmentalDetail: [1mnull[22m,
+  description: [32m'Global Description'[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  additionalObservations: [32m'Global Additional Obs'[39m,
+  reviewTasks: [],
+  signatureTasks: []
+}
+DEBUG MODAL - initialContractorResponses: {
+  contractorObservations: [32m''[39m,
+  safetyContractorResponse: [32m''[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  socialContractorResponse: [32m''[39m,
+  mevContractorResponse: [32m''[39m
+}
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:503:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:509:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+DEBUG MODAL - entry: {
+  id: [32m'entry-123'[39m,
+  folioNumber: [33m1[39m,
+  type: [32m'ENVIRONMENTAL'[39m,
+  status: [32m'Borrador'[39m,
+  createdAt: [32m'2026-01-21T14:07:58.876Z'[39m,
+  updatedAt: [32m'2026-01-21T14:07:58.947Z'[39m,
+  entryDate: [32m'2026-01-21T14:07:58.947Z'[39m,
+  author: {
+    id: [32m'author-123'[39m,
+    fullName: [32m'Author Name'[39m,
+    projectRole: [32m'Contratista'[39m,
+    avatarUrl: [32m''[39m
+  },
+  environmentalTramos: [
+    {
+      tramoId: [32m'tramo-1'[39m,
+      tramoName: [32m'Tramo Test 1'[39m,
+      summary: [32m'Actividad diaria del tramo 1'[39m,
+      interventorObservations: [32m'Obs Interventoria 1'[39m,
+      contractorObservations: [32m'Obs Contratista 1'[39m,
+      sewerProtection: [32m'CUMPLE'[39m,
+      materialStorage: [32m'NO_CUMPLE'[39m,
+      cleanliness: [32m'CUMPLE'[39m,
+      coveredTrucks: [32m'CUMPLE'[39m,
+      greenZones: [32m'CUMPLE'[39m,
+      treeProtection: [32m'CUMPLE'[39m,
+      enclosure: [32m'CUMPLE'[39m,
+      upsCount: [32m'5'[39m,
+      boalPersonnelCount: [32m'10'[39m,
+      emergency: [33mtrue[39m,
+      emergencyDescription: [32m'Emergency Test'[39m
+    }
+  ],
+  environmentalDetail: [1mnull[22m,
+  description: [32m'Global Description'[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  additionalObservations: [32m'Global Additional Obs'[39m,
+  reviewTasks: [],
+  signatureTasks: []
+}
+DEBUG MODAL - initialContractorResponses: {
+  contractorObservations: [32m''[39m,
+  safetyContractorResponse: [32m''[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  socialContractorResponse: [32m''[39m,
+  mevContractorResponse: [32m''[39m
+}
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+DEBUG MODAL - entry: {
+  id: [32m'entry-123'[39m,
+  folioNumber: [33m1[39m,
+  type: [32m'ENVIRONMENTAL'[39m,
+  status: [32m'Borrador'[39m,
+  createdAt: [32m'2026-01-21T14:07:58.876Z'[39m,
+  updatedAt: [32m'2026-01-21T14:07:58.947Z'[39m,
+  entryDate: [32m'2026-01-21T14:07:58.947Z'[39m,
+  author: {
+    id: [32m'author-123'[39m,
+    fullName: [32m'Author Name'[39m,
+    projectRole: [32m'Contratista'[39m,
+    avatarUrl: [32m''[39m
+  },
+  environmentalTramos: [
+    {
+      tramoId: [32m'tramo-1'[39m,
+      tramoName: [32m'Tramo Test 1'[39m,
+      summary: [32m'Actividad diaria del tramo 1'[39m,
+      interventorObservations: [32m'Obs Interventoria 1'[39m,
+      contractorObservations: [32m'Obs Contratista 1'[39m,
+      sewerProtection: [32m'CUMPLE'[39m,
+      materialStorage: [32m'NO_CUMPLE'[39m,
+      cleanliness: [32m'CUMPLE'[39m,
+      coveredTrucks: [32m'CUMPLE'[39m,
+      greenZones: [32m'CUMPLE'[39m,
+      treeProtection: [32m'CUMPLE'[39m,
+      enclosure: [32m'CUMPLE'[39m,
+      upsCount: [32m'5'[39m,
+      boalPersonnelCount: [32m'10'[39m,
+      emergency: [33mtrue[39m,
+      emergencyDescription: [32m'Emergency Test'[39m
+    }
+  ],
+  environmentalDetail: [1mnull[22m,
+  description: [32m'Global Description'[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  additionalObservations: [32m'Global Additional Obs'[39m,
+  reviewTasks: [],
+  signatureTasks: []
+}
+DEBUG MODAL - initialContractorResponses: {
+  contractorObservations: [32m''[39m,
+  safetyContractorResponse: [32m''[39m,
+  environmentContractorResponse: [32m'Global Response'[39m,
+  socialContractorResponse: [32m''[39m,
+  mevContractorResponse: [32m''[39m
+}
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:503:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:509:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+ ❯ src/test/consistency/EnvironmentalEntry.test.tsx (3 tests | 1 failed) 18118ms
+     × should SHOW checklist and BOAL personnel for CONTRACTOR 13226ms
+     ✓ should HIDE checklist and BOAL personnel for INTERVENTORIA  1090ms
+     ✓ should NOT show global non-tramo fields  3519ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/test/consistency/EnvironmentalEntry.test.tsx:101:3
+     99| describe('Environmental Entry Consistency', () => {
+    100|     
+    101|   it('should SHOW checklist and BOAL personnel for CONTRACTOR', () => {
+       |   ^
+    102|     // Setup user as Contractor
+    103|     mockUser.projectRole = UserRole.CONTRACTOR_REP;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  15:05:36
+   Duration  94.83s
+
+ FAIL  Tests failed. Watching for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  components/EntryDetailModal.tsx x15 
+        Filename pattern: src/test/consistency/EnvironmentalEntry.test.tsx
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/test/consistency/EnvironmentalEntry.test.tsx:101:3
+     99| describe('Environmental Entry Consistency', () => {
+    100|     
+    101|   it('should SHOW checklist and BOAL personnel for CONTRACTOR', () => {
+       |   ^
+    102|     // Setup user as Contractor
+    103|     mockUser.projectRole = UserRole.CONTRACTOR_REP;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯⎯⎯ Unhandled Error ⎯⎯⎯⎯⎯⎯⎯
+Error: [vitest-pool]: Failed to start forks worker for test files /Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/src/test/consistency/EnvironmentalEntry.test.tsx.
+ ❯ node_modules/vitest/dist/chunks/cli-api.Cx2DW4Bc.js:8046:94
+ ❯ Pool.schedule node_modules/vitest/dist/chunks/cli-api.Cx2DW4Bc.js:8046:5
+
+Caused by: Error: [vitest-pool-runner]: Timeout waiting for worker to respond
+ ❯ Timeout.<anonymous> node_modules/vitest/dist/chunks/cli-api.Cx2DW4Bc.js:7626:58
+ ❯ listOnTimeout node:internal/timers:608:17
+ ❯ processTimers node:internal/timers:543:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+     Errors  1 error
+   Start at  15:08:23
+   Duration  94.83s
+
+ FAIL  Tests failed. Watching for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  components/EntryDetailModal.tsx x16 
+        Filename pattern: src/test/consistency/EnvironmentalEntry.test.tsx
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+Error: Test timed out in 5000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ src/test/consistency/EnvironmentalEntry.test.tsx:101:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯⎯⎯ Unhandled Error ⎯⎯⎯⎯⎯⎯⎯
+Error: [vitest-pool]: Failed to start forks worker for test files /Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/src/test/consistency/EnvironmentalEntry.test.tsx.
+ ❯ node_modules/vitest/dist/chunks/cli-api.Cx2DW4Bc.js:8046:94
+ ❯ Pool.schedule node_modules/vitest/dist/chunks/cli-api.Cx2DW4Bc.js:8046:5
+
+Caused by: Error: [vitest-pool-runner]: Timeout waiting for worker to respond
+ ❯ Timeout.<anonymous> node_modules/vitest/dist/chunks/cli-api.Cx2DW4Bc.js:7626:58
+ ❯ listOnTimeout node:internal/timers:608:17
+ ❯ processTimers node:internal/timers:543:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+     Errors  1 error
+   Start at  15:10:37
+   Duration  94.83s
+
+ FAIL  Tests failed. Watching for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  components/EntryDetailModal.tsx x17 
+        Filename pattern: src/test/consistency/EnvironmentalEntry.test.tsx
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:501:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:507:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:501:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:507:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:501:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:507:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+ ✓ src/test/consistency/EnvironmentalEntry.test.tsx (3 tests) 4981ms
+     ✓ should SHOW checklist and BOAL personnel for CONTRACTOR  4790ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  15:14:03
+   Duration  126.54s
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  components/EntryDetailModal.tsx x18 
+        Filename pattern: src/test/consistency/EnvironmentalEntry.test.tsx
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯⎯⎯ Unhandled Error ⎯⎯⎯⎯⎯⎯⎯
+Error: [vitest-pool]: Failed to start forks worker for test files /Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/src/test/consistency/EnvironmentalEntry.test.tsx.
+ ❯ node_modules/vitest/dist/chunks/cli-api.Cx2DW4Bc.js:8046:94
+ ❯ Pool.schedule node_modules/vitest/dist/chunks/cli-api.Cx2DW4Bc.js:8046:5
+
+Caused by: Error: [vitest-pool-runner]: Timeout waiting for worker to respond
+ ❯ Timeout.<anonymous> node_modules/vitest/dist/chunks/cli-api.Cx2DW4Bc.js:7626:58
+ ❯ listOnTimeout node:internal/timers:608:17
+ ❯ processTimers node:internal/timers:543:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+     Errors  1 error
+   Start at  15:17:31
+   Duration  126.54s
+
+ FAIL  Tests failed. Watching for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  components/EntryDetailModal.tsx x19 
+        Filename pattern: src/test/consistency/EnvironmentalEntry.test.tsx
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+DEBUG JSON entry: {"id":"entry-123","folioNumber":1,"type":"ENVIRONMENTAL","status":"Borrador","createdAt":"2026-01-21T14:23:53.903Z","updatedAt":"2026-01-21T14:23:53.913Z","entryDate":"2026-01-21T14:23:53.913Z","author":{"id":"author-123","fullName":"Author Name","projectRole":"Contratista","avatarUrl":""},"environmentalTramos":[{"tramoId":"tramo-1","tramoName":"Tramo Test 1","summary":"Actividad diaria del tramo 1","interventorObservations":"Obs Interventoria 1","contractorObservations":"Obs Contratista 1","sewerProtection":"CUMPLE","materialStorage":"NO_CUMPLE","cleanliness":"CUMPLE","coveredTrucks":"CUMPLE","greenZones":"CUMPLE","treeProtection":"CUMPLE","enclosure":"CUMPLE","upsCount":"5","boalPersonnelCount":"10","emergency":true,"emergencyDescription":"Emergency Test"}],"environmentalDetail":null,"description":"Global Description","environmentContractorResponse":"Global Response","additionalObservations":"Global Additional Obs","reviewTasks":[],"signatureTasks":[]}
+DEBUG JSON initialContractorResponses: {"contractorObservations":"","safetyContractorResponse":"","environmentContractorResponse":"Global Response","socialContractorResponse":"","mevContractorResponse":""}
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+DEBUG JSON entry: {"id":"entry-123","folioNumber":1,"type":"ENVIRONMENTAL","status":"Borrador","createdAt":"2026-01-21T14:23:53.903Z","updatedAt":"2026-01-21T14:23:53.913Z","entryDate":"2026-01-21T14:23:53.913Z","author":{"id":"author-123","fullName":"Author Name","projectRole":"Contratista","avatarUrl":""},"environmentalTramos":[{"tramoId":"tramo-1","tramoName":"Tramo Test 1","summary":"Actividad diaria del tramo 1","interventorObservations":"Obs Interventoria 1","contractorObservations":"Obs Contratista 1","sewerProtection":"CUMPLE","materialStorage":"NO_CUMPLE","cleanliness":"CUMPLE","coveredTrucks":"CUMPLE","greenZones":"CUMPLE","treeProtection":"CUMPLE","enclosure":"CUMPLE","upsCount":"5","boalPersonnelCount":"10","emergency":true,"emergencyDescription":"Emergency Test"}],"environmentalDetail":null,"description":"Global Description","environmentContractorResponse":"Global Response","additionalObservations":"Global Additional Obs","reviewTasks":[],"signatureTasks":[]}
+DEBUG JSON initialContractorResponses: {"contractorObservations":"","safetyContractorResponse":"","environmentContractorResponse":"Global Response","socialContractorResponse":"","mevContractorResponse":""}
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:504:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:510:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+DEBUG JSON entry: {"id":"entry-123","folioNumber":1,"type":"ENVIRONMENTAL","status":"Borrador","createdAt":"2026-01-21T14:23:53.903Z","updatedAt":"2026-01-21T14:23:53.913Z","entryDate":"2026-01-21T14:23:53.913Z","author":{"id":"author-123","fullName":"Author Name","projectRole":"Contratista","avatarUrl":""},"environmentalTramos":[{"tramoId":"tramo-1","tramoName":"Tramo Test 1","summary":"Actividad diaria del tramo 1","interventorObservations":"Obs Interventoria 1","contractorObservations":"Obs Contratista 1","sewerProtection":"CUMPLE","materialStorage":"NO_CUMPLE","cleanliness":"CUMPLE","coveredTrucks":"CUMPLE","greenZones":"CUMPLE","treeProtection":"CUMPLE","enclosure":"CUMPLE","upsCount":"5","boalPersonnelCount":"10","emergency":true,"emergencyDescription":"Emergency Test"}],"environmentalDetail":null,"description":"Global Description","environmentContractorResponse":"Global Response","additionalObservations":"Global Additional Obs","reviewTasks":[],"signatureTasks":[]}
+DEBUG JSON initialContractorResponses: {"contractorObservations":"","safetyContractorResponse":"","environmentContractorResponse":"Global Response","socialContractorResponse":"","mevContractorResponse":""}
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+DEBUG JSON entry: {"id":"entry-123","folioNumber":1,"type":"ENVIRONMENTAL","status":"Borrador","createdAt":"2026-01-21T14:23:53.903Z","updatedAt":"2026-01-21T14:23:53.913Z","entryDate":"2026-01-21T14:23:53.913Z","author":{"id":"author-123","fullName":"Author Name","projectRole":"Contratista","avatarUrl":""},"environmentalTramos":[{"tramoId":"tramo-1","tramoName":"Tramo Test 1","summary":"Actividad diaria del tramo 1","interventorObservations":"Obs Interventoria 1","contractorObservations":"Obs Contratista 1","sewerProtection":"CUMPLE","materialStorage":"NO_CUMPLE","cleanliness":"CUMPLE","coveredTrucks":"CUMPLE","greenZones":"CUMPLE","treeProtection":"CUMPLE","enclosure":"CUMPLE","upsCount":"5","boalPersonnelCount":"10","emergency":true,"emergencyDescription":"Emergency Test"}],"environmentalDetail":null,"description":"Global Description","environmentContractorResponse":"Global Response","additionalObservations":"Global Additional Obs","reviewTasks":[],"signatureTasks":[]}
+DEBUG JSON initialContractorResponses: {"contractorObservations":"","safetyContractorResponse":"","environmentContractorResponse":"Global Response","socialContractorResponse":"","mevContractorResponse":""}
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:504:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:510:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+DEBUG JSON entry: {"id":"entry-123","folioNumber":1,"type":"ENVIRONMENTAL","status":"Borrador","createdAt":"2026-01-21T14:23:53.903Z","updatedAt":"2026-01-21T14:23:53.913Z","entryDate":"2026-01-21T14:23:53.913Z","author":{"id":"author-123","fullName":"Author Name","projectRole":"Contratista","avatarUrl":""},"environmentalTramos":[{"tramoId":"tramo-1","tramoName":"Tramo Test 1","summary":"Actividad diaria del tramo 1","interventorObservations":"Obs Interventoria 1","contractorObservations":"Obs Contratista 1","sewerProtection":"CUMPLE","materialStorage":"NO_CUMPLE","cleanliness":"CUMPLE","coveredTrucks":"CUMPLE","greenZones":"CUMPLE","treeProtection":"CUMPLE","enclosure":"CUMPLE","upsCount":"5","boalPersonnelCount":"10","emergency":true,"emergencyDescription":"Emergency Test"}],"environmentalDetail":null,"description":"Global Description","environmentContractorResponse":"Global Response","additionalObservations":"Global Additional Obs","reviewTasks":[],"signatureTasks":[]}
+DEBUG JSON initialContractorResponses: {"contractorObservations":"","safetyContractorResponse":"","environmentContractorResponse":"Global Response","socialContractorResponse":"","mevContractorResponse":""}
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+DEBUG JSON entry: {"id":"entry-123","folioNumber":1,"type":"ENVIRONMENTAL","status":"Borrador","createdAt":"2026-01-21T14:23:53.903Z","updatedAt":"2026-01-21T14:23:53.913Z","entryDate":"2026-01-21T14:23:53.913Z","author":{"id":"author-123","fullName":"Author Name","projectRole":"Contratista","avatarUrl":""},"environmentalTramos":[{"tramoId":"tramo-1","tramoName":"Tramo Test 1","summary":"Actividad diaria del tramo 1","interventorObservations":"Obs Interventoria 1","contractorObservations":"Obs Contratista 1","sewerProtection":"CUMPLE","materialStorage":"NO_CUMPLE","cleanliness":"CUMPLE","coveredTrucks":"CUMPLE","greenZones":"CUMPLE","treeProtection":"CUMPLE","enclosure":"CUMPLE","upsCount":"5","boalPersonnelCount":"10","emergency":true,"emergencyDescription":"Emergency Test"}],"environmentalDetail":null,"description":"Global Description","environmentContractorResponse":"Global Response","additionalObservations":"Global Additional Obs","reviewTasks":[],"signatureTasks":[]}
+DEBUG JSON initialContractorResponses: {"contractorObservations":"","safetyContractorResponse":"","environmentContractorResponse":"Global Response","socialContractorResponse":"","mevContractorResponse":""}
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:504:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:510:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+ ✓ src/test/consistency/EnvironmentalEntry.test.tsx (3 tests) 1160ms
+     ✓ should SHOW checklist and BOAL personnel for CONTRACTOR  1081ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  15:21:45
+   Duration  82.01s
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  components/EntryDetailModal.tsx x20 
+        Filename pattern: src/test/consistency/EnvironmentalEntry.test.tsx
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯⎯⎯ Unhandled Error ⎯⎯⎯⎯⎯⎯⎯
+Error: [vitest-pool]: Failed to start forks worker for test files /Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/src/test/consistency/EnvironmentalEntry.test.tsx.
+ ❯ node_modules/vitest/dist/chunks/cli-api.Cx2DW4Bc.js:8046:94
+ ❯ Pool.schedule node_modules/vitest/dist/chunks/cli-api.Cx2DW4Bc.js:8046:5
+
+Caused by: Error: [vitest-pool-runner]: Timeout waiting for worker to respond
+ ❯ Timeout.<anonymous> node_modules/vitest/dist/chunks/cli-api.Cx2DW4Bc.js:7626:58
+ ❯ listOnTimeout node:internal/timers:608:17
+ ❯ processTimers node:internal/timers:543:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+     Errors  1 error
+   Start at  15:24:07
+   Duration  82.01s
+
+ FAIL  Tests failed. Watching for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  components/EntryDetailModal.tsx x21 
+        Filename pattern: src/test/consistency/EnvironmentalEntry.test.tsx
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯⎯⎯ Unhandled Error ⎯⎯⎯⎯⎯⎯⎯
+Error: [vitest-pool]: Failed to start forks worker for test files /Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/src/test/consistency/EnvironmentalEntry.test.tsx.
+ ❯ node_modules/vitest/dist/chunks/cli-api.Cx2DW4Bc.js:8046:94
+ ❯ Pool.schedule node_modules/vitest/dist/chunks/cli-api.Cx2DW4Bc.js:8046:5
+
+Caused by: Error: [vitest-pool-runner]: Timeout waiting for worker to respond
+ ❯ Timeout.<anonymous> node_modules/vitest/dist/chunks/cli-api.Cx2DW4Bc.js:7626:58
+ ❯ listOnTimeout node:internal/timers:608:17
+ ❯ processTimers node:internal/timers:543:7
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+     Errors  1 error
+   Start at  15:25:21
+   Duration  82.01s
+
+ FAIL  Tests failed. Watching for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  components/EntryDetailModal.tsx x22 
+        Filename pattern: src/test/consistency/EnvironmentalEntry.test.tsx
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:502:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:508:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:502:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:508:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:502:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:508:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+ ✓ src/test/consistency/EnvironmentalEntry.test.tsx (3 tests) 470ms
+     ✓ should SHOW checklist and BOAL personnel for CONTRACTOR  429ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  15:37:22
+   Duration  85.46s
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit
+c[3J RERUN  components/EntryDetailModal.tsx x23 
+        Filename pattern: src/test/consistency/EnvironmentalEntry.test.tsx
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should SHOW checklist and BOAL personnel for CONTRACTOR
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:502:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:508:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should HIDE checklist and BOAL personnel for INTERVENTORIA
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:502:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:508:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+stdout | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+[DETAIL DEBUG] type from entry: ENVIRONMENTAL
+[DETAIL DEBUG] entryTypeValue (normalized): ENVIRONMENTAL
+[DETAIL DEBUG] EntryType.SAFETY: SAFETY
+[DETAIL DEBUG] isSpecialType: [33mtrue[39m
+[DETAIL DEBUG] showSafetyPanel: [33mfalse[39m
+[DETAIL DEBUG] safetyNotes: []
+
+stderr | src/test/consistency/EnvironmentalEntry.test.tsx > Environmental Entry Consistency > should NOT show global non-tramo fields
+No se pudo verificar la firma del usuario. TypeError: Cannot read properties of undefined (reading 'get')
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:502:52
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mcomponents/EntryDetailModal.tsx:508:7
+    at commitHookEffectListMount [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:23189:26[90m)[39m
+    at commitPassiveMountOnFiber [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24970:11[90m)[39m
+    at commitPassiveMountEffects_complete [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24930:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24917:7[90m)[39m
+    at commitPassiveMountEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:24905:3[90m)[39m
+    at flushPassiveEffectsImpl [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27078:3[90m)[39m
+    at flushPassiveEffects [90m(/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:27023:14[90m)[39m
+    at [90m/Users/mcarenas136/Desktop/Trabajo/Bitacora/bdo-client/[39mnode_modules/[4mreact-dom[24m/cjs/react-dom.development.js:26808:9
+
+ ✓ src/test/consistency/EnvironmentalEntry.test.tsx (3 tests) 1673ms
+     ✓ should SHOW checklist and BOAL personnel for CONTRACTOR  1589ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  15:46:33
+   Duration  74.86s
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit

@@ -808,6 +808,11 @@ export const logEntriesApi = {
     appendJson("socialTramos", (data as any).socialTramos);
     appendJson("environmentalDetail", (data as any).environmentalDetail);
     appendJson("environmentalTramos", (data as any).environmentalTramos);
+    
+    // MEV fields
+    appendIfDefined("mevNovelties", (data as any).mevNovelties);
+    appendIfDefined("mevFindings", (data as any).mevFindings);
+    appendIfDefined("mevContractorResponse", (data as any).mevContractorResponse);
 
     const serializeUsers = (users?: Array<Partial<User> | string>) => {
       if (!users || users.length === 0) {
