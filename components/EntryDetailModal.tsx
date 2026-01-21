@@ -2090,14 +2090,6 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                   </p>
                 )}
               </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-700">
-                  Respuesta del contratista
-                </p>
-                <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">
-                  {environmentContractorResponse || "Sin respuesta registrada."}
-                </p>
-              </div>
 
               
               {(environmentalTramos?.length > 0 || environmentalDetail) && (
@@ -2426,7 +2418,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
               value={scheduleDay || (projectStartDate ? calculateScheduleDay(entryDateIso) : "No registrado")}
             />
           )}
-          {entryTypeValue !== EntryType.SOCIAL && (
+          {entryTypeValue !== EntryType.SOCIAL && entryTypeValue !== EntryType.ENVIRONMENTAL && (
             isEditing ? (
               <Input
                 label="Localización / Tramo"
@@ -3021,99 +3013,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
           </div>
           )}
 
-          {isSpecialType && entryTypeValue !== EntryType.SOCIAL && (
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-sm font-semibold text-gray-800 mb-1">
-                  Registro diario de actividades
-                </h4>
-                {isEditing ? (
-                  <textarea
-                    name="description"
-                    value={description}
-                    onChange={handleInputChange}
-                    rows={4}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                  />
-                ) : (
-                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
-                    {description || "Sin resumen registrado."}
-                  </p>
-                )}
-              </div>
 
-              <div>
-                <h4 className="text-sm font-semibold text-gray-800 mb-1">
-                  Respuesta del contratista
-                </h4>
-                {isEditing ? (
-                  <textarea
-                    value={
-                      entryTypeValue === EntryType.SAFETY
-                        ? safetyContractorResponse
-                        : entryTypeValue === EntryType.ENVIRONMENTAL
-                        ? environmentContractorResponse
-                        : socialContractorResponse
-                    }
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (entryTypeValue === EntryType.SAFETY) {
-                        setEditedEntry((prev) => ({
-                          ...prev,
-                          safetyContractorResponse: val,
-                        }));
-                      } else if (entryTypeValue === EntryType.ENVIRONMENTAL) {
-                        setEditedEntry((prev) => ({
-                          ...prev,
-                          environmentContractorResponse: val,
-                        }));
-                      } else {
-                        setEditedEntry((prev) => ({
-                          ...prev,
-                          socialContractorResponse: val,
-                        }));
-                      }
-                    }}
-                    rows={3}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                    placeholder="Respuesta del contratista"
-                  />
-                ) : (
-                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
-                    {(entryTypeValue === EntryType.SAFETY
-                      ? safetyContractorResponse
-                      : entryTypeValue === EntryType.ENVIRONMENTAL
-                      ? environmentContractorResponse
-                      : socialContractorResponse) || "Sin respuesta registrada."}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <h4 className="text-sm font-semibold text-gray-800 mb-1">
-                  Observaciones adicionales
-                </h4>
-                {isEditing ? (
-                  <textarea
-                    value={additionalObservations}
-                    onChange={(e) =>
-                      setEditedEntry((prev) => ({
-                        ...prev,
-                        additionalObservations: e.target.value,
-                      }))
-                    }
-                    rows={3}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                    placeholder="Observaciones adicionales"
-                  />
-                ) : (
-                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
-                    {additionalObservations || "Sin observaciones."}
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
 
           {showGeneralSections && (
           <div>
