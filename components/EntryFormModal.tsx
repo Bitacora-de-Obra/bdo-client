@@ -2079,23 +2079,35 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Observaciones SST (Interventoría)
                 </label>
-                <textarea
-                  value={safetyFindings}
-                  onChange={(e) => setSafetyFindings(e.target.value)}
-                  rows={3}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                />
+                {!isInterventor ? (
+                  <div className="p-2 bg-gray-50 border border-gray-200 rounded text-sm text-gray-500 italic">
+                    {safetyFindings || 'Espacio reservado para la interventoría.'}
+                  </div>
+                ) : (
+                  <textarea
+                    value={safetyFindings}
+                    onChange={(e) => setSafetyFindings(e.target.value)}
+                    rows={3}
+                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  />
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Respuesta del contratista
+                  Observaciones del contratista
                 </label>
-                <textarea
-                  value={safetyContractorResponse}
-                  onChange={(e) => setSafetyContractorResponse(e.target.value)}
-                  rows={3}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                />
+                {isInterventor ? (
+                  <div className="p-2 bg-gray-50 border border-gray-200 rounded text-sm text-gray-500 italic">
+                    {safetyContractorResponse || 'Solo el contratista puede editar este campo.'}
+                  </div>
+                ) : (
+                  <textarea
+                    value={safetyContractorResponse}
+                    onChange={(e) => setSafetyContractorResponse(e.target.value)}
+                    rows={3}
+                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -2238,37 +2250,46 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
               </div>
             )}
 
-            {/* Observaciones de la interventoría */}
-            {isInterventor && (
+            {/* Observaciones - Role-based readonly */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Observaciones de la interventoría
                 </label>
-                <textarea
-                  value={mevFindings}
-                  onChange={(e) => setMevFindings(e.target.value)}
-                  rows={3}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                  placeholder="Observaciones generales de la interventoría sobre maquinaria y equipos..."
-                />
+                {!isInterventor ? (
+                  <div className="p-2 bg-gray-50 border border-gray-200 rounded text-sm text-gray-500 italic">
+                    {mevFindings || 'Espacio reservado para la interventoría.'}
+                  </div>
+                ) : (
+                  <textarea
+                    value={mevFindings}
+                    onChange={(e) => setMevFindings(e.target.value)}
+                    rows={3}
+                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                    placeholder="Observaciones generales de la interventoría sobre maquinaria y equipos..."
+                  />
+                )}
               </div>
-            )}
 
-            {/* Observaciones del contratista */}
-            {!isInterventor && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Observaciones del contratista
                 </label>
-                <textarea
-                  value={mevContractorResponse}
-                  onChange={(e) => setMevContractorResponse(e.target.value)}
-                  rows={3}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                  placeholder="Observaciones del contratista sobre maquinaria y equipos..."
-                />
+                {isInterventor ? (
+                  <div className="p-2 bg-gray-50 border border-gray-200 rounded text-sm text-gray-500 italic">
+                    {mevContractorResponse || 'Solo el contratista puede editar este campo.'}
+                  </div>
+                ) : (
+                  <textarea
+                    value={mevContractorResponse}
+                    onChange={(e) => setMevContractorResponse(e.target.value)}
+                    rows={3}
+                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                    placeholder="Observaciones del contratista sobre maquinaria y equipos..."
+                  />
+                )}
               </div>
-            )}
+            </div>
           </div>
         )}
 
