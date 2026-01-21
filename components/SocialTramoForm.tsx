@@ -119,7 +119,7 @@ const SocialTramoForm: React.FC<SocialTramoFormProps> = ({
             <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs">1</span>
             PQRSD Recibidas
           </h5>
-          {(!data.pqrsds || data.pqrsds.length === 0) ? (
+          {(!Array.isArray(data.pqrsds) || data.pqrsds.length === 0) ? (
             <p className="text-gray-500 text-sm mb-2">No hay PQRSD registradas</p>
           ) : (
             data.pqrsds.map((pqrsd, idx) => (
@@ -192,7 +192,7 @@ const SocialTramoForm: React.FC<SocialTramoFormProps> = ({
             <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs">2</span>
             Actas de Compromiso
           </h5>
-          {(!data.actasCompromiso || data.actasCompromiso.length === 0) ? (
+          {(!Array.isArray(data.actasCompromiso) || data.actasCompromiso.length === 0) ? (
             <p className="text-gray-500 text-sm mb-2">No hay actas registradas</p>
           ) : (
             data.actasCompromiso.map((acta, idx) => (
@@ -233,7 +233,7 @@ const SocialTramoForm: React.FC<SocialTramoFormProps> = ({
             <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-xs">3</span>
             Articulación Interinstitucional
           </h5>
-          {(!data.articulaciones || data.articulaciones.length === 0) ? (
+          {(!Array.isArray(data.articulaciones) || data.articulaciones.length === 0) ? (
             <p className="text-gray-500 text-sm mb-2">No hay articulaciones registradas</p>
           ) : (
             data.articulaciones.map((art, idx) => (
@@ -300,7 +300,7 @@ const SocialTramoForm: React.FC<SocialTramoFormProps> = ({
             <span className="bg-pink-100 text-pink-800 px-2 py-0.5 rounded text-xs">5</span>
             Entrega de Volantes
           </h5>
-          {(!data.volantes || data.volantes.length === 0) ? (
+          {(!Array.isArray(data.volantes) || data.volantes.length === 0) ? (
             <p className="text-gray-500 text-sm mb-2">No hay volantes registrados</p>
           ) : (
             data.volantes.map((vol, idx) => (
@@ -347,7 +347,7 @@ const SocialTramoForm: React.FC<SocialTramoFormProps> = ({
             <span className="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded text-xs">6</span>
             Instalación/Actualización de PSI
           </h5>
-          {(!data.psis || data.psis.length === 0) ? (
+          {(!Array.isArray(data.psis) || data.psis.length === 0) ? (
             <p className="text-gray-500 text-sm mb-2">No hay PSI registrados</p>
           ) : (
             data.psis.map((psi, idx) => (

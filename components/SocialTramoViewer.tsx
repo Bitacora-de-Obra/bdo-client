@@ -46,7 +46,7 @@ const SocialTramoViewer: React.FC<SocialTramoViewerProps> = ({ tramos }) => {
                 <span className="bg-blue-100 px-2 py-0.5 rounded text-xs">1</span>
                 PQRSD Recibidas
               </h6>
-              {tramo.pqrsds.length === 0 ? (
+              {(!Array.isArray(tramo.pqrsds) || tramo.pqrsds.length === 0) ? (
                 <span className="text-gray-500">Sin PQRSD</span>
               ) : (
                 <ul className="space-y-1">
@@ -73,7 +73,7 @@ const SocialTramoViewer: React.FC<SocialTramoViewerProps> = ({ tramos }) => {
                 <span className="bg-green-100 px-2 py-0.5 rounded text-xs">2</span>
                 Acta de Compromiso
               </h6>
-              {(!tramo.actasCompromiso || tramo.actasCompromiso.length === 0) ? (
+              {(!Array.isArray(tramo.actasCompromiso) || tramo.actasCompromiso.length === 0) ? (
                 <span className="text-gray-500">No se requirió</span>
               ) : (
                 <div className="space-y-2">
@@ -95,7 +95,7 @@ const SocialTramoViewer: React.FC<SocialTramoViewerProps> = ({ tramos }) => {
                 <span className="bg-yellow-100 px-2 py-0.5 rounded text-xs">3</span>
                 Articulación Interinstitucional
               </h6>
-              {(!tramo.articulaciones || tramo.articulaciones.length === 0) ? (
+              {(!Array.isArray(tramo.articulaciones) || tramo.articulaciones.length === 0) ? (
                 <span className="text-gray-500">No se realizó</span>
               ) : (
                 <div className="space-y-2">
@@ -130,7 +130,7 @@ const SocialTramoViewer: React.FC<SocialTramoViewerProps> = ({ tramos }) => {
                 <span className="bg-pink-100 px-2 py-0.5 rounded text-xs">5</span>
                 Volantes
               </h6>
-              {(!tramo.volantes || tramo.volantes.length === 0) ? (
+              {(!Array.isArray(tramo.volantes) || tramo.volantes.length === 0) ? (
                 <span className="text-gray-500">No se entregaron</span>
               ) : (
                 <div className="space-y-2">
@@ -152,7 +152,7 @@ const SocialTramoViewer: React.FC<SocialTramoViewerProps> = ({ tramos }) => {
                 <span className="bg-indigo-100 px-2 py-0.5 rounded text-xs">6</span>
                 PSI
               </h6>
-              {(!tramo.psis || tramo.psis.length === 0) ? (
+              {(!Array.isArray(tramo.psis) || tramo.psis.length === 0) ? (
                   <span className="text-gray-500">No se instaló/actualizó</span>
               ) : (
                 <div className="space-y-2">
