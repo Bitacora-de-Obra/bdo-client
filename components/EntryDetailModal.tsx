@@ -248,6 +248,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const [isSavingInterventoriaObs, setIsSavingInterventoriaObs] =
     useState(false);
   const [isSendingToContractor, setIsSendingToContractor] = useState(false);
+  const [pendingSignerChange, setPendingSignerChange] = useState<{userId: string; checked: boolean} | null>(null);
   // Separate state for new observation inputs (avoid overwriting existing text)
   const [contractorNoteInput, setContractorNoteInput] = useState("");
   const [interventoriaNoteInput, setInterventoriaNoteInput] = useState("");
@@ -306,6 +307,20 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const findUserById = (id: string): User | undefined => knownUsers.get(id);
 
   const handleToggleSigner = (userId: string, checked: boolean) => {
+    // Check if there are existing signatures
+    const existingSignatureCount = entry.signatures?.length || 0;
+    
+    if (existingSignatureCount > 0) {
+      // Show warning dialog
+      setPendingSignerChange({ userId, checked });
+      return;
+    }
+    
+    // No signatures, proceed normally
+    applySignerChange(userId, checked);
+  };
+
+  const applySignerChange = (userId: string, checked: boolean) => {
     setSelectedSignerIds((prev) => {
       const nextSet = new Set(prev);
       if (checked) {
@@ -323,6 +338,26 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
       }));
       return nextIds;
     });
+  };
+
+  const handleConfirmSignerChange = () => {
+    if (!pendingSignerChange) return;
+    
+    // Clear existing signatures
+    setEditedEntry((prev) => ({
+      ...prev,
+      signatures: [],
+    }));
+    
+    // Apply the signer change
+    applySignerChange(pendingSignerChange.userId, pendingSignerChange.checked);
+    
+    // Close dialog
+    setPendingSignerChange(null);
+  };
+
+  const handleCancelSignerChange = () => {
+    setPendingSignerChange(null);
   };
 
   const applyEntryState = (entryData: LogEntry) => {
@@ -1829,7 +1864,10 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   
   // On per-signatory workflow: signatures disabled until ALL review tasks complete
   const allReviewTasksComplete = reviewTasks.length === 0 || reviewTasks.every(t => t.status === 'COMPLETED');
-  const isSigningStage = (isReadyForSignaturesStatus || isSignedStatus) && !entry.pendingReviewBy && allReviewTasksComplete;
+  
+  // FIXED: If status is explicitly APPROVED (isReadyForSignaturesStatus), treat as signing stage regardless of pendingReviewBy flag
+  // This solves inconsistent states where pendingReviewBy might remain set.
+  const isSigningStage = (isReadyForSignaturesStatus || isSignedStatus) && (!entry.pendingReviewBy || isReadyForSignaturesStatus) && allReviewTasksComplete;
   const signatureBlockReadOnly = readOnly || !isSigningStage;
   const canSign = !effectiveReadOnly && isSigningStage;
 
@@ -2035,37 +2073,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                  </div>
               )}
 
-              <div>
-                <p className="text-sm font-semibold text-gray-700">
-                  Observaciones de la interventoría
-                </p>
-                {isEditing ? (
-                  <textarea
-                    name="safetyFindings"
-                    value={safetyFindings}
-                    onChange={(e) =>
-                      setEditedEntry((prev) => ({
-                        ...prev,
-                        safetyFindings: e.target.value,
-                      }))
-                    }
-                    rows={3}
-                    className="mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                  />
-                ) : (
-                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
-                    {safetyFindings || "Sin observaciones."}
-                  </p>
-                )}
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-700">
-                  Observaciones del contratista
-                </p>
-                <p className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">
-                  {safetyContractorResponse || "Sin respuesta registrada."}
-                </p>
-              </div>
+
             </div>
             )}
 
@@ -3565,10 +3573,62 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                 documentType="Anotación"
               />
               {!isSigningStage && (
-                <p className="mt-2 text-sm text-gray-500">
-                  Las firmas se habilitan cuando la interventoría marca la
-                  anotación como “Listo para firmas”.
-                </p>
+                <div className="mt-4 p-4 bg-yellow-50 rounded-md border border-yellow-200">
+                  <p className="text-sm text-yellow-800 mb-2">
+                    Las firmas están deshabilitadas porque la anotación aún no ha sido aprobada.
+                  </p>
+                  
+                  {/* Action buttons for authorized users to unblock flow */}
+                  <div className="flex gap-2 flex-wrap">
+                    {canCompleteContractorReview && (
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        onClick={handleCompleteContractorReview}
+                        disabled={isCompletingContractorReview}
+                      >
+                        {isCompletingContractorReview ? "Procesando..." : "Completar revisión y Continuar"}
+                      </Button>
+                    )}
+                    
+                    {canApprove && (
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        onClick={handleApprove}
+                        disabled={isApproving}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        {isApproving ? "Aprobando..." : "Aprobar y Habilitar Firmas"}
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {!canCompleteContractorReview && !canApprove && (
+                     <>
+                      {(isAuthor && isRequiredSigner) ? (
+                        <div className="mt-2">
+                           <p className="text-xs text-yellow-700 mb-2">
+                             Al ser el autor y firmante, puedes habilitar la firma directamente.
+                           </p>
+                           <Button
+                            size="sm"
+                            variant="primary"
+                            onClick={handleApprove} 
+                            disabled={isApproving}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            {isApproving ? "Procesando..." : "Habilitar mi firma"}
+                          </Button>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-yellow-600 mt-1">
+                          Debes esperar a que la interventoría o el administrador apruebe la anotación.
+                        </p>
+                      )}
+                     </>
+                  )}
+                </div>
               )}
             </>
           )}
@@ -3884,6 +3944,47 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
         userToSign={currentUser}
         consentStatement="Autorizo el uso de mi firma manuscrita digital para esta anotación de bitácora."
       />
+      
+      {/* Warning Dialog for Signer Modification */}
+      {pendingSignerChange && (
+        <Modal
+          isOpen={true}
+          onClose={handleCancelSignerChange}
+          title="⚠️ Advertencia: Firmas Existentes"
+          size="md"
+        >
+          <div className="space-y-4">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+              <p className="text-sm text-gray-700">
+                Ya existen <strong>{entry.signatures?.length || 0} firma(s)</strong> en esta anotación.
+              </p>
+              <p className="text-sm text-gray-700 mt-2">
+                Modificar los firmantes requeridos <strong>eliminará todas las firmas existentes</strong> y será necesario que todos los firmantes vuelvan a firmar.
+              </p>
+            </div>
+            
+            <p className="text-sm text-gray-600">
+              ¿Deseas continuar con esta modificación?
+            </p>
+            
+            <div className="flex justify-end gap-3 pt-2">
+              <Button
+                variant="secondary"
+                onClick={handleCancelSignerChange}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleConfirmSignerChange}
+                className="bg-yellow-600 hover:bg-yellow-700"
+              >
+                Sí, modificar firmantes
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </>
   );
 };

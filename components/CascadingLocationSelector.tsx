@@ -8,6 +8,7 @@ interface CascadingLocationSelectorProps {
   label?: string;
   showSelectAll?: boolean; // New prop to enable "Select All" button
   onSelectAll?: () => void; // Callback when user clicks "Select All"
+  buttonText?: string; // Custom button label
 }
 
 export const CascadingLocationSelector: React.FC<CascadingLocationSelectorProps> = ({
@@ -17,7 +18,8 @@ export const CascadingLocationSelector: React.FC<CascadingLocationSelectorProps>
   variant = 'blue',
   label = "Localización / Tramo",
   showSelectAll = false,
-  onSelectAll
+  onSelectAll,
+  buttonText = "+ Agregar reporte"
 }) => {
   const [tempSelection, setTempSelection] = useState<{
     troncal: string;
@@ -123,6 +125,11 @@ export const CascadingLocationSelector: React.FC<CascadingLocationSelectorProps>
     }
   };
 
+  // Generate unique IDs for datalists to prevent collisions between multiple instances
+  const instanceId = React.useId();
+  const civDatalistId = `civ-options-${variant}-${instanceId}`;
+  const pkDatalistId = `pk-options-${variant}-${instanceId}`;
+
   return (
     <div className={`p-4 rounded-lg border ${colors.container}`}>
       <div className="flex items-center justify-between mb-3">
@@ -173,7 +180,7 @@ export const CascadingLocationSelector: React.FC<CascadingLocationSelectorProps>
           </label>
           <input
             type="text"
-            list={`civ-options-${variant}`}
+            list={civDatalistId}
             className={`w-full border ${colors.border} rounded-md p-2 bg-white text-sm`}
             placeholder="Escribir o seleccionar..."
             value={civSearch || tempSelection.civ}
@@ -198,7 +205,7 @@ export const CascadingLocationSelector: React.FC<CascadingLocationSelectorProps>
             }}
             disabled={!tempSelection.troncal}
           />
-          <datalist id={`civ-options-${variant}`}>
+          <datalist id={civDatalistId}>
             {civs.map(civ => (
               <option key={civ} value={civ}>
                 CIV {civ}
@@ -214,7 +221,7 @@ export const CascadingLocationSelector: React.FC<CascadingLocationSelectorProps>
           </label>
           <input
             type="text"
-            list={`pk-options-${variant}`}
+            list={pkDatalistId}
             className={`w-full border ${colors.border} rounded-md p-2 bg-white text-sm`}
             placeholder="Escribir o seleccionar..."
             value={pkSearch || tempSelection.pk}
@@ -240,7 +247,7 @@ export const CascadingLocationSelector: React.FC<CascadingLocationSelectorProps>
             }}
             disabled={!tempSelection.civ}
           />
-          <datalist id={`pk-options-${variant}`}>
+          <datalist id={pkDatalistId}>
             {pks.map(item => (
               <option key={item.id} value={item.pk}>
                 PK {item.pk}
@@ -257,7 +264,7 @@ export const CascadingLocationSelector: React.FC<CascadingLocationSelectorProps>
         disabled={!tempSelection.troncal || !tempSelection.civ || !tempSelection.pk}
         className={`w-full ${colors.button} text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition`}
       >
-        + Agregar reporte
+        {buttonText}
       </button>
     </div>
   );

@@ -1,5 +1,7 @@
 import React from 'react';
 import Input from './ui/Input';
+import { CascadingLocationSelector } from './CascadingLocationSelector';
+import { CatalogItem } from '../src/services/api';
 import { SSTAccidentData, SSTDiseaseData, AccidentDetails, DiseaseDetails } from '../types';
 
 interface SSTIncidentFormProps {
@@ -7,6 +9,7 @@ interface SSTIncidentFormProps {
   onChangeAccident: (data: SSTAccidentData) => void;
   diseaseData: SSTDiseaseData;
   onChangeDisease: (data: SSTDiseaseData) => void;
+  locationOptions: CatalogItem[];
 }
 
 const createEmptyAccident = (): AccidentDetails => ({
@@ -38,7 +41,8 @@ const AccidentForm: React.FC<{
   incident: AccidentDetails;
   onUpdate: (field: keyof AccidentDetails, value: any) => void;
   onUpdateNested: (parent: 'reportedToBossDetails' | 'reportedToInterventoriaDetails', field: string, value: string) => void;
-}> = ({ index, total, incident, onUpdate, onUpdateNested }) => (
+  locationOptions: CatalogItem[];
+}> = ({ index, total, incident, onUpdate, onUpdateNested, locationOptions }) => (
   <div className="p-4 bg-white rounded-lg border-2 border-red-200 shadow-sm">
     <h5 className="text-md font-bold text-red-700 mb-4 flex items-center gap-2">
       <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-sm">
@@ -62,7 +66,32 @@ const AccidentForm: React.FC<{
       <Input label="Nombre y apellido accidentado" value={incident.injuredName || ''} onChange={(e) => onUpdate('injuredName', e.target.value)} />
       <Input label="Cargo" value={incident.injuredRole || ''} onChange={(e) => onUpdate('injuredRole', e.target.value)} />
       <Input label="Empresa contratante" value={incident.contractorCompany || ''} onChange={(e) => onUpdate('contractorCompany', e.target.value)} />
-      <Input label="Lugar (Dirección / Frente / CIV)" value={incident.location || ''} onChange={(e) => onUpdate('location', e.target.value)} />
+      
+      <div className="md:col-span-2 space-y-2">
+        <label className="block text-sm font-medium text-gray-700">Lugar del accidente</label>
+        
+        {/* Helper para buscar CIV */}
+        <div className="bg-blue-50 p-3 rounded-md border border-blue-100">
+           <p className="text-xs text-blue-600 mb-2 font-medium">Buscador de CIV (Opcional - llena el campo de abajo)</p>
+           <CascadingLocationSelector
+              locationSegmentCatalog={locationOptions}
+              onAdd={(item) => onUpdate('location', item.name)}
+              variant="blue"
+              label="Seleccionar CIV"
+              selectedIds={[]}
+              buttonText="Insertar tramo"
+           />
+        </div>
+
+        {/* Input final editable */}
+        <Input 
+          label="Dirección / Frente / CIV (Valor final)" 
+          value={incident.location || ''} 
+          onChange={(e) => onUpdate('location', e.target.value)}
+          placeholder="Seleccione un CIV arriba o escriba la dirección manualmente..."
+        />
+      </div>
+
       <Input label="Hora del accidente" type="time" value={incident.time || ''} onChange={(e) => onUpdate('time', e.target.value)} />
       
       <div className="md:col-span-2">
@@ -180,7 +209,8 @@ const SSTIncidentForm: React.FC<SSTIncidentFormProps> = ({
   accidentData,
   onChangeAccident,
   diseaseData,
-  onChangeDisease
+  onChangeDisease,
+  locationOptions
 }) => {
   
   const handleAccidentToggle = (hasAccident: boolean) => {
@@ -342,6 +372,9 @@ const SSTIncidentForm: React.FC<SSTIncidentFormProps> = ({
                 </button>
               </div>
             </div>
+            <p className="text-xs text-gray-500 -mt-3 mb-3 ml-1">
+               (Máximo 10 registros por anotación)
+            </p>
             
             <div className="space-y-4">
               {accidentIncidents.map((incident, index) => (
@@ -352,6 +385,7 @@ const SSTIncidentForm: React.FC<SSTIncidentFormProps> = ({
                   incident={incident}
                   onUpdate={(field, value) => updateAccidentIncident(index, field, value)}
                   onUpdateNested={(parent, field, value) => updateAccidentNested(index, parent, field, value)}
+                  locationOptions={locationOptions}
                 />
               ))}
             </div>
@@ -416,6 +450,9 @@ const SSTIncidentForm: React.FC<SSTIncidentFormProps> = ({
                 </button>
               </div>
             </div>
+            <p className="text-xs text-gray-500 -mt-3 mb-3 ml-1">
+               (Máximo 10 registros por anotación)
+            </p>
             
             <div className="space-y-4">
               {diseaseIncidents.map((incident, index) => (

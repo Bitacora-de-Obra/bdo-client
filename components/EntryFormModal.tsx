@@ -69,6 +69,8 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   const [weatherTemperature, setWeatherTemperature] = useState<string>("");
   const [weatherNotes, setWeatherNotes] = useState<string>("");
 
+  const [isConfidential, setIsConfidential] = useState(false);
+
   // Catalogs
   const [contractorRolesCatalog, setContractorRolesCatalog] = useState<CatalogItem[]>([]);
   const [interventoriaRolesCatalog, setInterventoriaRolesCatalog] = useState<CatalogItem[]>([]);
@@ -134,6 +136,12 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
   const [socialContractorResponse, setSocialContractorResponse] =
     useState<string>("");
   const [socialPhotoSummary, setSocialPhotoSummary] = useState<string>("");
+  
+  // Pending observation inputs (for new comments before saving)
+  const [pendingSafetyFinding, setPendingSafetyFinding] = useState<string>("");
+  const [pendingSafetyContractorResponse, setPendingSafetyContractorResponse] = useState<string>("");
+  const [pendingContractorObservation, setPendingContractorObservation] = useState<string>("");
+  const [pendingInterventoriaObservation, setPendingInterventoriaObservation] = useState<string>("");
   const [files, setFiles] = useState<File[]>([]);
   const [photos, setPhotos] = useState<File[]>([]);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -881,9 +889,13 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           safetyNotes: (isSpecialType && !showExtendedSST) ? [] : safetyNotesItems,
           projectIssues: isSpecialType ? [] : linesToItems(projectIssuesText),
           siteVisits: isSpecialType ? [] : linesToItems(siteVisitsText),
-          contractorObservations: isSpecialType ? "" : contractorObservations.trim(),
-          interventoriaObservations: isSpecialType ? "" : interventoriaObservations.trim(),
-          safetyFindings: isSpecialType ? "" : safetyFindings.trim(),
+          contractorObservations: isSpecialType 
+            ? (entryType === EntryType.SAFETY ? contractorResponse.trim() : "") 
+            : contractorObservations.trim(),
+          interventoriaObservations: isSpecialType 
+            ? (entryType === EntryType.SAFETY ? safetyFindings.trim() : "")
+            : interventoriaObservations.trim(),
+          safetyFindings: entryType === EntryType.SAFETY ? safetyFindings.trim() : (isSpecialType ? "" : safetyFindings.trim()),
           safetyContractorResponse:
             entryType === EntryType.SAFETY ? contractorResponse.trim() : "",
           environmentFindings: isSpecialType ? "" : environmentFindings.trim(),
@@ -912,7 +924,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
           location: "",
           type: entryType,
           status: EntryStatus.DRAFT,
-          isConfidential: false,
+          isConfidential,
           assignees: [],
           requiredSignatories,
           skipAuthorAsSigner,
@@ -995,12 +1007,34 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             </Select>
           </div>
 
-          <Input
-            label="Título / Asunto"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Ej. Registro diario"
-          />
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="isConfidential-special"
+              checked={isConfidential}
+              onChange={(e) => setIsConfidential(e.target.checked)}
+              className="h-4 w-4 text-brand-primary border-gray-300 rounded focus:ring-brand-primary"
+            />
+            <label htmlFor="isConfidential-special" className="text-sm font-medium text-gray-700 select-none">
+              El contenido de esta anotación es confidencial
+            </label>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Título / Asunto</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Ej. Registro diario"
+              maxLength={150}
+              className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+            />
+            <p className={`text-xs mt-1 text-right ${title.length > 130 ? 'text-orange-500' : 'text-gray-400'}`}>
+              {title.length}/150
+            </p>
+          </div>
 
           {entryType !== EntryType.SOCIAL && (
             <div>
@@ -1011,10 +1045,14 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                 value={summary}
                 onChange={(e) => setSummary(e.target.value)}
                 rows={4}
+                maxLength={2000}
                 className="w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
                 placeholder="Describe las actividades y hallazgos del día"
                 required
               />
+              <p className={`text-xs mt-1 text-right ${summary.length > 1800 ? 'text-orange-500' : 'text-gray-400'}`}>
+                {summary.length}/2000
+              </p>
             </div>
           )}
 
@@ -1080,7 +1118,115 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                     onChangeAccident={setSstAccident}
                     diseaseData={sstDisease}
                     onChangeDisease={setSstDisease}
+                    locationOptions={locationSegmentCatalog}
                  />
+                 
+                 {/* Observaciones SST - Interventoría y Contratista */}
+                 <div className="mt-6 pt-6 border-t border-gray-200">
+                    <h4 className="text-sm font-semibold text-gray-800 mb-4">
+                      Componente SST - Observaciones
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Observaciones SST (Interventoría)
+                          </label>
+                          {!isInterventor ? (
+                              <div className="p-2 bg-gray-50 border border-gray-200 rounded text-sm text-gray-500 italic whitespace-pre-wrap">
+                              {safetyFindings || 'Espacio reservado para la interventoría.'}
+                              </div>
+                          ) : (
+                              <div className="space-y-2">
+                              {/* Historial de observaciones (solo lectura) */}
+                              {safetyFindings && (
+                                <div className="p-2 bg-gray-50 border border-gray-200 rounded text-sm text-gray-700 whitespace-pre-wrap max-h-32 overflow-y-auto">
+                                  {safetyFindings}
+                                </div>
+                              )}
+                              {/* Input para nueva observación */}
+                              <textarea
+                                  value={pendingSafetyFinding}
+                                  onChange={(e) => setPendingSafetyFinding(e.target.value)}
+                                  rows={2}
+                                  maxLength={500}
+                                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                                  placeholder="Escriba su nueva observación..."
+                              />
+                              <p className={`text-xs text-right ${pendingSafetyFinding.length > 450 ? 'text-orange-500' : 'text-gray-400'}`}>
+                                {pendingSafetyFinding.length}/500
+                              </p>
+                              <div className="flex justify-end">
+                                  <button
+                                  type="button"
+                                  disabled={!pendingSafetyFinding.trim()}
+                                  onClick={() => {
+                                      if (!pendingSafetyFinding.trim()) return;
+                                      const dateStr = new Date().toLocaleString('es-CO');
+                                      const role = currentUser?.cargo || getFullRoleName(currentUser?.projectRole, currentUser?.entity) || 'Interventoría';
+                                      const newEntry = `[${dateStr}] ${role}: ${pendingSafetyFinding.trim()}`;
+                                      const updated = safetyFindings ? `${safetyFindings}\n${newEntry}` : newEntry;
+                                      setSafetyFindings(updated);
+                                      setPendingSafetyFinding('');
+                                  }}
+                                  className="text-xs text-brand-primary hover:text-brand-secondary font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                  + Guardar observación
+                                  </button>
+                              </div>
+                              </div>
+                          )}
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Observaciones del contratista
+                          </label>
+                          {isInterventor ? (
+                              <div className="p-2 bg-gray-50 border border-gray-200 rounded text-sm text-gray-500 italic whitespace-pre-wrap">
+                              {safetyContractorResponse || 'Solo el contratista puede editar este campo.'}
+                              </div>
+                          ) : (
+                              <div className="space-y-2">
+                              {/* Historial de observaciones (solo lectura) */}
+                              {safetyContractorResponse && (
+                                <div className="p-2 bg-gray-50 border border-gray-200 rounded text-sm text-gray-700 whitespace-pre-wrap max-h-32 overflow-y-auto">
+                                  {safetyContractorResponse}
+                                </div>
+                              )}
+                              {/* Input para nueva observación */}
+                              <textarea
+                                  value={pendingSafetyContractorResponse}
+                                  onChange={(e) => setPendingSafetyContractorResponse(e.target.value)}
+                                  rows={2}
+                                  maxLength={500}
+                                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                                  placeholder="Escriba su nueva observación..."
+                              />
+                              <p className={`text-xs text-right ${pendingSafetyContractorResponse.length > 450 ? 'text-orange-500' : 'text-gray-400'}`}>
+                                {pendingSafetyContractorResponse.length}/500
+                              </p>
+                              <div className="flex justify-end">
+                                  <button
+                                  type="button"
+                                  disabled={!pendingSafetyContractorResponse.trim()}
+                                  onClick={() => {
+                                      if (!pendingSafetyContractorResponse.trim()) return;
+                                      const dateStr = new Date().toLocaleString('es-CO');
+                                      const role = currentUser?.cargo || getFullRoleName(currentUser?.projectRole, currentUser?.entity) || 'Contratista';
+                                      const newEntry = `[${dateStr}] ${role}: ${pendingSafetyContractorResponse.trim()}`;
+                                      const updated = safetyContractorResponse ? `${safetyContractorResponse}\n${newEntry}` : newEntry;
+                                      setSafetyContractorResponse(updated);
+                                      setPendingSafetyContractorResponse('');
+                                  }}
+                                  className="text-xs text-brand-primary hover:text-brand-secondary font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                  + Guardar observación
+                                  </button>
+                              </div>
+                              </div>
+                          )}
+                        </div>
+                    </div>
+                 </div>
             </div>
           )}
 
@@ -1507,7 +1653,22 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             onChange={(e) => setTitle(e.target.value)}
             required
           />
+
         </div>
+        
+        <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="isConfidential"
+              checked={isConfidential}
+              onChange={(e) => setIsConfidential(e.target.checked)}
+              className="h-4 w-4 text-brand-primary border-gray-300 rounded focus:ring-brand-primary"
+            />
+            <label htmlFor="isConfidential" className="text-sm font-medium text-gray-700 select-none">
+              El contenido de esta anotación es confidencial
+            </label>
+        </div>
+
         <Select
           label="Tipo de anotación"
           value={entryType}
@@ -2039,22 +2200,180 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
+                Observaciones del contratista
+                {currentUser?.entity === 'INTERVENTORIA' && <span className="text-xs text-gray-400 ml-1">(Solo lectura)</span>}
+              </label>
+              {currentUser?.entity === 'INTERVENTORIA' ? (
+                <div className="p-2 bg-gray-100 border border-gray-200 rounded text-sm text-gray-500 whitespace-pre-wrap min-h-[60px]">
+                  {contractorObservations || 'Sin observaciones del contratista.'}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {contractorObservations && (
+                    <div className="p-2 bg-gray-50 border border-gray-200 rounded text-sm text-gray-700 whitespace-pre-wrap max-h-32 overflow-y-auto">
+                      {contractorObservations}
+                    </div>
+                  )}
+                  <textarea
+                    value={pendingContractorObservation}
+                    onChange={(e) => setPendingContractorObservation(e.target.value)}
+                    rows={2}
+                    maxLength={500}
+                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                    placeholder="Escriba su nueva observación..."
+                  />
+                  <p className={`text-xs text-right ${pendingContractorObservation.length > 450 ? 'text-orange-500' : 'text-gray-400'}`}>
+                    {pendingContractorObservation.length}/500
+                  </p>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      disabled={!pendingContractorObservation.trim()}
+                      onClick={() => {
+                        if (!pendingContractorObservation.trim()) return;
+                        const dateStr = new Date().toLocaleString('es-CO');
+                        const role = currentUser?.cargo || getFullRoleName(currentUser?.projectRole, currentUser?.entity) || 'Contratista';
+                        const newEntry = `[${dateStr}] ${role}: ${pendingContractorObservation.trim()}`;
+                        const updated = contractorObservations ? `${contractorObservations}\n${newEntry}` : newEntry;
+                        setContractorObservations(updated);
+                        setPendingContractorObservation('');
+                      }}
+                      className="text-xs text-brand-primary hover:text-brand-secondary font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      + Guardar observación
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Observaciones de la interventoría
                 {currentUser?.entity === 'CONTRACTOR' && <span className="text-xs text-gray-400 ml-1">(Solo lectura)</span>}
               </label>
-              <textarea
-                value={interventoriaObservations}
-                onChange={(e) => setInterventoriaObservations(e.target.value)}
-                rows={3}
-                disabled={currentUser?.entity === 'CONTRACTOR'}
-                className={`block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2 ${currentUser?.entity === 'CONTRACTOR' ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
-              />
+              {currentUser?.entity === 'CONTRACTOR' ? (
+                <div className="p-2 bg-gray-100 border border-gray-200 rounded text-sm text-gray-500 whitespace-pre-wrap min-h-[60px]">
+                  {interventoriaObservations || 'Sin observaciones de la interventoría.'}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {interventoriaObservations && (
+                    <div className="p-2 bg-gray-50 border border-gray-200 rounded text-sm text-gray-700 whitespace-pre-wrap max-h-32 overflow-y-auto">
+                      {interventoriaObservations}
+                    </div>
+                  )}
+                  <textarea
+                    value={pendingInterventoriaObservation}
+                    onChange={(e) => setPendingInterventoriaObservation(e.target.value)}
+                    rows={2}
+                    maxLength={500}
+                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                    placeholder="Escriba su nueva observación..."
+                  />
+                  <p className={`text-xs text-right ${pendingInterventoriaObservation.length > 450 ? 'text-orange-500' : 'text-gray-400'}`}>
+                    {pendingInterventoriaObservation.length}/500
+                  </p>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      disabled={!pendingInterventoriaObservation.trim()}
+                      onClick={() => {
+                        if (!pendingInterventoriaObservation.trim()) return;
+                        const dateStr = new Date().toLocaleString('es-CO');
+                        const role = currentUser?.cargo || getFullRoleName(currentUser?.projectRole, currentUser?.entity) || 'Interventoría';
+                        const newEntry = `[${dateStr}] ${role}: ${pendingInterventoriaObservation.trim()}`;
+                        const updated = interventoriaObservations ? `${interventoriaObservations}\n${newEntry}` : newEntry;
+                        setInterventoriaObservations(updated);
+                        setPendingInterventoriaObservation('');
+                      }}
+                      className="text-xs text-brand-primary hover:text-brand-secondary font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      + Guardar observación
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
 
         {showSafetySection && (
           <div className="space-y-5 border border-gray-200 rounded-lg p-4 bg-gray-50">
+            {/* Observaciones SST al inicio para mejor visibilidad */}
+            <div className="mb-6 border-b border-gray-200 pb-6">
+                <h4 className="text-sm font-semibold text-gray-800 mb-4">
+                  Componente SST (SST y MEV) - Observaciones
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Observaciones SST (Interventoría)
+                    </label>
+                    {!isInterventor ? (
+                        <div className="p-2 bg-gray-50 border border-gray-200 rounded text-sm text-gray-500 italic whitespace-pre-wrap">
+                        {safetyFindings || 'Espacio reservado para la interventoría.'}
+                        </div>
+                    ) : (
+                        <div>
+                        <textarea
+                            value={safetyFindings || ''}
+                            onChange={(e) => setSafetyFindings(e.target.value)}
+                            rows={3}
+                            className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                            placeholder="Escriba sus observaciones..."
+                        />
+                        <div className="flex justify-end mt-1">
+                            <button
+                            type="button"
+                            onClick={() => {
+                                const dateStr = new Date().toLocaleString('es-CO');
+                                const signature = `\n\n-- ${currentUser?.fullName || 'Interventoría'} (${dateStr})`;
+                                setSafetyFindings(prev => (prev || '') + signature);
+                            }}
+                            className="text-xs text-brand-primary hover:text-brand-secondary font-medium"
+                            >
+                            + Guardar observación
+                            </button>
+                        </div>
+                        </div>
+                    )}
+                    </div>
+                    <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Observaciones del contratista
+                    </label>
+                    {isInterventor ? (
+                        <div className="p-2 bg-gray-50 border border-gray-200 rounded text-sm text-gray-500 italic whitespace-pre-wrap">
+                        {safetyContractorResponse || 'Solo el contratista puede editar este campo.'}
+                        </div>
+                    ) : (
+                        <div>
+                        <textarea
+                            value={safetyContractorResponse || ''}
+                            onChange={(e) => setSafetyContractorResponse(e.target.value)}
+                            rows={3}
+                            className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
+                            placeholder="Escriba sus observaciones..."
+                        />
+                        <div className="flex justify-end mt-1">
+                            <button
+                            type="button"
+                            onClick={() => {
+                                const dateStr = new Date().toLocaleString('es-CO');
+                                const signature = `\n\n-- ${currentUser?.fullName || 'Contratista'} (${dateStr})`;
+                                setSafetyContractorResponse(prev => (prev || '') + signature);
+                            }}
+                            className="text-xs text-brand-primary hover:text-brand-secondary font-medium"
+                            >
+                            + Guardar observación
+                            </button>
+                        </div>
+                        </div>
+                    )}
+                    </div>
+                </div>
+            </div>
+
             {!isLegacyTenant && (
                 <div className="mb-6 border-b border-gray-200 pb-6">
                     <h4 className="text-sm font-semibold text-gray-800 mb-4">
@@ -2068,48 +2387,10 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({
                         onChangeAccident={setSstAccident}
                         diseaseData={sstDisease}
                         onChangeDisease={setSstDisease}
+                        locationOptions={locationSegmentCatalog}
                     />
                 </div>
             )}
-            <h4 className="text-sm font-semibold text-gray-800">
-              Componente SST (SST y MEV)
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Observaciones SST (Interventoría)
-                </label>
-                {!isInterventor ? (
-                  <div className="p-2 bg-gray-50 border border-gray-200 rounded text-sm text-gray-500 italic">
-                    {safetyFindings || 'Espacio reservado para la interventoría.'}
-                  </div>
-                ) : (
-                  <textarea
-                    value={safetyFindings}
-                    onChange={(e) => setSafetyFindings(e.target.value)}
-                    rows={3}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                  />
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Observaciones del contratista
-                </label>
-                {isInterventor ? (
-                  <div className="p-2 bg-gray-50 border border-gray-200 rounded text-sm text-gray-500 italic">
-                    {safetyContractorResponse || 'Solo el contratista puede editar este campo.'}
-                  </div>
-                ) : (
-                  <textarea
-                    value={safetyContractorResponse}
-                    onChange={(e) => setSafetyContractorResponse(e.target.value)}
-                    rows={3}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                  />
-                )}
-              </div>
-            </div>
           </div>
         )}
 

@@ -29,24 +29,27 @@ const AccidentCard: React.FC<{ details: AccidentDetails; index?: number; total?:
         <p><strong>Resp. Técnico:</strong> {details.technicalResponsible}</p>
         <p><strong>Resp. SST:</strong> {details.sstResponsible}</p>
         
-        {(details.reportedToBoss || details.reportedToInterventoria) && (
           <div className="md:col-span-2 mt-2 pt-2 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-            {details.reportedToBoss && details.reportedToBossDetails && (
-              <div>
-                <strong>Reportado a Jefe:</strong><br/>
-                {details.reportedToBossDetails.name} <br/>
-                {details.reportedToBossDetails.date} {details.reportedToBossDetails.time}
-              </div>
-            )}
-            {details.reportedToInterventoria && details.reportedToInterventoriaDetails && (
-              <div>
-                <strong>Reportado a Interventoría:</strong><br/>
-                {details.reportedToInterventoriaDetails.name} <br/>
-                {details.reportedToInterventoriaDetails.date} {details.reportedToInterventoriaDetails.time}
-              </div>
-            )}
+            <div>
+              <strong>Reportado a Jefe:</strong> {details.reportedToBoss ? <span className="text-green-600 font-bold">SÍ</span> : <span className="text-red-600 font-bold">NO</span>}<br/>
+              {details.reportedToBoss && details.reportedToBossDetails && (
+                <>
+                  <span className="font-medium">{details.reportedToBossDetails.name}</span> <br/>
+                  {details.reportedToBossDetails.date} {details.reportedToBossDetails.time}
+                </>
+              )}
+            </div>
+
+            <div>
+              <strong>Reportado a Interventoría:</strong> {details.reportedToInterventoria ? <span className="text-green-600 font-bold">SÍ</span> : <span className="text-red-600 font-bold">NO</span>}<br/>
+              {details.reportedToInterventoria && details.reportedToInterventoriaDetails && (
+                <>
+                  <span className="font-medium">{details.reportedToInterventoriaDetails.name}</span> <br/>
+                  {details.reportedToInterventoriaDetails.date} {details.reportedToInterventoriaDetails.time}
+                </>
+              )}
+            </div>
           </div>
-        )}
       </div>
     </div>
   );

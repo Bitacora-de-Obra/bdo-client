@@ -1,6 +1,6 @@
 import React from "react";
 // Fix: Corrected import path for types
-import { LogEntry } from "../types";
+import { LogEntry, User, UserRole } from "../types";
 import Card from "./ui/Card";
 import Badge from "./ui/Badge";
 // Fix: Corrected import path for icons
@@ -16,17 +16,37 @@ import {
 interface EntryCardProps {
   entry: LogEntry;
   onSelect: (entry: LogEntry) => void;
+  currentUser?: User | null;
 }
 
-const EntryCard: React.FC<EntryCardProps> = ({ entry, onSelect }) => {
+const EntryCard: React.FC<EntryCardProps> = ({ entry, onSelect, currentUser }) => {
   const entryDate = new Date(entry.entryDate).toLocaleDateString("es-CO", {
     year: "numeric",
     month: "short",
     day: "numeric",
   });
 
-  // A real app would have a more complex logic, e.g. checking user permissions.
-  const isLocked = entry.isConfidential;
+  // Permissions logic
+  const isCreator = currentUser?.id === entry.author.id;
+  // Check if user is assigned directly or has a signature task
+  const isAssignee = 
+    entry.assignees?.some(a => a.id === currentUser?.id) || 
+    entry.requiredSignatories?.some(s => s.id === currentUser?.id) ||
+    entry.signatureTasks?.some(t => t.signer?.id === currentUser?.id);
+    
+  // Check for admin/superuser roles
+  const isAdmin = 
+    currentUser?.projectRole === UserRole.ADMIN || 
+    currentUser?.appRole === 'admin' ||
+    currentUser?.projectRole === UserRole.RESIDENT || // Resident usually sees all
+    currentUser?.projectRole === UserRole.SUPERVISOR; // Supervisor usually sees all
+
+  // The simplified rule: if confidential, only specific people can see content
+  const canViewContent = !entry.isConfidential || isAdmin || isCreator || isAssignee;
+
+  // Visual lock state matches confidentiality
+  const isLocked = entry.isConfidential && !canViewContent;
+
   const signatureSummary = entry.signatureSummary;
   const hasPendingSignatures =
     signatureSummary && !signatureSummary.completed;

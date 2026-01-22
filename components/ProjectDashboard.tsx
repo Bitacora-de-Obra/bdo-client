@@ -537,6 +537,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
                       key={entry.id}
                       entry={entry}
                       onSelect={handleOpenDetail}
+                      currentUser={user}
                     />
                   ))}
                   {/* Paginación */}
