@@ -1204,6 +1204,84 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     }
   };
 
+  // Handler for contractor to save their response (available in all workflow states)
+  const handleSaveContractorResponse = async () => {
+    if (!isContractorUser) {
+      showToast({
+        variant: "error",
+        title: "Acción no permitida",
+        message: "Solo el contratista puede editar este campo.",
+      });
+      return;
+    }
+
+    setIsSavingContractorNotes(true);
+    try {
+      const payload: Partial<LogEntry> = {
+        safetyContractorResponse: (editedEntry.safetyContractorResponse || "").trim(),
+        environmentContractorResponse: (editedEntry.environmentContractorResponse || "").trim(),
+        socialContractorResponse: (editedEntry.socialContractorResponse || "").trim(),
+      };
+      const updatedEntry = await api.logEntries.update(entry.id, payload);
+      syncEntryState(updatedEntry);
+      await onRefresh();
+      showToast({
+        variant: "success",
+        title: "Respuesta guardada",
+        message: "Tu respuesta fue registrada correctamente.",
+      });
+    } catch (error: any) {
+      const message = error?.message || "No se pudo guardar la respuesta.";
+      setValidationError(message);
+      showToast({
+        variant: "error",
+        title: "Error al guardar respuesta",
+        message,
+      });
+    } finally {
+      setIsSavingContractorNotes(false);
+    }
+  };
+
+  // Handler for interventoría to save their findings/observations (available in all workflow states)
+  const handleSaveInterventoriaFindings = async () => {
+    if (!isInterventoriaUser) {
+      showToast({
+        variant: "error",
+        title: "Acción no permitida",
+        message: "Solo la interventoría puede editar este campo.",
+      });
+      return;
+    }
+
+    setIsSavingInterventoriaObs(true);
+    try {
+      const payload: Partial<LogEntry> = {
+        safetyFindings: (editedEntry.safetyFindings || "").trim(),
+        environmentFindings: (editedEntry.environmentFindings || "").trim(),
+        socialObservations: (editedEntry.socialObservations || "").trim(),
+      };
+      const updatedEntry = await api.logEntries.update(entry.id, payload);
+      syncEntryState(updatedEntry);
+      await onRefresh();
+      showToast({
+        variant: "success",
+        title: "Observaciones guardadas",
+        message: "Las observaciones de la interventoría fueron registradas correctamente.",
+      });
+    } catch (error: any) {
+      const message = error?.message || "No se pudieron guardar las observaciones.";
+      setValidationError(message);
+      showToast({
+        variant: "error",
+        title: "Error al guardar observaciones",
+        message,
+      });
+    } finally {
+      setIsSavingInterventoriaObs(false);
+    }
+  };
+
   const handleSaveInterventoriaObservations = async () => {
     if (!canEditInterventoriaResponses) {
       showToast({
@@ -2792,9 +2870,55 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                       }
                     }}
                     rows={3}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2"
-                    placeholder="Respuesta del contratista"
+                    disabled={!isContractorUser}
+                    readOnly={!isContractorUser}
+                    className={`block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2 ${!isContractorUser ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    placeholder={!isContractorUser ? "Solo el contratista puede editar este campo" : "Respuesta del contratista"}
                   />
+                ) : isContractorUser ? (
+                  <div className="mt-2 rounded-lg border border-yellow-200 bg-yellow-50 p-3 space-y-3">
+                    <p className="text-xs text-yellow-800">
+                      Como contratista, puedes agregar tu respuesta a las observaciones.
+                    </p>
+                    <textarea
+                      value={
+                        entryTypeValue === EntryType.SAFETY
+                          ? safetyContractorResponse
+                          : entryTypeValue === EntryType.ENVIRONMENTAL
+                          ? environmentContractorResponse
+                          : socialContractorResponse
+                      }
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (entryTypeValue === EntryType.SAFETY) {
+                          setEditedEntry((prev) => ({
+                            ...prev,
+                            safetyContractorResponse: val,
+                          }));
+                        } else if (entryTypeValue === EntryType.ENVIRONMENTAL) {
+                          setEditedEntry((prev) => ({
+                            ...prev,
+                            environmentContractorResponse: val,
+                          }));
+                        } else {
+                          setEditedEntry((prev) => ({
+                            ...prev,
+                            socialContractorResponse: val,
+                          }));
+                        }
+                      }}
+                      rows={3}
+                      className="block w-full border border-yellow-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm p-2"
+                      placeholder="Escribe tu respuesta..."
+                    />
+                    <Button
+                      variant="primary"
+                      onClick={handleSaveContractorResponse}
+                      disabled={isSavingContractorNotes}
+                    >
+                      {isSavingContractorNotes ? "Guardando..." : "Guardar respuesta"}
+                    </Button>
+                  </div>
                 ) : (
                   <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
                     {(entryTypeValue === EntryType.SAFETY
@@ -2966,38 +3090,35 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                   className={`mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2 ${!isContractorUser ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                   placeholder={!isContractorUser ? 'Solo el contratista puede editar este campo' : ''}
                 />
-              ) : (
-                <>
-                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
-                    {contractorObservations || "Sin observaciones."}
+              ) : isContractorUser ? (
+                <div className="mt-3 rounded-lg border border-yellow-200 bg-yellow-50 p-3 space-y-3">
+                  <p className="text-xs text-yellow-800">
+                    Como contratista, puedes agregar tus observaciones.
                   </p>
-                  {canEditContractorResponses && (
-                    <div className="mt-3 rounded-lg border border-yellow-200 bg-yellow-50 p-3 space-y-3">
-                      <p className="text-xs text-yellow-800">
-                        Como contratista, puedes agregar tus observaciones antes de aprobar.
-                      </p>
-                      <textarea
-                        value={contractorObservations}
-                        onChange={(e) =>
-                          setEditedEntry((prev) => ({
-                            ...prev,
-                            contractorObservations: e.target.value,
-                          }))
-                        }
-                        rows={3}
-                        className="block w-full border border-yellow-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm p-2"
-                        placeholder="Observaciones del contratista"
-                      />
-                      <Button
-                        variant="primary"
-                        onClick={handleSaveContractorObservations}
-                        disabled={isSavingContractorNotes}
-                      >
-                        {isSavingContractorNotes ? "Guardando..." : "Guardar observaciones"}
-                      </Button>
-                    </div>
-                  )}
-                </>
+                  <textarea
+                    value={contractorObservations}
+                    onChange={(e) =>
+                      setEditedEntry((prev) => ({
+                        ...prev,
+                        contractorObservations: e.target.value,
+                      }))
+                    }
+                    rows={3}
+                    className="block w-full border border-yellow-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm p-2"
+                    placeholder="Observaciones del contratista"
+                  />
+                  <Button
+                    variant="primary"
+                    onClick={handleSaveContractorObservations}
+                    disabled={isSavingContractorNotes}
+                  >
+                    {isSavingContractorNotes ? "Guardando..." : "Guardar observaciones"}
+                  </Button>
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                  {contractorObservations || "Sin observaciones."}
+                </p>
               )}
             </div>
             <div>
@@ -3019,38 +3140,35 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                   className={`mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2 ${!isInterventoriaUser ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                   placeholder={!isInterventoriaUser ? 'Solo la interventoría puede editar este campo' : ''}
                 />
-              ) : (
-                <>
-                  <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
-                    {interventoriaObservations || "Sin observaciones."}
+              ) : isInterventoriaUser ? (
+                <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3 space-y-3">
+                  <p className="text-xs text-blue-800">
+                    Como interventoría, puedes agregar tus observaciones.
                   </p>
-                  {canEditInterventoriaResponses && (
-                    <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3 space-y-3">
-                      <p className="text-xs text-blue-800">
-                        Como interventoría, puedes agregar tus observaciones antes de aprobar.
-                      </p>
-                      <textarea
-                        value={interventoriaObservations}
-                        onChange={(e) =>
-                          setEditedEntry((prev) => ({
-                            ...prev,
-                            interventoriaObservations: e.target.value,
-                          }))
-                        }
-                        rows={3}
-                        className="block w-full border border-blue-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2"
-                        placeholder="Observaciones de la interventoría"
-                      />
-                      <Button
-                        variant="primary"
-                        onClick={handleSaveInterventoriaObservations}
-                        disabled={isSavingInterventoriaObs}
-                      >
-                        {isSavingInterventoriaObs ? "Guardando..." : "Guardar observaciones"}
-                      </Button>
-                    </div>
-                  )}
-                </>
+                  <textarea
+                    value={interventoriaObservations}
+                    onChange={(e) =>
+                      setEditedEntry((prev) => ({
+                        ...prev,
+                        interventoriaObservations: e.target.value,
+                      }))
+                    }
+                    rows={3}
+                    className="block w-full border border-blue-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm p-2"
+                    placeholder="Observaciones de la interventoría"
+                  />
+                  <Button
+                    variant="primary"
+                    onClick={handleSaveInterventoriaObservations}
+                    disabled={isSavingInterventoriaObs}
+                  >
+                    {isSavingInterventoriaObs ? "Guardando..." : "Guardar observaciones"}
+                  </Button>
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-gray-700 whitespace-pre-wrap">
+                  {interventoriaObservations || "Sin observaciones."}
+                </p>
               )}
             </div>
           </div>
