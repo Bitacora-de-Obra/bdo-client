@@ -835,8 +835,7 @@ const LoginScreen: React.FC = () => {
           >
             <div className="w-16 h-1 bg-yellow-400 mb-6 rounded-full" />
             <h2 className="text-4xl xl:text-5xl font-bold mb-6 leading-tight">
-              Excelencia en<br/>
-              Ingeniería y Construcción.
+              Bitácora de Obra<br/>
             </h2>
             <p className="text-lg text-slate-200 max-w-md leading-relaxed">
               Plataforma integral para el seguimiento de obra, control de calidad y gestión de recursos.
