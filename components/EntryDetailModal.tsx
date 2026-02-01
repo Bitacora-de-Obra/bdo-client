@@ -2875,7 +2875,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                     className={`block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2 ${!isContractorUser ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                     placeholder={!isContractorUser ? "Solo el contratista puede editar este campo" : "Respuesta del contratista"}
                   />
-                ) : isContractorUser ? (
+                ) : (isContractorUser && !hasCompletedSignatures) ? (
                   <div className="mt-2 rounded-lg border border-yellow-200 bg-yellow-50 p-3 space-y-3">
                     <p className="text-xs text-yellow-800">
                       Como contratista, puedes agregar tu respuesta a las observaciones.
@@ -3090,7 +3090,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                   className={`mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2 ${!isContractorUser ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                   placeholder={!isContractorUser ? 'Solo el contratista puede editar este campo' : ''}
                 />
-              ) : isContractorUser ? (
+              ) : (isContractorUser && !hasCompletedSignatures) ? (
                 <div className="mt-3 rounded-lg border border-yellow-200 bg-yellow-50 p-3 space-y-3">
                   <p className="text-xs text-yellow-800">
                     Como contratista, puedes agregar tus observaciones.
@@ -3140,7 +3140,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                   className={`mt-2 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-brand-primary focus:border-brand-primary sm:text-sm p-2 ${!isInterventoriaUser ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                   placeholder={!isInterventoriaUser ? 'Solo la interventoría puede editar este campo' : ''}
                 />
-              ) : isInterventoriaUser ? (
+              ) : (isInterventoriaUser && !hasCompletedSignatures) ? (
                 <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3 space-y-3">
                   <p className="text-xs text-blue-800">
                     Como interventoría, puedes agregar tus observaciones.
