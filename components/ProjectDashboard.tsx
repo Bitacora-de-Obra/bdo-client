@@ -136,6 +136,26 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     }
   }, [initialItemToOpen, logEntries, isLogEntriesLoading, clearInitialItem]);
 
+  // Listen for custom event from floating annotation button
+  useEffect(() => {
+    const handleOpenAnnotationModal = () => {
+      if (!readOnly && project) {
+        setIsFormModalOpen(true);
+      } else if (readOnly) {
+        showToast({
+          title: "Acceso restringido",
+          message: "El rol Viewer solo puede consultar información.",
+          variant: "warning",
+        });
+      }
+    };
+
+    window.addEventListener('open-annotation-modal', handleOpenAnnotationModal);
+    return () => {
+      window.removeEventListener('open-annotation-modal', handleOpenAnnotationModal);
+    };
+  }, [readOnly, project, showToast]);
+
   // Prefetch next page in background
   useEffect(() => {
     // Only prefetch if there's a next page and we haven't already prefetched it

@@ -745,42 +745,82 @@ export const ChatbotWidget: React.FC = () => {
         </div>
       )}
 
-      <button
-        style={{
-          ...styles.bubble,
-          transform: isOpen ? "scale(0.9)" : "scale(1)",
-        }}
-        onClick={() => setIsOpen((prev) => !prev)}
-        aria-label={isOpen ? "Cerrar chat" : "Abrir chat"}
-      >
-        {isOpen ? (
-          <XMarkIcon className="w-7 h-7" />
-        ) : (
-          <div style={{ position: 'relative' }}>
-             <HardHatIcon className="w-7 h-7" />
-             {unreadCount > 0 && (
-               <div style={{
-                 position: 'absolute',
-                 top: -6,
-                 right: -6,
-                 backgroundColor: '#ef4444',
-                 color: 'white',
-                 fontSize: '10px',
-                 fontWeight: 'bold',
-                 width: '18px',
-                 height: '18px',
-                 borderRadius: '50%',
-                 display: 'flex',
-                 alignItems: 'center',
-                 justifyContent: 'center',
-                 border: '2px solid white'
-               }}>
-                 {unreadCount}
-               </div>
-             )}
-          </div>
-        )}
-      </button>
+      {/* Floating Buttons Container */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+        {/* New Annotation Button */}
+        <button
+          style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            backgroundColor: '#10b981',
+            color: 'white',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+            border: 'none',
+            transition: 'transform 0.2s ease, background-color 0.2s ease',
+          }}
+          onClick={() => {
+            // Dispatch custom event to open annotation modal
+            window.dispatchEvent(new CustomEvent('open-annotation-modal'));
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#059669';
+            e.currentTarget.style.transform = 'scale(1.05)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#10b981';
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
+          aria-label="Nueva anotación"
+          title="Nueva anotación"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+        </button>
+
+        {/* Chat Button */}
+        <button
+          style={{
+            ...styles.bubble,
+            transform: isOpen ? "scale(0.9)" : "scale(1)",
+          }}
+          onClick={() => setIsOpen((prev) => !prev)}
+          aria-label={isOpen ? "Cerrar chat" : "Abrir chat"}
+        >
+          {isOpen ? (
+            <XMarkIcon className="w-7 h-7" />
+          ) : (
+            <div style={{ position: 'relative' }}>
+               <HardHatIcon className="w-7 h-7" />
+               {unreadCount > 0 && (
+                 <div style={{
+                   position: 'absolute',
+                   top: -6,
+                   right: -6,
+                   backgroundColor: '#ef4444',
+                   color: 'white',
+                   fontSize: '10px',
+                   fontWeight: 'bold',
+                   width: '18px',
+                   height: '18px',
+                   borderRadius: '50%',
+                   display: 'flex',
+                   alignItems: 'center',
+                   justifyContent: 'center',
+                   border: '2px solid white'
+                 }}>
+                   {unreadCount}
+                 </div>
+               )}
+            </div>
+          )}
+        </button>
+      </div>
 
       <PreferencesModal
         isOpen={isPreferencesOpen}
