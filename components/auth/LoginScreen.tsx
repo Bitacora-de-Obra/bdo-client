@@ -55,7 +55,19 @@ const LoginScreen: React.FC = () => {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(() => {
+    // Initialize from localStorage
+    return localStorage.getItem('rememberMe') === 'true';
+  });
+
+  // Load remembered email on mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('rememberedEmail');
+    const wasRemembered = localStorage.getItem('rememberMe') === 'true';
+    if (savedEmail && wasRemembered) {
+      setEmail(savedEmail);
+    }
+  }, []);
 
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSubmitting, setForgotSubmitting] = useState(false);
@@ -242,6 +254,16 @@ const LoginScreen: React.FC = () => {
     e.preventDefault();
     setFormError(null);
     clearError();
+    
+    // Handle remember me
+    if (rememberMe) {
+      localStorage.setItem('rememberedEmail', email);
+      localStorage.setItem('rememberMe', 'true');
+    } else {
+      localStorage.removeItem('rememberedEmail');
+      localStorage.setItem('rememberMe', 'false');
+    }
+    
     try {
       await login(email, password);
     } catch (error: any) {
