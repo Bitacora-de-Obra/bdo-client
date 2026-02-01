@@ -26,11 +26,15 @@ import { useToast } from "./ui/ToastProvider";
 interface ProjectDashboardProps {
   initialItemToOpen: { type: string; id: string } | null;
   clearInitialItem: () => void;
+  triggerNewAnnotation?: boolean;
+  clearTriggerNewAnnotation?: () => void;
 }
 
 const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   initialItemToOpen,
   clearInitialItem,
+  triggerNewAnnotation,
+  clearTriggerNewAnnotation,
 }) => {
   const { user } = useAuth();
   const { data: project, isLoading: isProjectLoading } = useApi.projectDetails();
@@ -136,25 +140,20 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     }
   }, [initialItemToOpen, logEntries, isLogEntriesLoading, clearInitialItem]);
 
-  // Listen for custom event from floating annotation button
+  // Handle trigger from floating annotation button (from App.tsx)
   useEffect(() => {
-    const handleOpenAnnotationModal = () => {
-      if (!readOnly && project) {
-        setIsFormModalOpen(true);
-      } else if (readOnly) {
-        showToast({
-          title: "Acceso restringido",
-          message: "El rol Viewer solo puede consultar información.",
-          variant: "warning",
-        });
-      }
-    };
-
-    window.addEventListener('open-annotation-modal', handleOpenAnnotationModal);
-    return () => {
-      window.removeEventListener('open-annotation-modal', handleOpenAnnotationModal);
-    };
-  }, [readOnly, project, showToast]);
+    if (triggerNewAnnotation && !readOnly && project) {
+      setIsFormModalOpen(true);
+      clearTriggerNewAnnotation?.();
+    } else if (triggerNewAnnotation && readOnly) {
+      showToast({
+        title: "Acceso restringido",
+        message: "El rol Viewer solo puede consultar información.",
+        variant: "warning",
+      });
+      clearTriggerNewAnnotation?.();
+    }
+  }, [triggerNewAnnotation, readOnly, project, showToast, clearTriggerNewAnnotation]);
 
   // Prefetch next page in background
   useEffect(() => {

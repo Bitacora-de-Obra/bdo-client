@@ -45,6 +45,7 @@ const MainApp = () => {
     useState<InitialItemToOpen | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+  const [triggerNewAnnotation, setTriggerNewAnnotation] = useState(false);
 
   const { user } = useAuth();
   const { data: projectDetails, isLoading: isProjectLoading } =
@@ -102,6 +103,19 @@ const MainApp = () => {
     };
   }, [user, refreshNotifications]);
 
+  // Listen for floating annotation button click
+  useEffect(() => {
+    const handleOpenAnnotationModal = () => {
+      setTriggerNewAnnotation(true);
+      setCurrentView('logbook');
+    };
+
+    window.addEventListener('open-annotation-modal', handleOpenAnnotationModal);
+    return () => {
+      window.removeEventListener('open-annotation-modal', handleOpenAnnotationModal);
+    };
+  }, []);
+
   const handleNavigateAndOpen = (view: string, item: InitialItemToOpen) => {
     setInitialItemToOpen(item);
     setCurrentView(view);
@@ -109,6 +123,10 @@ const MainApp = () => {
 
   const clearInitialItem = () => {
     setInitialItemToOpen(null);
+  };
+
+  const clearTriggerNewAnnotation = () => {
+    setTriggerNewAnnotation(false);
   };
 
   const renderContent = () => {
@@ -155,6 +173,8 @@ const MainApp = () => {
           <ProjectDashboard
             initialItemToOpen={initialItemToOpen}
             clearInitialItem={clearInitialItem}
+            triggerNewAnnotation={triggerNewAnnotation}
+            clearTriggerNewAnnotation={clearTriggerNewAnnotation}
           />
         );
       case "drawings":
