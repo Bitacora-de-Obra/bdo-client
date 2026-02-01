@@ -744,6 +744,20 @@ const LoginScreen: React.FC = () => {
   // Logo component
   const LogoSection = () => (
     <div className="flex flex-col items-center justify-center mb-10">
+      {/* Company Logos */}
+      <div className="flex items-center justify-center gap-6 mb-6">
+        <img 
+          src="/assets/logointerventoria.jpeg" 
+          alt="Interventoría"
+          className="h-16 w-auto object-contain rounded-lg shadow-sm"
+        />
+        <img 
+          src="/assets/logoconsorcio.jpeg" 
+          alt="Contratista"
+          className="h-16 w-auto object-contain rounded-lg shadow-sm"
+        />
+      </div>
+      
       <div className="relative flex items-center justify-center w-20 h-20 bg-white border-2 border-slate-200 rounded-full shadow-sm mb-4 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-white to-slate-50" />
         <Building2 className="relative z-10 w-10 h-10 text-slate-700" strokeWidth={1.5} />
