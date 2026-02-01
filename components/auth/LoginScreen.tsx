@@ -759,13 +759,7 @@ const LoginScreen: React.FC = () => {
       </div>
       
       <div className="w-12 h-0.5 bg-slate-200 mb-4" />
-      
-      <h1 className="text-xl font-bold text-slate-900 tracking-tight text-center uppercase">
-        Bitácora Digital
-      </h1>
-      <p className="text-xs font-semibold text-brand-primary uppercase tracking-widest mt-1">
-        Control de Obra
-      </p>
+           
     </div>
   );
 
