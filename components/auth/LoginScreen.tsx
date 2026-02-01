@@ -1,12 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import Button from "../ui/Button";
-import Input from "../ui/Input";
 import Select from "../ui/Select";
 import { AppRole, User, UserRole } from "../../types";
 import api from "../../src/services/api";
 import { useToast } from "../ui/ToastProvider";
-import bitacoraLogo from "../../assets/Generated Image November 18, 2025 - 11_44AM (1).png";
+import { LoginInputField } from "./LoginInputField";
+import { Mail, Lock, User as UserIcon, ArrowRight, Loader2, CheckCircle2, Building2, HardHat, Wifi } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 type AuthMode = "login" | "forgot" | "reset" | "register" | "verify";
 
@@ -49,12 +50,12 @@ const LoginScreen: React.FC = () => {
   const { showToast } = useToast();
 
   const [mode, setMode] = useState<AuthMode>("login");
-  // const [sampleUsers, setSampleUsers] = useState<User[]>([]); // Deshabilitado - no mostrar accesos de prueba
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
 
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSubmitting, setForgotSubmitting] = useState(false);
@@ -72,28 +73,6 @@ const LoginScreen: React.FC = () => {
   const [verifyToken, setVerifyToken] = useState<string | null>(null);
   const [verifyStatus, setVerifyStatus] = useState<VerifyStatus>("idle");
   const [verifyMessage, setVerifyMessage] = useState<string>("");
-
-  // Carga de usuarios de prueba deshabilitada
-  // useEffect(() => {
-  //   let mounted = true;
-  //   const loadUsers = async () => {
-  //     try {
-  //       const users = await api.users.getAll();
-  //       if (mounted && Array.isArray(users)) {
-  //         setSampleUsers(users.filter((u) => u.status === "active"));
-  //       }
-  //     } catch (error) {
-  //       console.error(
-  //         "LoginScreen: No se pudo obtener la lista de accesos de prueba",
-  //         error
-  //       );
-  //     }
-  //   };
-  //   loadUsers();
-  //   return () => {
-  //     mounted = false;
-  //   };
-  // }, []);
 
   useEffect(() => {
     if (verificationEmailSent) {
@@ -210,10 +189,8 @@ const LoginScreen: React.FC = () => {
   }
 
   const displayError = useMemo(() => {
-    // Priorizar formError sobre contextError para tener control del mensaje
     const errorToDisplay = formError || (mode === "login" && contextError ? contextError : null);
     
-    // Mejorar mensaje de error para credenciales inválidas
     if (errorToDisplay && mode === "login") {
       const errorLower = errorToDisplay.toLowerCase();
       if (
@@ -255,8 +232,8 @@ const LoginScreen: React.FC = () => {
         };
       default:
         return {
-          title: "Bitácora Digital de Obra",
-          subtitle: "Inicia sesión para acceder a tu proyecto",
+          title: "Bienvenido",
+          subtitle: "Portal de supervisión y control de obra.",
         };
     }
   }, [mode]);
@@ -300,12 +277,6 @@ const LoginScreen: React.FC = () => {
       });
     }
   };
-
-  // Función de login rápido deshabilitada (no se muestran accesos de prueba)
-  // const handleQuickLogin = (userEmail: string) => {
-  //   setEmail(userEmail);
-  //   setPassword("password123");
-  // };
 
   const handleForgotSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -417,97 +388,178 @@ const LoginScreen: React.FC = () => {
   };
 
   const renderLoginForm = () => (
-    <form className="space-y-6" onSubmit={handleLoginSubmit}>
-      <Input
-        label="Correo Electrónico"
+    <form onSubmit={handleLoginSubmit}>
+      <LoginInputField
         id="email"
+        label="Correo Corporativo"
         type="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
+        placeholder="usuario@empresa.com"
+        icon={Mail}
         required
         autoComplete="email"
       />
-      <Input
-        label="Contraseña"
+      
+      <LoginInputField
         id="password"
+        label="Contraseña"
         type="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
+        placeholder="••••••••"
+        icon={Lock}
         required
         autoComplete="current-password"
       />
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? "Ingresando..." : "Iniciar Sesión"}
-      </Button>
+
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center">
+          <input
+            id="rememberMe"
+            name="rememberMe"
+            type="checkbox"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            className="h-4 w-4 text-brand-primary focus:ring-brand-primary border-slate-300 rounded cursor-pointer"
+          />
+          <label htmlFor="rememberMe" className="ml-2 block text-sm text-slate-600 cursor-pointer select-none">
+            Recordarme
+          </label>
+        </div>
+        
+        <div className="text-sm">
+          <button
+            type="button"
+            onClick={() => switchMode("forgot")}
+            className="font-medium text-brand-primary hover:text-brand-primary/80 transition-colors"
+          >
+            ¿Olvidaste tu contraseña?
+          </button>
+        </div>
+      </div>
+
+      <motion.button
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.98 }}
+        type="submit"
+        disabled={isLoading}
+        className={`
+          w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-sm font-semibold text-white 
+          transition-all duration-300 ease-in-out
+          bg-brand-primary hover:bg-brand-primary/90 hover:shadow-brand-primary/30 ring-0 hover:ring-4 hover:ring-brand-primary/20
+          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-primary disabled:opacity-70 disabled:cursor-not-allowed
+        `}
+      >
+        {isLoading ? (
+          <>
+            <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
+            Validando credenciales...
+          </>
+        ) : (
+          <>
+            Ingresar al Sistema
+            <ArrowRight className="ml-2 h-4 w-4 opacity-50" />
+          </>
+        )}
+      </motion.button>
     </form>
   );
 
   const renderForgotForm = () => (
     <form className="space-y-6" onSubmit={handleForgotSubmit}>
-      <Input
-        label="Correo Electrónico"
+      <LoginInputField
         id="forgot-email"
+        label="Correo Electrónico"
         type="email"
         value={forgotEmail}
         onChange={(e) => setForgotEmail(e.target.value)}
-        required
         placeholder="tucorreo@empresa.com"
+        icon={Mail}
+        required
       />
-      <Button type="submit" className="w-full" disabled={forgotSubmitting}>
-        {forgotSubmitting ? "Enviando..." : "Enviar instrucciones"}
-      </Button>
+      <motion.button
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.98 }}
+        type="submit"
+        disabled={forgotSubmitting}
+        className="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-sm font-semibold text-white bg-brand-primary hover:bg-brand-primary/90 transition-all duration-300 disabled:opacity-70"
+      >
+        {forgotSubmitting ? (
+          <>
+            <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
+            Enviando...
+          </>
+        ) : (
+          "Enviar instrucciones"
+        )}
+      </motion.button>
     </form>
   );
 
   const renderResetForm = () => (
     <form className="space-y-6" onSubmit={handleResetSubmit}>
-      <Input
-        label="Nueva contraseña"
+      <LoginInputField
         id="new-password"
+        label="Nueva contraseña"
         type="password"
         value={newPassword}
         onChange={(e) => setNewPassword(e.target.value)}
+        icon={Lock}
         required
         autoComplete="new-password"
       />
-      <Input
-        label="Confirmar contraseña"
+      <LoginInputField
         id="confirm-password"
+        label="Confirmar contraseña"
         type="password"
         value={confirmPassword}
         onChange={(e) => setConfirmPassword(e.target.value)}
+        icon={Lock}
         required
         autoComplete="new-password"
       />
-      <Button
+      <motion.button
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.98 }}
         type="submit"
-        className="w-full"
         disabled={resetSubmitting || !resetToken}
+        className="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-sm font-semibold text-white bg-brand-primary hover:bg-brand-primary/90 transition-all duration-300 disabled:opacity-70"
       >
-        {resetSubmitting ? "Actualizando..." : "Restablecer contraseña"}
-      </Button>
+        {resetSubmitting ? (
+          <>
+            <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
+            Actualizando...
+          </>
+        ) : (
+          "Restablecer contraseña"
+        )}
+      </motion.button>
     </form>
   );
 
   const renderRegisterForm = () => (
-    <form className="space-y-6" onSubmit={handleRegisterSubmit}>
-      <Input
-        label="Nombre completo"
+    <form className="space-y-4" onSubmit={handleRegisterSubmit}>
+      <LoginInputField
         id="register-fullName"
+        label="Nombre completo"
+        type="text"
         value={registerForm.fullName}
         onChange={(e) =>
           setRegisterForm((prev) => ({ ...prev, fullName: e.target.value }))
         }
+        icon={UserIcon}
         required
       />
-      <Input
-        label="Correo corporativo"
+      <LoginInputField
         id="register-email"
+        label="Correo corporativo"
         type="email"
         value={registerForm.email}
         onChange={(e) =>
           setRegisterForm((prev) => ({ ...prev, email: e.target.value }))
         }
+        icon={Mail}
         required
       />
       <Select
@@ -548,20 +600,21 @@ const LoginScreen: React.FC = () => {
           </option>
         ))}
       </Select>
-      <Input
-        label="Contraseña"
+      <LoginInputField
         id="register-password"
+        label="Contraseña"
         type="password"
         value={registerForm.password}
         onChange={(e) =>
           setRegisterForm((prev) => ({ ...prev, password: e.target.value }))
         }
+        icon={Lock}
         required
         autoComplete="new-password"
       />
-      <Input
-        label="Confirmar contraseña"
+      <LoginInputField
         id="register-confirm"
+        label="Confirmar contraseña"
         type="password"
         value={registerForm.confirmPassword}
         onChange={(e) =>
@@ -570,6 +623,7 @@ const LoginScreen: React.FC = () => {
             confirmPassword: e.target.value,
           }))
         }
+        icon={Lock}
         required
         autoComplete="new-password"
       />
@@ -577,9 +631,22 @@ const LoginScreen: React.FC = () => {
         La contraseña debe contener al menos 8 caracteres, incluyendo mayúsculas,
         minúsculas y números.
       </p>
-      <Button type="submit" className="w-full" disabled={registerSubmitting}>
-        {registerSubmitting ? "Registrando..." : "Crear cuenta"}
-      </Button>
+      <motion.button
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.98 }}
+        type="submit"
+        disabled={registerSubmitting}
+        className="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-sm font-semibold text-white bg-brand-primary hover:bg-brand-primary/90 transition-all duration-300 disabled:opacity-70"
+      >
+        {registerSubmitting ? (
+          <>
+            <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
+            Registrando...
+          </>
+        ) : (
+          "Crear cuenta"
+        )}
+      </motion.button>
     </form>
   );
 
@@ -591,7 +658,7 @@ const LoginScreen: React.FC = () => {
             Validando tu enlace...
           </p>
           <div className="flex items-center gap-2 text-sm text-gray-500">
-            <span className="animate-spin">⏳</span>
+            <Loader2 className="animate-spin h-5 w-5" />
             <span>Esto tomará sólo un momento.</span>
           </div>
         </div>
@@ -601,16 +668,19 @@ const LoginScreen: React.FC = () => {
     if (verifyStatus === "success") {
       return (
         <div className="space-y-4">
-          <p className="text-sm text-green-700 bg-green-50 border border-green-200 p-3 rounded">
-            {verifyMessage || "Tu correo fue verificado correctamente."}
-          </p>
-          <Button
+          <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 p-3 rounded">
+            <CheckCircle2 className="h-5 w-5" />
+            <span>{verifyMessage || "Tu correo fue verificado correctamente."}</span>
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
             type="button"
-            className="w-full"
             onClick={() => switchMode("login")}
+            className="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-sm font-semibold text-white bg-brand-primary hover:bg-brand-primary/90 transition-all duration-300"
           >
             Ir al inicio de sesión
-          </Button>
+          </motion.button>
         </div>
       );
     }
@@ -620,13 +690,15 @@ const LoginScreen: React.FC = () => {
         <p className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded">
           {verifyMessage || "El enlace no es válido o ya fue usado."}
         </p>
-        <Button
+        <motion.button
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.98 }}
           type="button"
-          className="w-full"
           onClick={() => switchMode("login")}
+          className="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-sm font-semibold text-white bg-brand-primary hover:bg-brand-primary/90 transition-all duration-300"
         >
           Volver al inicio de sesión
-        </Button>
+        </motion.button>
       </div>
     );
   };
@@ -648,26 +720,14 @@ const LoginScreen: React.FC = () => {
 
   const renderModeLinks = () => {
     switch (mode) {
-      case "login":
-        return (
-          <div className="text-sm text-center text-brand-primary">
-            <button
-              type="button"
-              className="hover:underline"
-              onClick={() => switchMode("forgot")}
-            >
-              ¿Olvidaste tu contraseña?
-            </button>
-          </div>
-        );
       case "forgot":
       case "register":
       case "reset":
         return (
-          <div className="text-sm text-center text-brand-primary">
+          <div className="text-sm text-center mt-6">
             <button
               type="button"
-              className="hover:underline"
+              className="font-medium text-brand-primary hover:text-brand-primary/80 transition-colors"
               onClick={() => switchMode("login")}
             >
               Volver al inicio de sesión
@@ -681,60 +741,126 @@ const LoginScreen: React.FC = () => {
     }
   };
 
-  const formatRole = (role: string) => {
-    const map: Record<string, string> = {
-      RESIDENT: "Residente de Obra",
-      SUPERVISOR: "Supervisor",
-      CONTRACTOR_REP: "Representante Contratista",
-      ADMIN: "Administrador IDU",
-    };
-    return map[role] || role;
-  };
+  // Logo component
+  const LogoSection = () => (
+    <div className="flex flex-col items-center justify-center mb-10">
+      <div className="relative flex items-center justify-center w-20 h-20 bg-white border-2 border-slate-200 rounded-full shadow-sm mb-4 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-white to-slate-50" />
+        <Building2 className="relative z-10 w-10 h-10 text-slate-700" strokeWidth={1.5} />
+        <HardHat className="absolute z-20 w-6 h-6 text-yellow-500 fill-yellow-100 bottom-4 right-4 translate-x-1 translate-y-1" strokeWidth={1.5} />
+        <Wifi className="absolute top-3 right-3 w-3 h-3 text-brand-primary" />
+      </div>
+      <h1 className="text-2xl font-bold text-slate-900 tracking-tight text-center uppercase">
+        Bitácora Digital
+      </h1>
+      <p className="text-xs font-semibold text-brand-primary uppercase tracking-widest mt-1">
+        Control de Obra
+      </p>
+    </div>
+  );
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
-        <div className="text-center">
-          <div className="h-64 w-64 mx-auto">
-            <img 
-              src={bitacoraLogo} 
-              alt="Bitácora Digital de Obra" 
-              className="w-full h-full object-contain"
-            />
-          </div>
-          <h2 className="mt-6 text-2xl font-bold text-gray-900">
-            {modeCopy.title}
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">{modeCopy.subtitle}</p>
+    <div className="min-h-screen w-full flex bg-slate-50 overflow-hidden">
+      
+      {/* Left Side: Form Container */}
+      <div className="w-full lg:w-1/2 flex flex-col justify-between p-8 lg:p-12 xl:p-20 relative z-10 bg-white shadow-2xl lg:shadow-none">
+        
+        {/* Center: Main Form Content */}
+        <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <LogoSection />
+            
+            <div className="text-center mb-10">
+              <h2 className="text-3xl font-bold text-slate-900 mb-2">{modeCopy.title}</h2>
+              <p className="text-slate-500">
+                {modeCopy.subtitle}
+              </p>
+            </div>
+
+            {successMessage && (
+              <div className="mb-4 text-sm text-green-700 bg-green-50 border border-green-200 p-3 rounded-lg flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                {successMessage}
+              </div>
+            )}
+
+            {displayError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg">
+                {displayError}
+              </div>
+            )}
+
+            {renderForm()}
+
+            {renderModeLinks()}
+          </motion.div>
         </div>
 
-        {successMessage && (
-          <div className="text-sm text-green-700 bg-green-50 border border-green-200 p-3 rounded">
-            {successMessage}
+        {/* Footer: Credits & Copyright */}
+        <div className="mt-8 lg:mt-0 flex items-center justify-between text-xs text-slate-400">
+          <span>© 2026 Bitácora Digital de Obra</span>
+          <div className="flex items-center gap-2 opacity-60 hover:opacity-100 transition-opacity cursor-default">
+            <span>Desarrollado por</span>
+            <span className="font-bold text-slate-600">KATA LAB</span>
           </div>
-        )}
-
-        {displayError && (
-          <div className="text-sm text-red-600 bg-red-50 border border-red-200 p-3 rounded">
-            {displayError}
-          </div>
-        )}
-
-        {renderForm()}
-
-        {renderModeLinks()}
-
-        {/* Sección de Accesos de Prueba deshabilitada */}
+        </div>
       </div>
 
-      <div className="fixed bottom-4 right-4 flex items-center gap-2 text-xs text-gray-500">
-        <span className="font-medium">by</span>
-        <img
-          src="/manual_usuario/logo.png"
-          alt="Logo de la empresa"
-          className="h-40 w-auto object-contain"
-        />
+      {/* Right Side: Image/Visual (Hidden on mobile) */}
+      <div className="hidden lg:block lg:w-1/2 relative overflow-hidden bg-slate-900">
+        <motion.div 
+          initial={{ scale: 1.1, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 1.2, ease: "easeOut" }}
+          className="absolute inset-0 z-0"
+        >
+          <img 
+            src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&h=1600&fit=crop" 
+            alt="Construcción moderna"
+            className="w-full h-full object-cover opacity-60 mix-blend-overlay"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-brand-primary/90 via-brand-primary/60 to-slate-900/40" />
+        </motion.div>
+        
+        <div className="absolute inset-0 z-10 flex flex-col justify-end p-20 text-white">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.8 }}
+          >
+            <div className="w-16 h-1 bg-yellow-400 mb-6 rounded-full" />
+            <h2 className="text-4xl xl:text-5xl font-bold mb-6 leading-tight">
+              Excelencia en<br/>
+              Ingeniería y Construcción.
+            </h2>
+            <p className="text-lg text-slate-200 max-w-md leading-relaxed">
+              Plataforma integral para el seguimiento de obra, control de calidad y gestión de recursos.
+            </p>
+            
+            <div className="mt-12 flex items-center gap-4">
+              <div className="flex -space-x-3">
+                {[1,2,3].map((i) => (
+                  <div key={i} className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-200 overflow-hidden">
+                    <img src={`https://picsum.photos/seed/${i + 50}/100/100`} alt="User" className="w-full h-full object-cover" />
+                  </div>
+                ))}
+                <div className="w-10 h-10 rounded-full border-2 border-slate-900 bg-brand-primary/80 flex items-center justify-center text-xs font-bold">
+                  +50
+                </div>
+              </div>
+              <div className="text-sm font-medium text-slate-300">
+                Equipo Técnico y Administrativo
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </div>
+
     </div>
   );
 };
