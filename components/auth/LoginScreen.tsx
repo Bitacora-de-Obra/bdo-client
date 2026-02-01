@@ -743,28 +743,24 @@ const LoginScreen: React.FC = () => {
 
   // Logo component
   const LogoSection = () => (
-    <div className="flex flex-col items-center justify-center mb-10">
+    <div className="flex flex-col items-center justify-center mb-8">
       {/* Company Logos */}
-      <div className="flex items-center justify-center gap-6 mb-6">
+      <div className="flex items-center justify-center gap-8 mb-6">
         <img 
           src="/assets/logointerventoria.jpeg" 
           alt="Interventoría"
-          className="h-16 w-auto object-contain rounded-lg shadow-sm"
+          className="h-12 w-auto object-contain"
         />
         <img 
           src="/assets/logoconsorcio.jpeg" 
           alt="Contratista"
-          className="h-16 w-auto object-contain rounded-lg shadow-sm"
+          className="h-12 w-auto object-contain"
         />
       </div>
       
-      <div className="relative flex items-center justify-center w-20 h-20 bg-white border-2 border-slate-200 rounded-full shadow-sm mb-4 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-white to-slate-50" />
-        <Building2 className="relative z-10 w-10 h-10 text-slate-700" strokeWidth={1.5} />
-        <HardHat className="absolute z-20 w-6 h-6 text-yellow-500 fill-yellow-100 bottom-4 right-4 translate-x-1 translate-y-1" strokeWidth={1.5} />
-        <Wifi className="absolute top-3 right-3 w-3 h-3 text-brand-primary" />
-      </div>
-      <h1 className="text-2xl font-bold text-slate-900 tracking-tight text-center uppercase">
+      <div className="w-12 h-0.5 bg-slate-200 mb-4" />
+      
+      <h1 className="text-xl font-bold text-slate-900 tracking-tight text-center uppercase">
         Bitácora Digital
       </h1>
       <p className="text-xs font-semibold text-brand-primary uppercase tracking-widest mt-1">
