@@ -657,7 +657,6 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
         onClose={() => setIsExportModalOpen(false)}
         onExportZip={handleExportZip}
         onExportPdf={handleExportMergedPdf}
-        entryCount={filteredEntries.length}
         filters={filters}
       />
     </div>

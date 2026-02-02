@@ -10,7 +10,6 @@ interface ExportModalProps {
   onClose: () => void;
   onExportZip: () => void;
   onExportPdf: () => void;
-  entryCount: number;
   filters: {
     startDate: string;
     endDate: string;
@@ -23,12 +22,11 @@ const ExportModal: React.FC<ExportModalProps> = ({
   onClose, 
   onExportZip, 
   onExportPdf, 
-  entryCount, 
   filters 
 }) => {
   const { user } = useAuth();
   const canDownload = user?.canDownload ?? true;
-  const hasDateFilters = filters.startDate || filters.endDate;
+  const hasFilters = filters.startDate || filters.endDate || (filters.type && filters.type !== 'all');
   const [exportFormat, setExportFormat] = useState<ExportFormat>('pdf');
   const [isExporting, setIsExporting] = useState(false);
 
@@ -68,7 +66,7 @@ const ExportModal: React.FC<ExportModalProps> = ({
           </Button>
           <Button 
             onClick={handleExport} 
-            disabled={entryCount === 0 || !canDownload || isExporting}
+            disabled={!canDownload || isExporting}
           >
             {isExporting 
               ? 'Generando...' 
@@ -84,7 +82,7 @@ const ExportModal: React.FC<ExportModalProps> = ({
     >
       <div className="text-sm text-gray-700 space-y-4">
         <p>
-          Se exportarán <strong>{entryCount} anotaciones</strong> que coinciden con los filtros actuales.
+          Se exportarán <strong>todas las anotaciones</strong> que coincidan con los filtros seleccionados.
         </p>
 
         {/* Format selection */}
@@ -122,24 +120,20 @@ const ExportModal: React.FC<ExportModalProps> = ({
           </div>
         </div>
         
-        {entryCount === 0 ? (
-          <div className="p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800">
-            <p className="font-bold">No hay anotaciones</p>
-            <p>No hay anotaciones que coincidan con los filtros seleccionados. Ajusta los filtros para exportar datos.</p>
-          </div>
-        ) : (
-          <div className="p-3 bg-gray-50 border rounded-md">
-            <h4 className="font-semibold text-gray-800">Filtros Activos</h4>
+        <div className="p-3 bg-gray-50 border rounded-md">
+          <h4 className="font-semibold text-gray-800">Filtros Activos</h4>
+          {hasFilters ? (
             <ul className="list-disc list-inside mt-2 text-gray-600">
               {filters.startDate && <li>Desde: <strong>{new Date(filters.startDate).toLocaleDateString('es-CO', {timeZone: 'UTC'})}</strong></li>}
               {filters.endDate && <li>Hasta: <strong>{new Date(filters.endDate).toLocaleDateString('es-CO', {timeZone: 'UTC'})}</strong></li>}
               {filters.type && filters.type !== 'all' && (
                 <li>Área: <strong>{typeLabels[filters.type] || filters.type}</strong></li>
               )}
-              {!hasDateFilters && filters.type === 'all' && <li>Se exportarán todas las anotaciones visibles.</li>}
             </ul>
-          </div>
-        )}
+          ) : (
+            <p className="mt-2 text-gray-600">Sin filtros aplicados. Se exportarán todas las anotaciones.</p>
+          )}
+        </div>
 
         <p className="text-xs text-gray-500">
           Si alguna anotación no tiene PDF, se generará automáticamente. 
