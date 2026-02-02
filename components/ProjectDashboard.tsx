@@ -400,7 +400,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     }
   };
 
-  const handleExportEntries = async () => {
+  const handleExportZip = async () => {
     try {
       const blob = await api.logEntries.exportZip({
         startDate: filters.startDate || undefined,
@@ -421,6 +421,37 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
         variant: "error",
         title: "Error al exportar",
         message: e?.message || "No fue posible generar el ZIP.",
+      });
+    }
+  };
+
+  const handleExportMergedPdf = async () => {
+    try {
+      const blob = await api.logEntries.exportMergedPdf({
+        startDate: filters.startDate || undefined,
+        endDate: filters.endDate || undefined,
+        type: filters.type !== "all" ? filters.type : undefined,
+        status: filters.status !== "all" ? filters.status : undefined,
+        authorId: filters.user !== "all" ? filters.user : undefined,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      // Generate filename based on filters
+      let filename = `bitacoras`;
+      if (filters.type !== "all") filename += `_${filters.type}`;
+      if (filters.startDate) filename += `_desde_${filters.startDate}`;
+      if (filters.endDate) filename += `_hasta_${filters.endDate}`;
+      filename += `.pdf`;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      setIsExportModalOpen(false);
+    } catch (e: any) {
+      showToast({
+        variant: "error",
+        title: "Error al exportar",
+        message: e?.message || "No fue posible generar el PDF.",
       });
     }
   };
@@ -624,7 +655,8 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
       <ExportModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
-        onExport={handleExportEntries}
+        onExportZip={handleExportZip}
+        onExportPdf={handleExportMergedPdf}
         entryCount={filteredEntries.length}
         filters={filters}
       />
