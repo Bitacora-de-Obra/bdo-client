@@ -9,8 +9,12 @@ interface CivMapProps {
   className?: string;
 }
 
-const ARCGIS_BASE_URL =
+const ARCGIS_MOVILIDAD_URL =
   'https://services2.arcgis.com/NEwhEo9GGSHXcRXV/arcgis/rest/services/Malla_Vial_Integral_Bogota_D_C/FeatureServer/0/query';
+
+// Fallback: IDECA Mapa de Referencia (contiene CIVs que no están en movilidadbogota)
+const ARCGIS_IDECA_URL =
+  'https://serviciosgis.catastrobogota.gov.co/arcgis/rest/services/Mapa_Referencia/Mapa_Referencia/MapServer/13/query';
 
 const COLORS = [
   '#2563EB', // Azul
@@ -28,6 +32,59 @@ interface CivFeature {
   label: string;
   tipo: string;
   coordinates: [number, number][][]; // array of lines, each line is array of [lat, lng]
+}
+
+// Parsear features GeoJSON y agrupar por CIV
+function parseGeoJsonFeatures(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  features: any[],
+  target: Map<number, CivFeature>
+) {
+  for (const feature of features) {
+    const civCode = feature.properties.MVICIV;
+    const label = feature.properties.MVIETIQUET || '';
+    const tipo = feature.properties.MVITIPO || '';
+    const geom = feature.geometry;
+
+    let lines: [number, number][][] = [];
+    if (geom.type === 'LineString') {
+      lines = [geom.coordinates.map((c: number[]) => [c[1], c[0]] as [number, number])];
+    } else if (geom.type === 'MultiLineString') {
+      lines = geom.coordinates.map((line: number[][]) =>
+        line.map((c: number[]) => [c[1], c[0]] as [number, number])
+      );
+    }
+
+    const existing = target.get(civCode);
+    if (existing) {
+      existing.coordinates.push(...lines);
+    } else {
+      target.set(civCode, { civCode, label, tipo, coordinates: lines });
+    }
+  }
+}
+
+// Consultar un endpoint ArcGIS por CIVs específicos
+async function queryArcGIS(baseUrl: string, civNumbers: number[]): Promise<Map<number, CivFeature>> {
+  const result = new Map<number, CivFeature>();
+  if (civNumbers.length === 0) return result;
+
+  const whereClause = `MVICIV IN (${civNumbers.join(',')})`;
+  const params = new URLSearchParams({
+    where: whereClause,
+    outFields: 'MVICIV,MVINOMBRE,MVIETIQUET,MVITIPO',
+    f: 'geojson',
+    outSR: '4326',
+  });
+
+  const response = await fetch(`${baseUrl}?${params.toString()}`);
+  if (!response.ok) return result;
+
+  const data = await response.json();
+  if (data.features && data.features.length > 0) {
+    parseGeoJsonFeatures(data.features, result);
+  }
+  return result;
 }
 
 // Componente para auto-ajustar el zoom del mapa a los bounds de las features
@@ -100,61 +157,40 @@ const CivMap: React.FC<CivMapProps> = ({ elements, className = 'h-96 w-full' }) 
         return;
       }
 
-      const whereClause = `MVICIV IN (${civNumbers.join(',')})`;
-      const params = new URLSearchParams({
-        where: whereClause,
-        outFields: 'MVICIV,MVINOMBRE,MVIETIQUET,MVITIPO',
-        f: 'geojson',
-        outSR: '4326',
-      });
+      // 1. Consultar API primaria (Movilidad Bogotá)
+      const primaryResults = await queryArcGIS(ARCGIS_MOVILIDAD_URL, civNumbers);
 
-      const response = await fetch(`${ARCGIS_BASE_URL}?${params.toString()}`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      // 2. Identificar CIVs faltantes
+      const foundPrimary = new Set(Array.from(primaryResults.keys()));
+      const missingNumbers = civNumbers.filter((n) => !foundPrimary.has(n));
 
-      const data = await response.json();
+      // 3. Consultar API fallback (IDECA) para los faltantes
+      let fallbackResults = new Map<number, CivFeature>();
+      if (missingNumbers.length > 0) {
+        try {
+          fallbackResults = await queryArcGIS(ARCGIS_IDECA_URL, missingNumbers);
+        } catch {
+          console.warn('IDECA fallback failed, some CIVs may not be shown');
+        }
+      }
 
-      if (!data.features || data.features.length === 0) {
+      // 4. Combinar resultados
+      const allResults = new Map([...primaryResults, ...fallbackResults]);
+
+      if (allResults.size === 0) {
         setError('No se encontraron geometrías para los CIVs del proyecto.');
         setMissingCivs(uniqueCivs);
         setLoading(false);
         return;
       }
 
-      // Agrupar features por CIV
-      const civFeaturesMap = new Map<number, CivFeature>();
+      setFeatures(Array.from(allResults.values()));
 
-      for (const feature of data.features) {
-        const civCode = feature.properties.MVICIV;
-        const label = feature.properties.MVIETIQUET || '';
-        const tipo = feature.properties.MVITIPO || '';
-        const geom = feature.geometry;
-
-        // Convertir coordenadas GeoJSON [lng, lat] -> Leaflet [lat, lng]
-        let lines: [number, number][][] = [];
-
-        if (geom.type === 'LineString') {
-          lines = [geom.coordinates.map((c: number[]) => [c[1], c[0]] as [number, number])];
-        } else if (geom.type === 'MultiLineString') {
-          lines = geom.coordinates.map((line: number[][]) =>
-            line.map((c: number[]) => [c[1], c[0]] as [number, number])
-          );
-        }
-
-        const existing = civFeaturesMap.get(civCode);
-        if (existing) {
-          existing.coordinates.push(...lines);
-        } else {
-          civFeaturesMap.set(civCode, { civCode, label, tipo, coordinates: lines });
-        }
-      }
-
-      setFeatures(Array.from(civFeaturesMap.values()));
-
-      // Detectar CIVs que no se encontraron en la API
-      const foundCivs = new Set(Array.from(civFeaturesMap.keys()).map(String));
-      const missing = uniqueCivs.filter((c) => !foundCivs.has(c));
-      if (missing.length > 0) {
-        setMissingCivs(missing);
+      // Detectar CIVs que no se encontraron en ninguna API
+      const allFound = new Set(Array.from(allResults.keys()).map(String));
+      const stillMissing = uniqueCivs.filter((c) => !allFound.has(c));
+      if (stillMissing.length > 0) {
+        setMissingCivs(stillMissing);
       }
     } catch (err) {
       console.error('Error fetching malla vial:', err);
