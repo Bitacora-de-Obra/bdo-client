@@ -57,6 +57,7 @@ const CivMap: React.FC<CivMapProps> = ({ elements, className = 'h-96 w-full' }) 
   const [features, setFeatures] = useState<CivFeature[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [missingCivs, setMissingCivs] = useState<string[]>([]);
 
   // Obtener CIVs únicos de los elementos del corredor
   const uniqueCivs = useMemo(() => {
@@ -90,6 +91,7 @@ const CivMap: React.FC<CivMapProps> = ({ elements, className = 'h-96 w-full' }) 
 
     setLoading(true);
     setError(null);
+    setMissingCivs([]);
 
     try {
       const civNumbers = uniqueCivs.map((c) => Number(c)).filter((n) => !isNaN(n));
@@ -113,6 +115,7 @@ const CivMap: React.FC<CivMapProps> = ({ elements, className = 'h-96 w-full' }) 
 
       if (!data.features || data.features.length === 0) {
         setError('No se encontraron geometrías para los CIVs del proyecto.');
+        setMissingCivs(uniqueCivs);
         setLoading(false);
         return;
       }
@@ -146,6 +149,13 @@ const CivMap: React.FC<CivMapProps> = ({ elements, className = 'h-96 w-full' }) 
       }
 
       setFeatures(Array.from(civFeaturesMap.values()));
+
+      // Detectar CIVs que no se encontraron en la API
+      const foundCivs = new Set(Array.from(civFeaturesMap.keys()).map(String));
+      const missing = uniqueCivs.filter((c) => !foundCivs.has(c));
+      if (missing.length > 0) {
+        setMissingCivs(missing);
+      }
     } catch (err) {
       console.error('Error fetching malla vial:', err);
       setError('Error al consultar la malla vial de Bogotá.');
@@ -162,70 +172,60 @@ const CivMap: React.FC<CivMapProps> = ({ elements, className = 'h-96 w-full' }) 
   const defaultCenter: [number, number] = [4.65, -74.1];
 
   return (
-    <div className={`rounded-lg overflow-hidden border border-gray-300 ${className}`}>
-      {loading && (
-        <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-white/70">
-          <div className="flex flex-col items-center gap-2">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600" />
-            <span className="text-sm text-gray-500">Cargando malla vial...</span>
+    <div className={`flex flex-col ${className}`}>
+      <div className="relative flex-1 rounded-t-lg overflow-hidden border border-gray-300">
+        {loading && (
+          <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-white/70">
+            <div className="flex flex-col items-center gap-2">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600" />
+              <span className="text-sm text-gray-500">Cargando malla vial...</span>
+            </div>
           </div>
-        </div>
-      )}
-      <MapContainer
-        center={defaultCenter}
-        zoom={13}
-        scrollWheelZoom={false}
-        style={{ height: '100%', width: '100%' }}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <FitBounds features={features} />
-        {features.map((f) =>
-          f.coordinates.map((line, lineIdx) => (
-            <Polyline
-              key={`${f.civCode}-${lineIdx}`}
-              positions={line}
-              pathOptions={{
-                color: civColorMap.get(f.civCode) || '#2563EB',
-                weight: 6,
-                opacity: 0.8,
-              }}
-            >
-              <Popup>
-                <div className="text-sm min-w-[180px]">
-                  <p className="font-bold text-base">CIV: {f.civCode}</p>
-                  {f.label && <p className="text-gray-700">{f.label}</p>}
-                  {f.tipo && (
-                    <p className="text-gray-500 text-xs mt-1">Tipo: {f.tipo}</p>
-                  )}
-                  {civInfoMap.has(String(f.civCode)) && (
-                    <p className="text-gray-600 mt-1">
-                      {civInfoMap.get(String(f.civCode))?.ubicacion}
-                    </p>
-                  )}
-                </div>
-              </Popup>
-            </Polyline>
-          ))
         )}
-      </MapContainer>
-      {error && (
-        <div className="bg-amber-50 p-2 text-xs text-amber-700 border-t flex items-center gap-1">
-          <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fillRule="evenodd"
-              d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.168 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 6a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 6zm0 9a1 1 0 100-2 1 1 0 000 2z"
-              clipRule="evenodd"
-            />
-          </svg>
-          {error}
-        </div>
-      )}
-      {!loading && !error && features.length > 0 && (
-        <div className="bg-gray-50 p-2 border-t">
-          <div className="flex flex-wrap gap-3 text-xs">
+        <MapContainer
+          center={defaultCenter}
+          zoom={13}
+          scrollWheelZoom={false}
+          style={{ height: '100%', width: '100%' }}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <FitBounds features={features} />
+          {features.map((f) =>
+            f.coordinates.map((line, lineIdx) => (
+              <Polyline
+                key={`${f.civCode}-${lineIdx}`}
+                positions={line}
+                pathOptions={{
+                  color: civColorMap.get(f.civCode) || '#2563EB',
+                  weight: 6,
+                  opacity: 0.8,
+                }}
+              >
+                <Popup>
+                  <div className="text-sm min-w-[180px]">
+                    <p className="font-bold text-base">CIV: {f.civCode}</p>
+                    {f.label && <p className="text-gray-700">{f.label}</p>}
+                    {f.tipo && (
+                      <p className="text-gray-500 text-xs mt-1">Tipo: {f.tipo}</p>
+                    )}
+                    {civInfoMap.has(String(f.civCode)) && (
+                      <p className="text-gray-600 mt-1">
+                        {civInfoMap.get(String(f.civCode))?.ubicacion}
+                      </p>
+                    )}
+                  </div>
+                </Popup>
+              </Polyline>
+            ))
+          )}
+        </MapContainer>
+      </div>
+      {!loading && features.length > 0 && (
+        <div className="bg-gray-50 px-3 py-2 border border-t-0 border-gray-300 rounded-b-lg">
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
             {features.map((f) => (
               <div key={f.civCode} className="flex items-center gap-1.5">
                 <span
@@ -239,6 +239,30 @@ const CivMap: React.FC<CivMapProps> = ({ elements, className = 'h-96 w-full' }) 
               </div>
             ))}
           </div>
+        </div>
+      )}
+      {error && (
+        <div className="bg-amber-50 px-3 py-2 text-xs text-amber-700 border border-t-0 border-amber-200 rounded-b-lg flex items-center gap-1.5">
+          <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fillRule="evenodd"
+              d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.168 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 6a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 6zm0 9a1 1 0 100-2 1 1 0 000 2z"
+              clipRule="evenodd"
+            />
+          </svg>
+          {error}
+        </div>
+      )}
+      {!loading && missingCivs.length > 0 && (
+        <div className="bg-amber-50 px-3 py-2 text-xs text-amber-700 border border-t-0 border-amber-200 rounded-b-lg flex items-center gap-1.5 mt-0">
+          <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fillRule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z"
+              clipRule="evenodd"
+            />
+          </svg>
+          CIVs no encontrados en la malla vial: {missingCivs.join(', ')}
         </div>
       )}
     </div>

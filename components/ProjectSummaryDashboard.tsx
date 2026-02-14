@@ -152,10 +152,10 @@ const ProjectSummaryDashboard: React.FC<ProjectSummaryDashboardProps> = ({ proje
       <Card>
         <div className="p-5">
             <h3 className="text-lg font-semibold text-gray-800">Ubicación del Proyecto y Zona de Intervención</h3>
-            <div className="mt-4 aspect-video bg-gray-200 rounded-lg overflow-hidden border">
+            <div className="mt-4">
                 <CivMap 
                     elements={project.corredorVialElements || []} 
-                    className="w-full h-full min-h-[400px]"
+                    className="w-full min-h-[400px]"
                 />
             </div>
         </div>
