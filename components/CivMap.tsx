@@ -172,8 +172,8 @@ const CivMap: React.FC<CivMapProps> = ({ elements, className = 'h-96 w-full' }) 
   const defaultCenter: [number, number] = [4.65, -74.1];
 
   return (
-    <div className={`flex flex-col ${className}`}>
-      <div className="relative flex-1 rounded-t-lg overflow-hidden border border-gray-300">
+    <div className={className}>
+      <div className="relative rounded-t-lg overflow-hidden border border-gray-300" style={{ height: '400px' }}>
         {loading && (
           <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-white/70">
             <div className="flex flex-col items-center gap-2">
