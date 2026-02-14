@@ -204,6 +204,7 @@ const DrawingDetailModal: React.FC<DrawingDetailModalProps> = ({ isOpen, onClose
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     users={availableUsers}
+                    maxLength={500}
                   />
                   <div className="mt-2 flex justify-end">
                     <div className="flex flex-col items-end">

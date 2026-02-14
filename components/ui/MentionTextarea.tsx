@@ -9,6 +9,7 @@ interface MentionTextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   users: User[];
   placeholder?: string;
+  maxLength?: number;
 }
 
 const MentionTextarea: React.FC<MentionTextareaProps> = ({
@@ -18,6 +19,7 @@ const MentionTextarea: React.FC<MentionTextareaProps> = ({
   placeholder = "Escribe tu comentario aquí...",
   className,
   style,
+  maxLength,
   ...props
 }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -114,6 +116,12 @@ const MentionTextarea: React.FC<MentionTextareaProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
+
+    // Respetar maxLength si está definido
+    if (maxLength && text.length > maxLength) {
+      return;
+    }
+
     const cursorPosition = e.target.selectionStart || 0;
 
     // Buscar @ antes del cursor
@@ -206,6 +214,11 @@ const MentionTextarea: React.FC<MentionTextareaProps> = ({
   };
 
 
+  const charCount = value.length;
+  const remaining = maxLength ? maxLength - charCount : null;
+  const isNearLimit = maxLength ? charCount >= maxLength * 0.9 : false;
+  const isAtLimit = maxLength ? charCount >= maxLength : false;
+
   return (
     <div className="relative">
       <div
@@ -225,12 +238,28 @@ const MentionTextarea: React.FC<MentionTextareaProps> = ({
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         placeholder=""
+        maxLength={maxLength}
         className={`relative z-10 block w-full rounded-md border border-gray-300 bg-transparent p-2 text-transparent caret-brand-primary placeholder-gray-500 placeholder:opacity-100 focus:border-brand-primary focus:ring-brand-primary focus:ring-1 sm:text-sm ${className || ""}`}
         style={{
           ...(style || {}),
           resize: style?.resize ?? ("vertical" as React.CSSProperties["resize"]),
         }}
       />
+      {maxLength && (
+        <div className="mt-1 flex justify-end">
+          <span
+            className={`text-xs ${
+              isAtLimit
+                ? 'text-red-600 font-semibold'
+                : isNearLimit
+                ? 'text-amber-600'
+                : 'text-gray-400'
+            }`}
+          >
+            {charCount}/{maxLength}
+          </span>
+        </div>
+      )}
       {showSuggestions && suggestions.length > 0 && (
         <div
           ref={suggestionsRef}

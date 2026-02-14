@@ -3545,6 +3545,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                     users={availableUsers}
+                    maxLength={500}
                   />
                   {commentFiles.length > 0 && (
                     <div className="mt-2 space-y-1">
