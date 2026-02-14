@@ -29,6 +29,15 @@ const MentionTextarea: React.FC<MentionTextareaProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
 
+  // Auto-resize textarea based on content
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  }, [value]);
+
   // Renderizar menciones directamente desde el valor raw del textarea (sin convertir)
   // para mantener la alineación exacta carácter por carácter con el textarea
   const renderMentionsFromRawInput = (rawValue: string): React.ReactNode => {
@@ -242,7 +251,8 @@ const MentionTextarea: React.FC<MentionTextareaProps> = ({
         className={`relative z-10 block w-full rounded-md border border-gray-300 bg-transparent p-2 text-transparent caret-brand-primary placeholder-gray-500 placeholder:opacity-100 focus:border-brand-primary focus:ring-brand-primary focus:ring-1 sm:text-sm ${className || ""}`}
         style={{
           ...(style || {}),
-          resize: style?.resize ?? ("vertical" as React.CSSProperties["resize"]),
+          resize: 'none' as React.CSSProperties['resize'],
+          overflow: 'hidden',
         }}
       />
       {maxLength && (
