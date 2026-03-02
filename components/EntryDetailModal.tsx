@@ -3782,7 +3782,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                     >
                       {isRegeneratingPdf ? 'Regenerando...' : 'Regenerar PDF'}
                     </Button>
-                    {entry.signatureTasks && entry.signatureTasks.some((t: any) => t.signatureTaskStatus === 'SIGNED') && (
+                    {entry.signatureTasks && entry.signatureTasks.some((t: any) => t.status === 'SIGNED') && (
                       <Button
                         variant="secondary"
                         onClick={handleResetSignatures}
