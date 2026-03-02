@@ -187,6 +187,7 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
   const [formEntryDate, setFormEntryDate] = useState<string>("");
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isRegeneratingPdf, setIsRegeneratingPdf] = useState(false);
+  const [isResettingSignatures, setIsResettingSignatures] = useState(false);
 
   // Effect to recalculate schedule day when date changes during edit
   useEffect(() => {
@@ -1543,8 +1544,35 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
     }
   };
 
-  // Eliminado: handleSignAttachment ya no se usa
-  // El flujo de firma ahora es solo a través de "Firmar anotación" con contraseña
+  const handleResetSignatures = async () => {
+    if (!window.confirm('¿Estás seguro de resetear las firmas de esta anotación?\n\nEsto eliminará TODAS las firmas existentes, regenerará el PDF sin firmas, y la anotación volverá a estado Aprobado para que todos los firmantes vuelvan a firmar.')) {
+      return;
+    }
+    setIsResettingSignatures(true);
+    setValidationError(null);
+    try {
+      const response = await api.logEntries.resetSignatures(entry.id);
+      if (response?.entry) {
+        applyEntryState(response.entry as LogEntry);
+      }
+      await onRefresh();
+      showToast({
+        variant: 'success',
+        title: 'Firmas reseteadas',
+        message: response?.message || 'Las firmas se resetearon correctamente. Los firmantes pueden volver a firmar.',
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No se pudieron resetear las firmas.';
+      setValidationError(message);
+      showToast({
+        variant: 'error',
+        title: 'Error al resetear firmas',
+        message,
+      });
+    } finally {
+      setIsResettingSignatures(false);
+    }
+  };
 
   const { folioNumber, folioFormatted, author } = entry;
   const { comments = [] } = editedEntry;
@@ -3745,14 +3773,27 @@ const EntryDetailModal: React.FC<EntryDetailModalProps> = ({
                   </Button>
                 )}
                 {isAdmin && (
-                  <Button
-                    variant="secondary"
-                    onClick={handleRegeneratePdf}
-                    disabled={isRegeneratingPdf}
-                    title="Regenerar PDF con firmas en posiciones correctas (solo admin)"
-                  >
-                    {isRegeneratingPdf ? 'Regenerando...' : 'Regenerar PDF'}
-                  </Button>
+                  <>
+                    <Button
+                      variant="secondary"
+                      onClick={handleRegeneratePdf}
+                      disabled={isRegeneratingPdf}
+                      title="Regenerar PDF con firmas en posiciones correctas (solo admin)"
+                    >
+                      {isRegeneratingPdf ? 'Regenerando...' : 'Regenerar PDF'}
+                    </Button>
+                    {entry.signatureTasks && entry.signatureTasks.some((t: any) => t.signatureTaskStatus === 'SIGNED') && (
+                      <Button
+                        variant="secondary"
+                        onClick={handleResetSignatures}
+                        disabled={isResettingSignatures}
+                        title="Eliminar todas las firmas y devolver la anotación a estado Aprobado para que los firmantes vuelvan a firmar (solo admin)"
+                        className="!text-red-600 !border-red-300 hover:!bg-red-50"
+                      >
+                        {isResettingSignatures ? 'Reseteando...' : 'Resetear Firmas'}
+                      </Button>
+                    )}
+                  </>
                 )}
               </>
             )}

@@ -930,6 +930,11 @@ export const logEntriesApi = {
       method: "POST",
     });
   },
+  resetSignatures: async (entryId: string) => {
+    return apiFetch(`/log-entries/${entryId}/reset-signatures`, {
+      method: "POST",
+    });
+  },
   exportZip: async (filters: {
     startDate?: string;
     endDate?: string;
