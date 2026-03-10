@@ -157,29 +157,29 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
 
   // Prefetch next page in background
   useEffect(() => {
-    // Only prefetch if there's a next page and we haven't already prefetched it
-    if (pagination?.hasNext && pagination.currentPage !== prefetchedPage) {
-      const nextPage = pagination.currentPage + 1;
-      
-      // Prepare filters for API call
-      const apiFilters = {
-        status: convertFilterToDbValue(filters.status, EntryStatus),
-        type: convertFilterToDbValue(filters.type, EntryType),
-        userId: filters.user !== 'all' ? filters.user : undefined,
-        search: filters.searchTerm || undefined
-      };
+    if (!pagination?.hasNext) return;
+    const nextPage = pagination.currentPage + 1;
+    // Only prefetch if we haven't already prefetched this specific page
+    if (nextPage === prefetchedPage) return;
 
-      // Prefetch in background with current filters!
-      api.logEntries.getAll(nextPage, ENTRIES_PER_PAGE, sortBy, apiFilters)
-        .then(data => {
-          setPrefetchedData(data);
-          setPrefetchedPage(nextPage);
-        })
-        .catch(err => {
-          // Silent fail - prefetch is a nice-to-have
-          console.log('Prefetch failed (this is OK):', err);
-        });
-    }
+    // Prepare filters for API call
+    const apiFilters = {
+      status: convertFilterToDbValue(filters.status, EntryStatus),
+      type: convertFilterToDbValue(filters.type, EntryType),
+      userId: filters.user !== 'all' ? filters.user : undefined,
+      search: filters.searchTerm || undefined
+    };
+
+    // Prefetch in background with current filters!
+    api.logEntries.getAll(nextPage, ENTRIES_PER_PAGE, sortBy, apiFilters)
+      .then(data => {
+        setPrefetchedData(data);
+        setPrefetchedPage(nextPage);
+      })
+      .catch(err => {
+        // Silent fail - prefetch is a nice-to-have
+        console.log('Prefetch failed (this is OK):', err);
+      });
   }, [pagination?.currentPage, pagination?.hasNext, prefetchedPage]);
 
   const handleOpenDetail = async (entry: LogEntry) => {
