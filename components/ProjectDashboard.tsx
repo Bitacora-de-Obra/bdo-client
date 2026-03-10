@@ -155,32 +155,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     }
   }, [triggerNewAnnotation, readOnly, project, showToast, clearTriggerNewAnnotation]);
 
-  // Prefetch next page in background
-  useEffect(() => {
-    if (!pagination?.hasNext) return;
-    const nextPage = pagination.currentPage + 1;
-    // Only prefetch if we haven't already prefetched this specific page
-    if (nextPage === prefetchedPage) return;
-
-    // Prepare filters for API call
-    const apiFilters = {
-      status: convertFilterToDbValue(filters.status, EntryStatus),
-      type: convertFilterToDbValue(filters.type, EntryType),
-      userId: filters.user !== 'all' ? filters.user : undefined,
-      search: filters.searchTerm || undefined
-    };
-
-    // Prefetch in background with current filters!
-    api.logEntries.getAll(nextPage, ENTRIES_PER_PAGE, sortBy, apiFilters)
-      .then(data => {
-        setPrefetchedData(data);
-        setPrefetchedPage(nextPage);
-      })
-      .catch(err => {
-        // Silent fail - prefetch is a nice-to-have
-        console.log('Prefetch failed (this is OK):', err);
-      });
-  }, [pagination?.currentPage, pagination?.hasNext, prefetchedPage]);
+  // Prefetch disabled - was causing infinite loop
 
   const handleOpenDetail = async (entry: LogEntry) => {
     // First show modal with existing data for quick response
