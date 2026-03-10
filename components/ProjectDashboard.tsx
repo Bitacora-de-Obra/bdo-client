@@ -71,7 +71,9 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     type: convertFilterToDbValue(filters.type, EntryType),
     userId: filters.user !== 'all' ? filters.user : undefined,
     search: filters.searchTerm || undefined,
-  }), [filters.status, filters.type, filters.user, filters.searchTerm]);
+    startDate: filters.startDate || undefined,
+    endDate: filters.endDate || undefined,
+  }), [filters.status, filters.type, filters.user, filters.searchTerm, filters.startDate, filters.endDate]);
 
   const fetchLogEntries = useCallback(async () => {
     const id = ++fetchIdRef.current;
@@ -80,7 +82,6 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     try {
       const apiFilters = JSON.parse(apiFiltersKey);
       const result = await api.logEntries.getAll(currentPage, ENTRIES_PER_PAGE, sortBy, apiFilters);
-      // Only update if this is still the latest fetch
       if (fetchIdRef.current === id) {
         setLogEntriesResponse(result);
         setIsLogEntriesLoading(false);
@@ -116,15 +117,19 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
       return;
     }
     setCurrentPage(1);
-  }, [filters.status, filters.type, filters.user, filters.searchTerm, sortBy]);
+  }, [filters.status, filters.type, filters.user, filters.searchTerm, filters.startDate, filters.endDate, sortBy]);
 
   // Extract entries and pagination from response (backward compatible)
-  const logEntries = Array.isArray(logEntriesResponse)
-    ? logEntriesResponse
-    : logEntriesResponse?.entries || [];
-  const pagination = !Array.isArray(logEntriesResponse)
-    ? logEntriesResponse?.pagination
-    : null;
+  const logEntries = useMemo(() => {
+    if (!logEntriesResponse) return [];
+    return Array.isArray(logEntriesResponse)
+      ? logEntriesResponse
+      : logEntriesResponse?.entries || [];
+  }, [logEntriesResponse]);
+  const pagination = useMemo(() => {
+    if (!logEntriesResponse || Array.isArray(logEntriesResponse)) return null;
+    return logEntriesResponse?.pagination || null;
+  }, [logEntriesResponse]);
 
   const [selectedEntry, setSelectedEntry] = useState<LogEntry | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -140,29 +145,26 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const { showToast } = useToast();
 
   useEffect(() => {
-    if (initialItemToOpen) {
-      // Find in current list
-      const entry = logEntries.find(e => e.id === initialItemToOpen.id);
-      if (entry) {
-        setSelectedEntry(entry);
-        setIsDetailModalOpen(true);
-        // Clear param
-        clearInitialItem();
-      } else if (!isLogEntriesLoading) {
-         // If not found in current list (maybe on another page), fetch it directly
-         api.logEntries.getById(initialItemToOpen.id)
-          .then(entry => {
-            setSelectedEntry(entry);
-            setIsDetailModalOpen(true);
-            clearInitialItem();
-          })
-          .catch(err => {
-            console.error("Could not fetch linked entry:", err);
-            clearInitialItem();
-          });
-      }
+    if (!initialItemToOpen) return;
+    const entry = logEntries.find(e => e.id === initialItemToOpen.id);
+    if (entry) {
+      setSelectedEntry(entry);
+      setIsDetailModalOpen(true);
+      clearInitialItem();
+    } else if (!isLogEntriesLoading && logEntries.length > 0) {
+      api.logEntries.getById(initialItemToOpen.id)
+        .then(freshEntry => {
+          setSelectedEntry(freshEntry);
+          setIsDetailModalOpen(true);
+          clearInitialItem();
+        })
+        .catch(err => {
+          console.error("Could not fetch linked entry:", err);
+          clearInitialItem();
+        });
     }
-  }, [initialItemToOpen, logEntries, isLogEntriesLoading, clearInitialItem]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialItemToOpen]);
 
   // Handle trigger from floating annotation button (from App.tsx)
   useEffect(() => {
@@ -194,17 +196,8 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     }
   };
 
-  const filteredEntries = useMemo(() => {
-    if (!logEntries || logEntries.length === 0) return [];
-
-    return logEntries.filter((entry) => {
-      if (!entry.entryDate) return true;
-      const entryDateOnly = entry.entryDate.substring(0, 10);
-      const startDateMatch = !filters.startDate || entryDateOnly >= filters.startDate;
-      const endDateMatch = !filters.endDate || entryDateOnly <= filters.endDate;
-      return startDateMatch && endDateMatch;
-    });
-  }, [logEntries, filters.startDate, filters.endDate]);
+  // All filtering (including dates) is now done server-side
+  const filteredEntries = logEntries;
 
   const handleCloseDetail = () => {
     setIsDetailModalOpen(false);
