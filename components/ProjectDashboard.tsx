@@ -203,7 +203,10 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     // Only filter by date range (frontend-only since backend doesn't have these params yet)
     // status, type, user, search filters are handled by backend
     const filtered = logEntries.filter((entry) => {
-      const entryDateOnly = entry.entryDate.substring(0, 10);
+      // Use entryDate if available, fallback to createdAt
+      const dateField = entry.entryDate || entry.createdAt;
+      if (!dateField) return true; // If no date, include entry
+      const entryDateOnly = dateField.substring(0, 10);
       const startDateMatch = !filters.startDate || entryDateOnly >= filters.startDate;
       const endDateMatch = !filters.endDate || entryDateOnly <= filters.endDate;
 
