@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { ProjectDetails, LogEntry, User, SignatureConsentPayload, UserRole, Comment as EntryComment, EntryStatus, EntryType } from "../types";
 import api from "../src/services/api";
 import FilterBar from "./FilterBar";
@@ -40,8 +40,6 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const { data: project, isLoading: isProjectLoading } = useApi.projectDetails();
   const [currentPage, setCurrentPage] = useState(1);
   const ENTRIES_PER_PAGE = 20;
-  const [prefetchedPage, setPrefetchedPage] = useState<number | null>(null);
-  const [prefetchedData, setPrefetchedData] = useState<any>(null);
   const [sortBy, setSortBy] = useState<"entryDate" | "entryDateDesc" | "folioNumber" | "folioNumberDesc" | "createdAt">("createdAt");
   
   // Helper: Convert Spanish UI labels to DB enum keys
@@ -62,17 +60,45 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     endDate: "",
   });
   
-  const { data: logEntriesResponse, isLoading: isLogEntriesLoading, error, refetch: refetchLogEntries } = useApi.logEntries(
-    currentPage, 
-    ENTRIES_PER_PAGE, 
-    sortBy,
-    {
-      status: convertFilterToDbValue(filters.status, EntryStatus),
-      type: convertFilterToDbValue(filters.type, EntryType),
-      userId: filters.user !== 'all' ? filters.user : undefined,
-      search: filters.searchTerm || undefined
+  // Direct fetch to avoid hook re-render issues
+  const [logEntriesResponse, setLogEntriesResponse] = useState<any>(null);
+  const [isLogEntriesLoading, setIsLogEntriesLoading] = useState(false);
+  const [error, setError] = useState<any>(null);
+  const fetchIdRef = useRef(0);
+
+  const apiFiltersKey = useMemo(() => JSON.stringify({
+    status: convertFilterToDbValue(filters.status, EntryStatus),
+    type: convertFilterToDbValue(filters.type, EntryType),
+    userId: filters.user !== 'all' ? filters.user : undefined,
+    search: filters.searchTerm || undefined,
+  }), [filters.status, filters.type, filters.user, filters.searchTerm]);
+
+  const fetchLogEntries = useCallback(async () => {
+    const id = ++fetchIdRef.current;
+    setIsLogEntriesLoading(true);
+    setError(null);
+    try {
+      const apiFilters = JSON.parse(apiFiltersKey);
+      const result = await api.logEntries.getAll(currentPage, ENTRIES_PER_PAGE, sortBy, apiFilters);
+      // Only update if this is still the latest fetch
+      if (fetchIdRef.current === id) {
+        setLogEntriesResponse(result);
+        setIsLogEntriesLoading(false);
+      }
+    } catch (err) {
+      if (fetchIdRef.current === id) {
+        console.error('Error fetching log entries:', err);
+        setError(err);
+        setIsLogEntriesLoading(false);
+      }
     }
-  );
+  }, [currentPage, sortBy, apiFiltersKey]);
+
+  useEffect(() => {
+    fetchLogEntries();
+  }, [fetchLogEntries]);
+
+  const refetchLogEntries = fetchLogEntries;
   
   // Fetch ALL entries for calendar (no pagination, no filters)
   const { data: allEntriesResponse, isLoading: isAllEntriesLoading } = useApi.allLogEntries();
@@ -82,24 +108,22 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   
   const { data: users, isLoading: isUsersLoading } = useApi.users();
 
-  // Reset page to 1 and clear prefetch when filters or sort change
+  // Reset page to 1 when filters or sort change
+  const isFirstRender = useRef(true);
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     setCurrentPage(1);
-    setPrefetchedPage(null);
-    setPrefetchedData(null);
-  }, [filters.status, filters.type, filters.user, filters.searchTerm, filters.startDate, filters.endDate, sortBy]);
+  }, [filters.status, filters.type, filters.user, filters.searchTerm, sortBy]);
 
-  // Use prefetched data if available, otherwise use fresh data
-  const actualLogEntriesResponse = prefetchedPage === currentPage && prefetchedData
-    ? prefetchedData
-    : logEntriesResponse;
-
-  // Extraer entries y pagination del response (backward compatible)
-  const logEntries = Array.isArray(actualLogEntriesResponse) 
-    ? actualLogEntriesResponse 
-    : actualLogEntriesResponse?.entries || [];
-  const pagination = !Array.isArray(actualLogEntriesResponse) 
-    ? actualLogEntriesResponse?.pagination 
+  // Extract entries and pagination from response (backward compatible)
+  const logEntries = Array.isArray(logEntriesResponse)
+    ? logEntriesResponse
+    : logEntriesResponse?.entries || [];
+  const pagination = !Array.isArray(logEntriesResponse)
+    ? logEntriesResponse?.pagination
     : null;
 
   const [selectedEntry, setSelectedEntry] = useState<LogEntry | null>(null);
@@ -155,8 +179,6 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
     }
   }, [triggerNewAnnotation, readOnly, project, showToast, clearTriggerNewAnnotation]);
 
-  // Prefetch disabled - was causing infinite loop
-
   const handleOpenDetail = async (entry: LogEntry) => {
     // First show modal with existing data for quick response
     setSelectedEntry(entry);
@@ -173,31 +195,15 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   };
 
   const filteredEntries = useMemo(() => {
-    if (!logEntries) return [];
+    if (!logEntries || logEntries.length === 0) return [];
 
-    console.log('[DEBUG] logEntries count:', logEntries.length);
-    console.log('[DEBUG] logEntries is array:', Array.isArray(logEntries));
-    if (logEntries.length > 0) {
-      console.log('[DEBUG] first entry:', JSON.stringify(logEntries[0]).substring(0, 200));
-      console.log('[DEBUG] first entry entryDate:', logEntries[0]?.entryDate);
-    }
-    console.log('[DEBUG] filters.startDate:', filters.startDate, 'filters.endDate:', filters.endDate);
-
-    // Only filter by date range (frontend-only since backend doesn't have these params yet)
-    // status, type, user, search filters are handled by backend
-    const filtered = logEntries.filter((entry) => {
-      // Filter by entryDate (annotation date, not creation date)
-      if (!entry.entryDate) return true; // If no entryDate, include entry
-      const dateField = entry.entryDate;
-      const entryDateOnly = dateField.substring(0, 10);
+    return logEntries.filter((entry) => {
+      if (!entry.entryDate) return true;
+      const entryDateOnly = entry.entryDate.substring(0, 10);
       const startDateMatch = !filters.startDate || entryDateOnly >= filters.startDate;
       const endDateMatch = !filters.endDate || entryDateOnly <= filters.endDate;
-
       return startDateMatch && endDateMatch;
     });
-
-    console.log('[DEBUG] filteredEntries count:', filtered.length);
-    return filtered;
   }, [logEntries, filters.startDate, filters.endDate]);
 
   const handleCloseDetail = () => {
