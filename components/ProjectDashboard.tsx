@@ -175,6 +175,14 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
   const filteredEntries = useMemo(() => {
     if (!logEntries) return [];
 
+    console.log('[DEBUG] logEntries count:', logEntries.length);
+    console.log('[DEBUG] logEntries is array:', Array.isArray(logEntries));
+    if (logEntries.length > 0) {
+      console.log('[DEBUG] first entry:', JSON.stringify(logEntries[0]).substring(0, 200));
+      console.log('[DEBUG] first entry entryDate:', logEntries[0]?.entryDate);
+    }
+    console.log('[DEBUG] filters.startDate:', filters.startDate, 'filters.endDate:', filters.endDate);
+
     // Only filter by date range (frontend-only since backend doesn't have these params yet)
     // status, type, user, search filters are handled by backend
     const filtered = logEntries.filter((entry) => {
@@ -188,6 +196,7 @@ const ProjectDashboard: React.FC<ProjectDashboardProps> = ({
       return startDateMatch && endDateMatch;
     });
 
+    console.log('[DEBUG] filteredEntries count:', filtered.length);
     return filtered;
   }, [logEntries, filters.startDate, filters.endDate]);
 
